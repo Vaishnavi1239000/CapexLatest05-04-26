@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "capex-sonacom-client-side-solution",
+    "id": "e9fe2947-95c8-422c-aca7-0e657c61db4b",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.22.2"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "capex-sonacom description"
+      },
+      "longDescription": {
+        "default": "capex-sonacom description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "capex-sonacom Feature",
+        "description": "The feature that activates elements of the capex-sonacom solution.",
+        "id": "0792812c-e874-4041-94de-8a008101ef3c",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/capex-sonacom.sppkg"
+  }
+}

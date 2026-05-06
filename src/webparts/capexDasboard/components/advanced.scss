@@ -1,0 +1,142 @@
+.form-container {
+  max-width: 1100px;
+  margin: auto;
+  font-family: "Segoe UI", sans-serif;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+.card {
+  background: #fff;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+input, select, textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
+}
+
+textarea {
+  min-height: 80px;
+  margin-top: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+th {
+  background: #f4f4f4;
+}
+
+.actions {
+  text-align: right;
+}
+
+button {
+  padding: 10px 20px;
+  margin-left: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.primary {
+  background: #0078d4;
+  color: white;
+}
+
+.secondary {
+  background: #ccc;
+}
+
+.approval-flow {
+  display: flex;
+  gap: 20px;
+}
+
+// .approval-step {
+//   padding: 10px;
+//   border: 1px solid #ccc;
+//   border-radius: 6px;
+//   background: #f9f9f9;
+// }
+
+// .approval-step {
+//   border: 1px solid #ccc;
+//   padding: 10px;
+//   border-radius: 6px;
+//   text-align: center;
+// }
+
+.approval-step .status {
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+.approval-flow {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.approval-step {
+  padding: 10px 15px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  min-width: 120px;
+  text-align: center;
+}
+
+.approval-step.active {
+  border: 2px solid orange;
+  background: #fff3cd;
+}
+
+.approval-step.approved {
+  border: 2px solid green;
+  background: #d4edda;
+}
+
+.status {
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+.workflow-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-item {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 6px;
+  background: #f9f9f9;
+}
+
+.history-item .date {
+  font-size: 12px;
+  color: gray;
+}
