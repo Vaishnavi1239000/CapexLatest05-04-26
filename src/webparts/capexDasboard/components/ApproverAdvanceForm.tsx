@@ -8,6 +8,7 @@ import {
   PeoplePicker,
   PrincipalType,
 } from "@pnp/spfx-controls-react/lib/PeoplePicker";
+import logo from "../assets/sona-comstarlogo.png";
 interface IProps {
   context: any;
   itemId: number; // 👈 IMPORTANT
@@ -478,240 +479,477 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
   if (!itemData) return <div>Loading...</div>;
 
   return (
-    <div className="form-container">
-      <h2 className="form-title">Advance Payment (Approver)</h2>
-      <div className="section">
-        <h3>Approval Matrix</h3>
-
-        <div className="approval-flow">
-          {approvalMatrix.length === 0 ? (
-            <p>No approval data</p>
-          ) : (
-            approvalMatrix.map((a, index) => (
-              <div
-                key={index}
-                className={`approval-step ${a.Status === "In Progress"
-                  ? "active"
-                  : a.Status === "Approved"
-                    ? "approved"
-                    : ""
-                  }`}
-              >
-                <div><b>{a.Role}</b></div>
-                <div>{a.Name}</div>
-
-                <div className="status">{a.Status}</div>
+    <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
+      <div className='row'>
+        <div className='col-md-12'>
+          <div className='Main-Boxpoup'>
+            <div className="bordered">
+              <img src={logo} />
+              <h1> Approval Matrix </h1>
+            </div>
+            {approvalMatrix.length === 0 ? (
+              <p>No approval data</p>
+            ) : (
+              <div className="displayWF">
+                <ul className="approval-flow">
+                  {approvalMatrix.map((a, index) => (
+                    <li
+                      key={index}
+                      className={`approval-step ${a.Status === "In Progress"
+                        ? "active"
+                        : a.Status === "Approved"
+                          ? "approved"
+                          : ""
+                        }`}
+                    >
+                      {a.Role} - {a.Name}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Employee Info */}
-      <div className="section">
-        <h3>Requestor Information</h3>
-
-        <div className="form-row">
-          <label>Employee Code</label>
-          <input value={itemData.EmployeeCode || ""} readOnly />
-
-          <label>Employee Name</label>
-          <input value={itemData.EmployeeName || ""} readOnly />
-
-          <label>Division</label>
-          <input value={itemData.Division || ""} readOnly />
-
-          <label>Location</label>
-          <input value={itemData.Location || ""} readOnly />
-        </div>
-
-        <div className="form-row">
-          <label>Email</label>
-          <input value={itemData.Email || ""} readOnly />
-
-          <label>RM</label>
-          <input value={itemData.RM || ""} readOnly />
-
-          <label>HOD</label>
-          <input value={itemData.HOD || ""} readOnly />
-
-          <label>Contact No</label>
-          <input value={itemData.ContactNo || ""} readOnly />
-        </div>
-      </div>
-
-      {/* Vendor */}
-      <div className="section">
-        <h3>Vendor & PO Details</h3>
-
-        <div className="form-row">
-          <label>Vendor Code</label>
-
-          <select
-            value={selectedVendorId ?? ""}
-            disabled={true}
-            onChange={(e) => {
-              const id = Number(e.target.value);
-              const vendor = vendors.find((v) => v.Id === id);
-              setSelectedVendorId(id);
-              setSelectedVendorName(vendor?.VendorName || "");
-            }}
-          >
-            <option value="">Select Vendor</option>
-            {vendors.map((v) => (
-              <option key={v.Id} value={v.Id}>
-                {v.VendorCode}
-              </option>
-            ))}
-          </select>
-          <label>Vendor Name</label>
-          <input value={itemData.VendorName || ""} readOnly />
-
-          <label>PO Number</label>
-          <input value={itemData.PONumber || ""} readOnly />
-
-          <label>PO Date</label>
-          <input
-            value={
-              itemData.PODate
-                ? new Date(itemData.PODate).toLocaleDateString("en-GB")
-                : ""
-            }
-            readOnly
-          />
-        </div>
-
-        <div className="form-row">
-          <label>PO Terms</label>
-          <input value={itemData.POAdvanceTerms || ""} readOnly />
-
-          <label>PO Amount</label>
-          <input value={itemData.POAmtGST || ""} readOnly />
-
-          <label>Advance Amount</label>
-          <input value={itemData.RequestAdvanceAmount || ""} readOnly />
-
-          <label>Paid Amount</label>
-          <input value={itemData.PaidAmount || ""} readOnly />
-        </div>
-      </div>
-
-      {/* Advance */}
-      <div className="section">
-        <h3>Advance Details</h3>
-
-        <div className="form-row">
-          <label>Expected Settlement</label>
-          <input
-            value={
-              itemData.ExpectedDateofSettlement
-                ? new Date(
-                  itemData.ExpectedDateofSettlement,
-                ).toLocaleDateString("en-GB")
-                : ""
-            }
-            readOnly
-          />
-          <label>PIC Name</label>
-          <PeoplePicker
-            context={peoplePickerContext}
-            personSelectionLimit={1}
-            disabled={true}
-            principalTypes={[PrincipalType.User]}
-            defaultSelectedUsers={
-              itemData?.PICName?.Title ? [itemData.PICName.Title] : []
-            }
-
-          />
-          <label>GL Code</label>
-          <input value={itemData.GL || ""} readOnly />
-
-          <label>Cost Center</label>
-          <input value={itemData.CostCenter || ""} readOnly />
-        </div>
-      </div>
-
-      {/* Remarks */}
-      <div className="section">
-        <h3>Remarks</h3>
-
-        <div className="form-row">
-          <label>User Remarks</label>
-          <textarea value={itemData.Remarks || ""} readOnly />
-
-          <label>Project Description</label>
-          <textarea value={itemData.ProjectDescription || ""} readOnly />
-        </div>
-      </div>
-      <div className="section">
-        <h3>Workflow History</h3>
-
-        {workflowHistory.length === 0 ? (
-          <p>No history available</p>
-        ) : (
-          <div className="workflow-history">
-            {workflowHistory.map((h, index) => (
-              <div key={index} className="history-item">
-                <div><b>{h.ActionTaken}</b></div>
-                <div>{h.CurrentApprover}</div>
-                <div>{h.Comment}</div>
-                <div className="date">
-                  {new Date(h.Date).toLocaleString()}
+            )}
+            {/* <div className='borderedbox'>
+              <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Requestor Information</label>
+              </div>
+              <div className='main-formcontainer'>
+                <div className='row mb-20'>
+                  <div className='col-md-4'>
+                    <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.EmployeeCode}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.EmployeeName}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.EmployeeEmail}</label>
+                  </div>
+                </div>
+                <div className='row mb-20'>
+                  <div className='col-md-4'>
+                    <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.ContactNo}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.EmployeeStatus}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.Division}</label>
+                  </div>
+                </div>
+                <div className='row mb-20'>
+                  <div className='col-md-4'>
+                    <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.Location}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.RM}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.HOD}</label>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ✅ ONLY EDITABLE FIELD */}
-      <div className="section">
-        <h3>Approver Action</h3>
-
-        <label>Approver Remarks</label>
-        <textarea
-          value={approverRemarks}
-          onChange={(e) => setApproverRemarks(e.target.value)}
-        />
-      </div>
-
-      <div className="section">
-        <h3>Attachments</h3>
-
-        {attachments.length === 0 ? (
-          <p>No attachments found</p>
-        ) : (
-          <ul>
-            {attachments.map((file: any, index: number) => (
-              <li key={index}>
-                <a href={file.ServerRelativeUrl} target="_blank">
-                  {file.Name}
+              <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Vendor & PO Details</label>
+              </div>
+              <div className='main-formcontainer'>
+                <div className='row mb-20'>
+                  <div className="col-md-4">
+                    <label className="font">Vendor Code</label>
+                    <select
+                      value={selectedVendorId ?? ""}
+                      disabled={true}
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const vendor = vendors.find((v) => v.Id === id);
+                        setSelectedVendorId(id);
+                        setSelectedVendorName(vendor?.VendorName || "");
+                      }} className="formtext-control"
+                    >
+                      <option value="">Select Vendor</option>
+                      {vendors.map((v) => (
+                        <option key={v.Id} value={v.Id}>
+                          {v.VendorCode}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-4">
+                    <label>Vendor Name</label>
+                    <input value={itemData.VendorName || ""} className="form-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label>PO Number</label>
+                    <input value={itemData.PONumber || ""} className="form-control readonly" />
+                  </div>
+                </div>
+                <div className='row mb-20'>
+                  <div className="col-md-4">
+                    <label className="font">PO Date</label>
+                    <input value={itemData.PODate ? new Date(itemData.PODate).toLocaleDateString("en-GB") : ""} className="font-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">PO Terms</label>
+                    <input value={itemData.POAdvanceTerms || ""} className="font-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">PO Amount</label>
+                    <input value={itemData.POAmtGST || ""} className="font-control readonly" />
+                  </div>
+                </div>
+                <div className='row mb-20'>
+                  <div className='col-md-4'>
+                    <label className="font">Advance Amount</label>
+                    <input value={itemData.RequestAdvanceAmount || ""} className="font-control readonly" />
+                  </div>
+                  <div className='col-md-4'>
+                    <label className="font">Paid Amount</label>
+                    <input value={itemData.PaidAmount || ""} className="font-control readonly" />
+                  </div>
+                </div>
+              </div>
+              <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Advance Details</label>
+              </div>
+              <div className='main-formcontainer'>
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label className="font">Expected Settlement</label>
+                    <input value={itemData.ExpectedDateofSettlement ? new Date(itemData.ExpectedDateofSettlement,).toLocaleDateString("en-GB") : ""}
+                      className="font-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">PIC Name</label>
+                    <PeoplePicker
+                      context={peoplePickerContext}
+                      personSelectionLimit={1}
+                      disabled={true}
+                      principalTypes={[PrincipalType.User]}
+                      defaultSelectedUsers={
+                        itemData?.PICName?.Title ? [itemData.PICName.Title] : []
+                      }
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">GL Code</label>
+                    <input value={itemData.GL || ""} className="font-control readonly" />
+                  </div>
+                </div>
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label className="font">Cost Center</label>
+                    <input value={itemData.CostCenter || ""} className="font-control readonly" />
+                  </div>
+                </div>
+              </div>
+              <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Remarks</label>
+              </div>
+              <div className='main-formcontainer'>
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label className="font">User Remarks</label>
+                    <textarea value={itemData.Remarks || ""} className="font-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">Project Description</label>
+                    <textarea value={itemData.ProjectDescription || ""} className="font-control readonly" />
+                  </div>
+                </div>
+              </div>
+              <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Workflow History</label>
+              </div>
+              <div className='main-formcontainer'>
+                <div className='row mb-20'>
+                  <div className='col-md-12'>
+                    {workflowHistory.length === 0 ? (
+                      <p>No history available</p>
+                    ) : (
+                      <div className="workflow-history">
+                        {workflowHistory.map((h, index) => (
+                          <div key={index} className="history-item">
+                            <div><b>{h.ActionTaken}</b></div>
+                            <div>{h.CurrentApprover}</div>
+                            <div>{h.Comment}</div>
+                            <div className="date">
+                              {new Date(h.Date).toLocaleString()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Approver Action</label>
+              </div>
+              <div className='main-formcontainer'>
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label className="font">Approver Remarks</label>
+                    <textarea className="font-control"
+                      value={approverRemarks}
+                      onChange={(e) => setApproverRemarks(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Attachments</label>
+              </div>
+              <div className='main-formcontainer'>
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label className="font">Attachments</label>
+                    {attachments.length === 0 ? (
+                      <p>No attachments found</p>
+                    ) : (
+                      <ul>
+                        {attachments.map((file: any, index: number) => (
+                          <li key={index}>
+                            <a href={file.ServerRelativeUrl} target="_blank">
+                              {file.Name}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
+                <a onClick={handleApprove} className="submit-btn">
+                  Approve
                 </a>
-              </li>
-            ))}
-          </ul>
-        )}
+                <a onClick={handleSendBack} className="Rework-btn">
+                  Sent Back
+                </a>
+                <a onClick={handleReject} className="Reject-btn">
+                  Reject
+                </a>
+                <a href="#" onClick={handleExit} className="reset-btn">
+                  Exit
+                </a>
+              </div>
+            </div> */}
+            <div className='borderedbox'>
+              <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Requestor Information</label>
+              </div>
+              <div className='main-formcontainer'>
+                <div className='row mb-20'>
+                  <div className='col-md-4'>
+                    <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.EmployeeCode}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.EmployeeName}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.EmployeeEmail}</label>
+                  </div>
+                </div>
+                <div className='row mb-20'>
+                  <div className='col-md-4'>
+                    <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.ContactNo}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.EmployeeStatus}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.Division}</label>
+                  </div>
+                </div>
+                <div className='row mb-20'>
+                  <div className='col-md-4'>
+                    <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.Location}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.RM}</label>
+                  </div>
+                  <div className='col-md-4'>
+                    <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
+                    <label className='fonttext'>  {itemData.HOD}</label>
+                  </div>
+                </div>
+              </div>
+              <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Vendor & PO Details</label>
+              </div>
+              <div className='main-formcontainer'>
+                <div className='row mb-20'>
+                  <div className="col-md-4">
+                    <label className="font">Vendor Code</label>
+                    <select
+                      value={selectedVendorId ?? ""}
+                      disabled={true}
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const vendor = vendors.find((v) => v.Id === id);
+                        setSelectedVendorId(id);
+                        setSelectedVendorName(vendor?.VendorName || "");
+                      }} className="formtext-control"
+                    >
+                      <option value="">Select Vendor</option>
+                      {vendors.map((v) => (
+                        <option key={v.Id} value={v.Id}>
+                          {v.VendorCode}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-4">
+                    <label>Vendor Name</label>
+                    <input value={itemData.VendorName || ""} className="form-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label>PO Number</label>
+                    <input value={itemData.PONumber || ""} className="form-control readonly" />
+                  </div>
+                </div>
+                <div className='row mb-20'>
+                  <div className="col-md-4">
+                    <label className="font">PO Date</label>
+                    <input value={itemData.PODate ? new Date(itemData.PODate).toLocaleDateString("en-GB") : ""} className="font-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">PO Terms</label>
+                    <input value={itemData.POAdvanceTerms || ""} className="font-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">PO Amount</label>
+                    <input value={itemData.POAmtGST || ""} className="font-control readonly" />
+                  </div>
+                </div>
+                <div className='row mb-20'>
+                  <div className='col-md-4'>
+                    <label className="font">Advance Amount</label>
+                    <input value={itemData.RequestAdvanceAmount || ""} className="font-control readonly" />
+                  </div>
+                  <div className='col-md-4'>
+                    <label className="font">Paid Amount</label>
+                    <input value={itemData.PaidAmount || ""} className="font-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">Expected Settlement</label>
+                    <input value={itemData.ExpectedDateofSettlement ? new Date(itemData.ExpectedDateofSettlement,).toLocaleDateString("en-GB") : ""}
+                      className="font-control readonly" />
+                  </div>
+                </div>
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label className="font">PIC Name</label>
+                    <PeoplePicker
+                      context={peoplePickerContext}
+                      personSelectionLimit={1}
+                      disabled={true}
+                      principalTypes={[PrincipalType.User]}
+                      defaultSelectedUsers={
+                        itemData?.PICName?.Title ? [itemData.PICName.Title] : []
+                      }
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">GL Code</label>
+                    <input value={itemData.GL || ""} className="font-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">Cost Center</label>
+                    <input value={itemData.CostCenter || ""} className="font-control readonly" />
+                  </div>
+                </div>
+                <div className='row mb-20'>
+                  <div className='col-md-12'>
+                    {workflowHistory.length === 0 ? (
+                      <p>No history available</p>
+                    ) : (
+                      <div className="workflow-history">
+                        {workflowHistory.map((h, index) => (
+                          <div key={index} className="history-item">
+                            <div><b>{h.ActionTaken}</b></div>
+                            <div>{h.CurrentApprover}</div>
+                            <div>{h.Comment}</div>
+                            <div className="date">
+                              {new Date(h.Date).toLocaleString()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label className="font">User Remarks</label>
+                    <textarea value={itemData.Remarks || ""} className="font-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">Project Description</label>
+                    <textarea value={itemData.ProjectDescription || ""} className="font-control readonly" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="font">Approver Remarks</label>
+                    <textarea className="font-control"
+                      value={approverRemarks}
+                      onChange={(e) => setApproverRemarks(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label className="font">Attachments</label>
+                    {attachments.length === 0 ? (
+                      <p>No attachments found</p>
+                    ) : (
+                      <ul>
+                        {attachments.map((file: any, index: number) => (
+                          <li key={index}>
+                            <a href={file.ServerRelativeUrl} target="_blank">
+                              {file.Name}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
+                  <a onClick={handleApprove} className="submit-btn">
+                    Approve
+                  </a>
+                  <a onClick={handleSendBack} className="Rework-btn">
+                    Sent Back
+                  </a>
+                  <a onClick={handleReject} className="Reject-btn">
+                    Reject
+                  </a>
+                  <a href="#" onClick={handleExit} className="reset-btn">
+                    Exit
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Buttons */}
-      <div className="actions">
-        <button className="primary" onClick={handleApprove}>
-          Approve
-        </button>
-
-        <button className="secondary" onClick={handleSendBack}>
-          Sent Back
-        </button>
-
-        <button className="secondary" onClick={handleReject}>
-          Reject
-        </button>
-
-        <button className="exit" onClick={handleExit}>
-          Exit
-        </button>
-      </div>
-    </div>
+    </div >
   );
 };
 
