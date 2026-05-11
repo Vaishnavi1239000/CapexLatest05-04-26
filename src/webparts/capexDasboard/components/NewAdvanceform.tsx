@@ -59,6 +59,9 @@ const NewAdvanceform = ({ context }: any) => {
     msGraphClientFactory: context.msGraphClientFactory,
     spHttpClient: context.spHttpClient,
   };
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDraftSaving, setIsDraftSaving] = useState(false);
   const handleNumberChange = (value: string, setter: any) => {
     // Allow only numbers and decimal (max one dot)
     const regex = /^\d*\.?\d*$/;
@@ -314,30 +317,43 @@ const NewAdvanceform = ({ context }: any) => {
 
     if (!selectedVendorId) {
       errors.push("Please select the Vendor code");
+      setIsSubmitting(false);
     }
 
     if (!poNumber) {
       errors.push("Please update PO Number");
+      setIsSubmitting(false);
+
     }
 
     if (!poDate) {
       errors.push("Please update PO date");
+      setIsSubmitting(false);
+
     }
 
     if (!poTerms) {
       errors.push("Please update PO Terms");
+      setIsSubmitting(false);
+
     }
 
     if (!poAmount) {
       errors.push("Please update PO Amount");
+      setIsSubmitting(false);
+
     }
 
     if (!advanceAmount || Number(advanceAmount) <= 0) {
       errors.push("Please update Advance Amount");
+      setIsSubmitting(false);
+
     }
 
     if (!paidAmount || Number(paidAmount) <= 0) {
       errors.push("Please update Paid Amount");
+      setIsSubmitting(false);
+
     }
 
     // 🔥 NEW VALIDATION
@@ -347,22 +363,32 @@ const NewAdvanceform = ({ context }: any) => {
       Number(paidAmount) > Number(advanceAmount)
     ) {
       errors.push("Paid Amount cannot be greater than Advance Amount");
+      setIsSubmitting(false);
+
     }
 
     if (!expectedDate) {
       errors.push("Please update Settlement Date");
+      setIsSubmitting(false);
+
     }
 
     if (!selectedUser || selectedUser.length === 0) {
       errors.push("Please select PIC Name");
+      setIsSubmitting(false);
+
     }
 
     if (!projectDesc) {
       errors.push("Please enter Project Description");
+      setIsSubmitting(false);
+
     }
 
     if (!selectedFiles || selectedFiles.length === 0) {
       errors.push("Please upload at least one attachment");
+      setIsSubmitting(false);
+
     }
 
     return errors;
@@ -371,6 +397,8 @@ const NewAdvanceform = ({ context }: any) => {
   const handleSubmit = async () => {
     try {
       debugger;
+      if (isSubmitting) return;
+      setIsSubmitting(true);
       const errors = validateForm();
 
       if (errors.length > 0) {
@@ -459,6 +487,7 @@ const NewAdvanceform = ({ context }: any) => {
         CurrentApproverId: currentApprover,
 
         WorkFlowHistory: JSON.stringify(wfHistory),
+                ApproverStatus:"Pending at RM"
       });
       debugger;
       await uploadAttachments(capexId); // 🔥 FIXED
@@ -472,11 +501,14 @@ const NewAdvanceform = ({ context }: any) => {
     } catch (error) {
       console.error("ERROR:", error);
       alert("Error while saving ❌");
+      setIsSubmitting(false);
     }
   };
 
   const handledraft = async () => {
     try {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
       const capexId = await generateCapexId();
 
       let ensuredUserId: number | null = null;
@@ -494,6 +526,7 @@ const NewAdvanceform = ({ context }: any) => {
 
       if (!userEmail) {
         alert("User email not found");
+        setIsSubmitting(false);
         return;
       }
 
@@ -578,6 +611,8 @@ const NewAdvanceform = ({ context }: any) => {
     } catch (error) {
       console.error("ERROR:", error);
       alert("Error while saving ❌");
+      setIsSubmitting(false);
+
     }
   };
 
@@ -605,7 +640,13 @@ const NewAdvanceform = ({ context }: any) => {
                 <p>Loading...</p>
               ) : (
                 <div className="displayWF">
+
                   <ul className="approval-flow">
+                    <li className={`approval-step`}>
+
+                      {`Initiator`} - {employee.EmployeeName}
+
+                    </li>
                     {approvalMatrix.map((a, index) => (
                       <li key={index} className={`approval-step ${index === 0 ? "active" : ""}`}>
                         {a.Role} - {a.Name}
@@ -664,7 +705,7 @@ const NewAdvanceform = ({ context }: any) => {
                   </div>
                 </div>
                 <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Vendor & PO Details</label>
+                  <label>Capex Details</label>
                 </div>
                 <div className='main-formcontainer'>
                   <div className="row mb-20">
@@ -914,7 +955,7 @@ const NewAdvanceform = ({ context }: any) => {
                   </div>
                 </div>
                 <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Vendor & PO Details</label>
+                  <label>Capex Details</label>
                 </div>
                 <div className='main-formcontainer'>
                   <div className="row mb-20">
@@ -1084,11 +1125,27 @@ const NewAdvanceform = ({ context }: any) => {
                     </div>
                   </div>
                   <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
-                    <a onClick={handleSubmit} className="submit-btn">
-                      Submit
+                    <a
+                      onClick={!isSubmitting ? handleSubmit : undefined}
+                      className="submit-btn"
+                      style={{
+                        pointerEvents: isSubmitting ? "none" : "auto",
+                        opacity: isSubmitting ? 0.6 : 1,
+                        cursor: isSubmitting ? "not-allowed" : "pointer"
+                      }}
+                    >
+                      {isSubmitting ? "Submitting..." : "Submit"}
                     </a>
-                    <a onClick={handledraft} className="Rework-btn">
-                      Save as Draft
+                    <a
+                      onClick={!isSubmitting ? handledraft : undefined}
+                      className="Rework-btn"
+                      style={{
+                        pointerEvents: isSubmitting ? "none" : "auto",
+                        opacity: isSubmitting ? 0.6 : 1,
+                        cursor: isSubmitting ? "not-allowed" : "pointer"
+                      }}
+                    >
+                      {isSubmitting ? "Saving..." : "Save as Draft"}
                     </a>
                     <a href="#" onClick={handleExit} className="reset-btn">
                       Exit

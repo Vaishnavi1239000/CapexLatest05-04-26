@@ -487,6 +487,11 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
               ) : (
                 <div className="displayWF">
                   <ul className="approval-flow">
+                     <li className={`approval-step`}>
+                      
+                           {`Initiator`} - {employee.EmployeeName}
+                        
+                    </li>
                     {approvalMatrix.map((a, index) => (
                       <li
                         key={index}
@@ -552,7 +557,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                   </div>
                 </div>
                 <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Vendor & PO Details</label>
+                  <label>Capex Details</label>
                 </div>
                 <div className='main-formcontainer'>
                   <div className="row mb-20">
@@ -819,7 +824,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                   </div>
                 </div>
                 <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Vendor & PO Details</label>
+                  <label>Capex Details</label>
                 </div>
                 <div className='main-formcontainer'>
                   <div className="row mb-20">

@@ -65,8 +65,8 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
       const item = await sp.web.lists
         .getByTitle("CapexAdvance")
         .items.getById(itemId)
-        .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode")
-        .expand("PICName", "VendorCode")();
+        .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode", "Author/Id","Author/Title","Author/EMail")
+        .expand("PICName", "VendorCode", "Author")();
       // 👈 ADD
 
       setItemData(item);
@@ -250,7 +250,8 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
           ApprovalMatrix: JSON.stringify(finalFlow),
 
           // 🔥 IMPORTANT
-          CurrentApproverId: nextApproverId
+          CurrentApproverId: nextApproverId,
+          ApproverStatus: "Pending for PF Approver UTR"
         });
 
       alert("Approved successfully ✅");
@@ -396,6 +397,11 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
               ) : (
                 <div className="displayWF">
                   <ul className="approval-flow">
+                     <li className={`approval-step`}>
+                      
+                           {`Initiator`} - {itemData.Author.Title}
+                        
+                    </li>
                     {approvalMatrix.map((a, index) => (
                       <li
                         key={index}
@@ -461,7 +467,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                   </div>
                 </div>
                 <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Vendor & PO Details</label>
+                  <label>Capex Details</label>
                 </div>
                 <div className='main-formcontainer'>
                   <div className='row mb-20'>
@@ -723,7 +729,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                   </div>
                 </div>
                 <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Vendor & PO Details</label>
+                  <label>Capex Details</label>
                 </div>
                 <div className='main-formcontainer'>
                   <div className='row mb-20'>

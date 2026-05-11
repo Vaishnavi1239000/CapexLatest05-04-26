@@ -100,8 +100,8 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
       const item = await sp.web.lists
         .getByTitle("CapexAdvance")
         .items.getById(itemId)
-        .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode")
-        .expand("PICName", "VendorCode")
+        .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode","Author/Id","Author/Title","Author/EMail")
+        .expand("PICName", "VendorCode", "Author")
         // 👈 ADD
         ();
 
@@ -334,6 +334,16 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         Date: new Date().toISOString()
       });
 
+      let ApproverStatus;
+      
+      if (currentRole === "RM") {
+        ApproverStatus = "Pending for HOD";
+      } else if (currentRole === "HOD") {
+        ApproverStatus = "Pending for PF Approver";
+      } else {
+        ApproverStatus = nextApproverId ? "Pending" : "Approved";
+      }
+
       // =========================
       // 🔥 UPDATE SHAREPOINT
       // =========================
@@ -349,7 +359,8 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
 
           CurrentApproverId: nextApproverId,
 
-          WorkFlowHistory: JSON.stringify(history)
+          WorkFlowHistory: JSON.stringify(history),
+          ApproverStatus: ApproverStatus
         });
 
       alert("Approved successfully ✅");
@@ -492,6 +503,11 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
             ) : (
               <div className="displayWF">
                 <ul className="approval-flow">
+                  <li className={`approval-step`}>
+                      
+                           {`Initiator`} - {itemData.Author.Title}
+                        
+                    </li>
                   {approvalMatrix.map((a, index) => (
                     <li
                       key={index}
@@ -557,7 +573,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                 </div>
               </div>
               <div className="heading1" style={{ marginTop: "10px" }}>
-                <label>Vendor & PO Details</label>
+                <label>Capex Details</label>
               </div>
               <div className='main-formcontainer'>
                 <div className='row mb-20'>
@@ -790,7 +806,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                 </div>
               </div>
               <div className="heading1" style={{ marginTop: "10px" }}>
-                <label>Vendor & PO Details</label>
+                <label>Capex Details</label>
               </div>
               <div className='main-formcontainer'>
                 <div className='row mb-20'>

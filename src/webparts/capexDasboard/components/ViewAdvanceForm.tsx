@@ -235,6 +235,11 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
 
                 <div className="displayWF">
                   <ul className="approval-flow">
+                    <li className={`approval-step`}>
+                      
+                           {`Initiator`} - {employee.EmployeeName}
+                        
+                    </li>
                     {approvalMatrix.map((a, index) => (
                       <li
                         key={index}
