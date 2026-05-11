@@ -3,6 +3,7 @@ import "./advanced.scss";
 import { spfi } from "@pnp/sp";
 import { SPFx } from "@pnp/sp/presets/all";
 import { useEffect, useState } from "react";
+
 import {
   PeoplePicker,
   PrincipalType,
@@ -13,6 +14,7 @@ interface IVendor {
   VendorCode: string;
   VendorName: string;
 }
+import logo from "../assets/sona-comstarlogo.png";
 const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
   const [attachments, setAttachments] = useState<any[]>([]);
   const sp = spfi().using(SPFx(context));
@@ -216,237 +218,531 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
     void getVendors();
   }, []);
   return (
-    <div className="form-container">
-      <h2>Advance Payment (View)</h2>
-      <div className="section">
-        <h3>Approval Matrix</h3>
+    <>
 
-        {approvalMatrix.length === 0 ? (
-          <p>No approval data</p>
-        ) : (
-          <div className="approval-flow">
-            {approvalMatrix.map((a, index) => (
-              <div
-                key={index}
-                className={`approval-step ${a.Status === "In Progress"
-                    ? "active"
-                    : a.Status === "Approved"
-                      ? "approved"
-                      : a.Status === "Rejected"
-                        ? "rejected"
-                        : a.Status === "Send Back"
-                          ? "sendback"
-                          : ""
-                  }`}
-              >
-                <div><b>{a.Role}</b></div>
-                <div>{a.Name}</div>
-                <div>{a.Status}</div>
+      <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
+        <div className='row'>
+          <div className='col-md-12'>
+            <div className='Main-Boxpoup'>
+              {/* 🔹 Header */}
+              <div className="bordered">
+                <img src={logo} />
+                <h1> Advance Payment (View) </h1>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-      {/* Employee */}
+              {approvalMatrix.length === 0 ? (
+                <p>No approval data</p>
+              ) : (
 
-      <div className="section">
-        <h3>Requestor Information</h3>
-
-        <div className="form-row">
-          <label>Employee Code</label>
-          <input value={employee.EmployeeCode || ""} readOnly />
-
-          <label>Employee Name</label>
-          <input value={employee.EmployeeName || ""} readOnly />
-
-          <label>Division</label>
-          <input value={employee.Division || ""} readOnly />
-
-          <label>Location</label>
-          <input value={employee.Location || ""} readOnly />
-        </div>
-
-        <div className="form-row">
-          <label>Email</label>
-          <input value={employee.EmployeeEmail || ""} readOnly />
-
-          <label>RM</label>
-          <input value={employee.ReportingManager?.Title || ""} readOnly />
-
-          <label>HOD</label>
-          <input value={employee.HOD?.Title || ""} readOnly />
-
-          <label>Contact No</label>
-          <input value={employee.ContactNo || ""} readOnly />
-        </div>
-
-        <div className="form-row">
-          <label>Employee Status</label>
-          <input value={employee.EmployeeStatus || ""} readOnly />
-        </div>
-      </div>
-
-      {/* Vendor */}
-      <div className="section">
-        <h3>Vendor & PO</h3>
-
-        <label>Vendor Code</label>
-
-        <select
-          value={selectedVendorId ?? ""}
-          disabled={true}
-          onChange={(e) => {
-
-            const id = Number(e.target.value);
-            const vendor = vendors.find((v) => v.Id === id);
-            setSelectedVendorId(id);
-            setSelectedVendorName(vendor?.VendorName || "");
-          }}
-        >
-          <option value="">Select Vendor</option>
-          {vendors.map((v) => (
-            <option key={v.Id} value={v.Id}>
-              {v.VendorCode}
-            </option>
-          ))}
-        </select>
-
-        <label>Vendor Name</label>
-        <input value={vendorName} readOnly />
-
-        <label>PO Number</label>
-        <input value={poNumber} readOnly />
-
-        <label>PO Date</label>
-        <input type="date" value={poDate} readOnly />
-
-        <label>PO Terms</label>
-        <input value={poTerms} readOnly />
-      </div>
-
-      {/* Amount */}
-      <div className="section">
-        <h3>Amount</h3>
-
-        <label>PO Amount</label>
-        <input value={poAmount} readOnly />
-
-        <label>Advance Amount</label>
-        <input value={advanceAmount} readOnly />
-
-        <label>Paid Amount</label>
-        <input value={paidAmount} readOnly />
-      </div>
-
-      {/* Advance */}
-      <div className="section">
-        <h3>Advance Details</h3>
-
-        <label>Expected Date</label>
-        <input type="date" value={expectedDate} readOnly />
-
-        <label>PIC Name</label>
-        <PeoplePicker
-          context={peoplePickerContext}
-          personSelectionLimit={1}
-          disabled={true}
-          principalTypes={[PrincipalType.User]}
-          defaultSelectedUsers={
-            formData?.PICName?.Title ? [formData.PICName.Title] : []
-          }
-        />
-
-        <label>GL Code</label>
-        <input value={glCode} readOnly />
-
-        <label>Cost Center</label>
-        <input value={costCenter} readOnly />
-      </div>
-
-      {/* Remarks */}
-      <div className="section">
-        <h3>Remarks</h3>
-
-        <textarea value={remarks} readOnly />
-        <h3>Project Description</h3>
-        <textarea value={projectDesc} readOnly />
-      </div>
-
-      {/* Approver */}
-      <div className="section">
-        <h3>Approver Details</h3>
-
-        <label>Approver Remarks</label>
-        <textarea value={approverRemarks} readOnly />
-
-        <label>Voucher Date</label>
-        <input type="date" value={voucherDate} readOnly />
-
-        <label>Voucher Number</label>
-        <input value={VouchingNumber} readOnly />
-
-        <label>UTR Date</label>
-        <input type="date" value={UTRDate} readOnly />
-
-        <label>UTR Number</label>
-        <input value={UTRNumber} readOnly />
-      </div>
-
-      {/* Attachment */}
-      <div className="section">
-        <h3>Attachments</h3>
-
-        {attachments.length > 0 && (
-          <ul>
-            {attachments.map((file: any, index: number) => (
-              <li key={index}>
-                <a
-                  href={file.ServerRelativeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {file.Name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="section">
-          <h3>Workflow History</h3>
-
-          {workflowHistory.length === 0 ? (
-            <p>No history available</p>
-          ) : (
-            <div className="workflow-history">
-              {workflowHistory.map((h, index) => (
-                <div key={index} className="history-item">
-                  <div>
-                    {h.ActionTaken === "Submitted" && "📩 "}
-                    {h.ActionTaken === "Approved" && "✅ "}
-                    {h.ActionTaken === "Rejected" && "❌ "}
-                    {h.ActionTaken === "Send Back" && "↩ "}
-                    {h.ActionTaken === "Vouched" && "💰 "}
-                    {h.ActionTaken === "Paid" && "💸 "}
-                    {h.ActionTaken}
+                <div className="displayWF">
+                  <ul className="approval-flow">
+                    {approvalMatrix.map((a, index) => (
+                      <li
+                        key={index}
+                        className={`approval-step ${a.Status === "In Progress"
+                          ? "active"
+                          : a.Status === "Approved"
+                            ? "approved"
+                            : a.Status === "Rejected"
+                              ? "rejected"
+                              : a.Status === "Send Back"
+                                ? "sendback"
+                                : ""
+                          }`}
+                      >
+                        {a.Role} - {a.Name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {/* <div className='borderedbox'>
+                <div className="heading1">
+                  <label>Requestor Information</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeCode}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeName}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeEmail}</label>
+                    </div>
                   </div>
-
-                  <div><b>{h.CurrentApprover}</b></div>
-                  <div>{h.Comment}</div>
-                  <div className="date">
-                    {new Date(h.Date).toLocaleString()}
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.ContactNo}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeStatus}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.Division}</label>
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.Location}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.ReportingManager?.Title}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.HOD?.Title}</label>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Vendor & PO</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label className="font">Vendor Code</label>
+                      <select
+                        value={selectedVendorId ?? ""}
+                        disabled={true}
+                        onChange={(e) => {
+                          const id = Number(e.target.value);
+                          const vendor = vendors.find((v) => v.Id === id);
+                          setSelectedVendorId(id);
+                          setSelectedVendorName(vendor?.VendorName || "");
+                        }} className="formtext-control"
+                      >
+                        <option value="">Select Vendor</option>
+                        {vendors.map((v) => (
+                          <option key={v.Id} value={v.Id}>
+                            {v.VendorCode}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Vendor Name</label>
+                      <input className="form-control readonly" value={vendorName} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">PO Number</label>
+                      <input className="form-control readonly" value={poNumber} />
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label className="font">PO Date</label>
+                      <input type="date" className="form-control readonly" value={poDate} />
+                    </div>
+                    <div className='col-md-4'>
+                      <label className="font">PO Terms</label>
+                      <input className="form-control readonly" value={poTerms} />
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Amount</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className="col-md-4">
+                      <label className="font">PO Amount</label>
+                      <input className="form-control readonly" value={poAmount} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Advance Amount</label>
+                      <input className="form-control readonly" value={advanceAmount} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Paid Amount</label>
+                      <input className="form-control readonly" value={paidAmount} />
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Advance Details</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className="col-md-4">
+                      <label className="font">Expected Date</label>
+                      <input type="date" className="form-control readonly" value={expectedDate} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">PIC Name</label>
+                      <PeoplePicker
+                        context={peoplePickerContext}
+                        personSelectionLimit={1}
+                        disabled={true}
+                        principalTypes={[PrincipalType.User]}
+                        defaultSelectedUsers={
+                          formData?.PICName?.Title ? [formData.PICName.Title] : []
+                        }
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">GL Code</label>
+                      <input className="form-control readonly" value={glCode} />
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className="col-md-4">
+                      <label className="font">Cost Center</label>
+                      <input className="form-control readonly" value={costCenter} />
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Remark</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label className="font" style={{ display: "block" }}>Remark</label>
+                      <label className='fonttext textbox readonly' style={{ height: "auto", width: "100%" }}>{remarks}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label className="font" style={{ display: "block" }}>Project Description</label>
+                      <label className='fonttext textbox readonly' style={{ height: "auto", width: "100%" }}>{projectDesc}</label>
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Approver Details</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label className="font" style={{ display: "block" }}>Approver Remarks</label>
+                      <label className='fonttext textbox readonly' style={{ height: "auto", width: "100%" }}>{approverRemarks}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label className="font">Voucher Date</label>
+                      <input type="date" className="form-control readonly" value={voucherDate} />
+                    </div>
+                    <div className='col-md-4'>
+                      <label className="font">Voucher Number</label>
+                      <input className="form-control readonly" value={VouchingNumber} />
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label className="font">UTR Date</label>
+                      <input type="date" className="form-control readonly" value={UTRDate} />
+                    </div>
+                    <div className='col-md-4'>
+                      <label className="font">UTR Number</label>
+                      <input className="form-control readonly" value={UTRNumber} />
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Upload Document</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className="col-md-4">
+                      <label className="font">Attachments</label>
+                      {attachments.length > 0 && (
+                        <ul>
+                          {attachments.map((file: any, index: number) => (
+                            <li key={index}>
+                              <a
+                                href={file.ServerRelativeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {file.Name}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Workflow History</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className='col-md-12'>
+                      {workflowHistory.length === 0 ? (
+                        <p>No history available</p>
+                      ) : (
+                        <div className="workflow-history">
+                          {workflowHistory.map((h, index) => (
+                            <div key={index} className="history-item">
+                              <div>
+                                {h.ActionTaken === "Submitted" && "📩 "}
+                                {h.ActionTaken === "Approved" && "✅ "}
+                                {h.ActionTaken === "Rejected" && "❌ "}
+                                {h.ActionTaken === "Send Back" && "↩ "}
+                                {h.ActionTaken === "Vouched" && "💰 "}
+                                {h.ActionTaken === "Paid" && "💸 "}
+                                {h.ActionTaken}
+                              </div>
 
+                              <div><b>{h.CurrentApprover}</b></div>
+                              <div>{h.Comment}</div>
+                              <div className="date">
+                                {new Date(h.Date).toLocaleString()}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className='row' style={{margin : "15px 0px"}}>
+                  <div className='col-md-12'>
+                    <div className='text-center'>
+                      <a href="#" onClick={handleExit} className="reset-btn">
+                        Exit
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div> */}
+              <div className='borderedbox'>
+                <div className="heading1">
+                  <label>Requestor Information</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeCode}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeName}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeEmail}</label>
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.ContactNo}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeStatus}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.Division}</label>
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.Location}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.ReportingManager?.Title}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.HOD?.Title}</label>
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Vendor & PO</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label className="font">Vendor Code</label>
+                      <select
+                        value={selectedVendorId ?? ""}
+                        disabled={true}
+                        onChange={(e) => {
+                          const id = Number(e.target.value);
+                          const vendor = vendors.find((v) => v.Id === id);
+                          setSelectedVendorId(id);
+                          setSelectedVendorName(vendor?.VendorName || "");
+                        }} className="formtext-control"
+                      >
+                        <option value="">Select Vendor</option>
+                        {vendors.map((v) => (
+                          <option key={v.Id} value={v.Id}>
+                            {v.VendorCode}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Vendor Name</label>
+                      <input className="form-control readonly" value={vendorName} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">PO Number</label>
+                      <input className="form-control readonly" value={poNumber} />
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label className="font">PO Date</label>
+                      <input type="date" className="form-control readonly" value={poDate} />
+                    </div>
+                    <div className='col-md-4'>
+                      <label className="font">PO Terms</label>
+                      <input className="form-control readonly" value={poTerms} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">PO Amount</label>
+                      <input className="form-control readonly" value={poAmount} />
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className="col-md-4">
+                      <label className="font">Advance Amount</label>
+                      <input className="form-control readonly" value={advanceAmount} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Paid Amount</label>
+                      <input className="form-control readonly" value={paidAmount} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Expected Date</label>
+                      <input type="date" className="form-control readonly" value={expectedDate} />
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className="col-md-4">
+                      <label className="font">PIC Name</label>
+                      <PeoplePicker
+                        context={peoplePickerContext}
+                        personSelectionLimit={1}
+                        disabled={true}
+                        principalTypes={[PrincipalType.User]}
+                        defaultSelectedUsers={
+                          formData?.PICName?.Title ? [formData.PICName.Title] : []
+                        }
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">GL Code</label>
+                      <input className="form-control readonly" value={glCode} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Cost Center</label>
+                      <input className="form-control readonly" value={costCenter} />
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label className="font" style={{ display: "block" }}>Remark</label>
+                      <label className='fonttext textbox readonly' style={{ height: "auto", width: "100%" }}>{remarks}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label className="font" style={{ display: "block" }}>Project Description</label>
+                      <label className='fonttext textbox readonly' style={{ height: "auto", width: "100%" }}>{projectDesc}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label className="font" style={{ display: "block" }}>Approver Remarks</label>
+                      <label className='fonttext textbox readonly' style={{ height: "auto", width: "100%" }}>{approverRemarks}</label>
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label className="font">Voucher Date</label>
+                      <input type="date" className="form-control readonly" value={voucherDate} />
+                    </div>
+                    <div className='col-md-4'>
+                      <label className="font">Voucher Number</label>
+                      <input className="form-control readonly" value={VouchingNumber} />
+                    </div>
+                    <div className='col-md-4'>
+                      <label className="font">UTR Date</label>
+                      <input type="date" className="form-control readonly" value={UTRDate} />
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label className="font">UTR Number</label>
+                      <input className="form-control readonly" value={UTRNumber} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Attachments</label>
+                      {attachments.length > 0 && (
+                        <ul>
+                          {attachments.map((file: any, index: number) => (
+                            <li key={index}>
+                              <a
+                                href={file.ServerRelativeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {file.Name}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-12'>
+                      {workflowHistory.length === 0 ? (
+                        <p>No history available</p>
+                      ) : (
+                        <div className="workflow-history">
+                          {workflowHistory.map((h, index) => (
+                            <div key={index} className="history-item">
+                              <div>
+                                {h.ActionTaken === "Submitted" && "📩 "}
+                                {h.ActionTaken === "Approved" && "✅ "}
+                                {h.ActionTaken === "Rejected" && "❌ "}
+                                {h.ActionTaken === "Send Back" && "↩ "}
+                                {h.ActionTaken === "Vouched" && "💰 "}
+                                {h.ActionTaken === "Paid" && "💸 "}
+                                {h.ActionTaken}
+                              </div>
+
+                              <div><b>{h.CurrentApprover}</b></div>
+                              <div>{h.Comment}</div>
+                              <div className="date">
+                                {new Date(h.Date).toLocaleString()}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className='row' style={{ margin: "15px 0px" }}>
+                    <div className='col-md-12'>
+                      <div className='text-center'>
+                        <a href="#" onClick={handleExit} className="reset-btn">
+                          Exit
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      {/* Button */}
-      <div style={{ textAlign: "center", marginTop: "20px" }}>
-        <button onClick={handleExit}>Back</button>
-      </div>
-    </div>
+
+    </>
   );
 };
 

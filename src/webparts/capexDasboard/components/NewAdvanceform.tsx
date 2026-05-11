@@ -8,6 +8,8 @@ import {
   PrincipalType,
 } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { IPeoplePickerContext } from "@pnp/spfx-controls-react/lib/PeoplePicker";
+
+import logo from "../assets/sona-comstarlogo.png";
 // interface IVendor {
 //     VendorCode: string;
 //     VendorName: string;
@@ -587,332 +589,518 @@ const NewAdvanceform = ({ context }: any) => {
   }, [context]);
 
   return (
-    <div className="form-container">
-      <h2 className="form-title">(New advanceed)Advance Payment</h2>
-      <div className="approval-flow">
-        {approvalMatrix.map((a, index) => (
-          <div key={index} className="approval-step">
-            <div>
-              <b>{a.Role}</b>
-            </div>
-            <div>{a.Name}</div>
+    <>
 
-            {/* 🔥 STATUS */}
-            <div
-              style={{
-                color:
-                  a.Status === "Approved"
-                    ? "green"
-                    : a.Status === "Rejected"
-                      ? "red"
-                      : a.Status === "In Progress"
-                        ? "orange"
-                        : "gray",
-              }}
-            >
-              {a.Status}
+
+      <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
+        <div className='row'>
+          <div className='col-md-12'>
+            <div className='Main-Boxpoup'>
+              {/* 🔹 Header */}
+              <div className="bordered">
+                <img src={logo} />
+                <h1> (New advanceed)Advance Payment </h1>
+              </div>
+              {approvalMatrix.length === 0 ? (
+                <p>Loading...</p>
+              ) : (
+                <div className="displayWF">
+                  <ul className="approval-flow">
+                    {approvalMatrix.map((a, index) => (
+                      <li key={index} className={`approval-step ${index === 0 ? "active" : ""}`}>
+                        {a.Role} - {a.Name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {/* <div className='borderedbox'>
+
+                <div className="heading1">
+                  <label>Requestor Information</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeCode}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeName}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeEmail}</label>
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.ContactNo}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeStatus}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.Division}</label>
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.Location}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.ReportingManager?.Title}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.HOD?.Title}</label>
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Vendor & PO Details</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className='font'>Vendor Code</label>
+                      <select value={selectedVendorId || ""} onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const vendor = vendors.find((v) => v.Id === id);
+                        setSelectedVendorId(id); setSelectedVendorName(vendor?.VendorName || "");
+                        if (id) { void getPreviousAdvances(id); }
+                      }} className='formtext-control'>
+                        <option value="">Select Vendor</option>
+                        {vendors.map(
+                          (v,) => (
+                            <option key={v.Id} value={v.Id} >
+                              {v.VendorCode}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>Vendor Name</label>
+                      <input value={selectedVendorName} className='form-control readonly' />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>PO Number</label>
+                      <input value={poNumber} className='form-control' onChange={(e) => setPoNumber(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className='font'>PO Date</label>
+                      <input type="date" value={poDate} className='form-control' onChange={(e) => setPoDate(e.target.value)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>PO Advance Terms</label>
+                      <input value={poTerms} className='form-control' onChange={(e) => setPoTerms(e.target.value)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>PO Amount (GST)</label>
+                      <input value={poAmount} className='form-control' onChange={(e) => handleNumberChange(e.target.value, setPoAmount)} />
+                    </div>
+                  </div>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className="font">Request Advance Amount</label>
+                      <input value={advanceAmount} className='form-control' onChange={(e) => handleNumberChange(e.target.value, setAdvanceAmount)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font" style={{ color: "red" }}>Paid Amount</label>
+                      <input value={paidAmount} className='form-control' onChange={(e) => handleNumberChange(e.target.value, setPaidAmount)} />
+                    </div>
+
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Advance Details</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className='font'>Expected Settlement Date</label>
+                      <input type="date" className="form-control" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>PIC Name</label>
+                      <PeoplePicker context={peoplePickerContext}
+                        personSelectionLimit={1} ensureUser={true} principalTypes={[PrincipalType.User]}
+                        onChange={(items) => setSelectedUser(items)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>GL Code</label>
+                      <input value={glCode} className='form-control readonly' />
+                    </div>
+                  </div>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className='font'>Cost Center</label>
+                      <input value={employee.CostCenter} className='form-control readonly' />
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Remarks</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className="font">Remarks</label>
+                      <textarea value={remarks} className="font-control" onChange={(e) => setRemarks(e.target.value)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Project Description</label>
+                      <textarea value={projectDesc} className="font-control" onChange={(e) => setProjectDesc(e.target.value)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Attach</label>
+                      <input type="file" multiple onChange={(e) => { const files = e.target.files; if (!files) return; setSelectedFiles((prev) => [...prev, ...Array.from(files)]); }} />
+                      {selectedFiles.length > 0 && (
+                        <ul style={{ marginTop: "10px" }}>
+                          {selectedFiles.map((file, index) => (
+                            <li key={index}>
+                              {file.name}
+                              <button
+                                type="button"
+                                style={{
+                                  marginLeft: "10px",
+                                  color: "red",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => handleRemoveFile(index)}
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Previous Advances</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className="row mb-20">
+                    <div className="col-md-12">
+                      <div style={{ overflowX: "auto" }}>
+                        <div className="table-vert-scroll">
+                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                            <thead className="text-white" style={{ backgroundColor: "rgb(60, 62, 69)" }}>
+                              <tr>
+                                <th className="px-4 py-2">PO Number</th>
+                                <th className="px-4 py-2">Previous Advance</th>
+                                <th className="px-4 py-2">Requested Date</th>
+                                <th className="px-4 py-2">Paid Date</th>
+                                <th className="px-4 py-2">MRN No</th>
+                                <th className="px-4 py-2">Settled Amount</th>
+                                <th className="px-4 py-2">Pending Advance</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {previousAdvances.length === 0 ? (
+                                <tr>
+                                  <td colSpan={7} style={{ textAlign: "center" }}>
+                                    No Data
+                                  </td>
+                                </tr>
+                              ) : (
+                                previousAdvances.map((item: any, index: number) => {
+                                  const pending = Math.max(
+                                    0,
+                                    Number(item.RequestAdvanceAmount || 0) -
+                                    Number(item.PaidAmount || 0),
+                                  );
+                                  return (
+                                    <tr key={index}>
+                                      <td>{item.PONumber}</td>
+                                      <td>{item.RequestAdvanceAmount}</td>
+
+                                      <td>
+                                        {item.Created
+                                          ? new Date(item.Created).toLocaleDateString()
+                                          : ""}
+                                      </td>
+
+                                      <td>
+                                        {item.VoucherDate
+                                          ? new Date(item.VoucherDate).toLocaleDateString()
+                                          : ""}
+                                      </td>
+
+                                      <td>{item.VoucherNumber}</td>
+                                      <td>{item.PaidAmount}</td>
+                                      <td>{pending}</td>
+                                    </tr>
+                                  );
+                                })
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
+                  <a onClick={handleSubmit} className="submit-btn">
+                    Submit
+                  </a>
+                  <a onClick={handledraft} className="Rework-btn">
+                    Save as Draft
+                  </a>
+                  <a href="#" onClick={handleExit} className="reset-btn">
+                    Exit
+                  </a>
+                </div>
+              </div> */}
+              <div className='borderedbox'>
+
+                <div className="heading1">
+                  <label>Requestor Information</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeCode}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeName}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeEmail}</label>
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.ContactNo}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.EmployeeStatus}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.Division}</label>
+                    </div>
+                  </div>
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
+                      <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.Location}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.ReportingManager?.Title}</label>
+                    </div>
+                    <div className='col-md-4'>
+                      <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
+                      <label className='fonttext'>  {employee.HOD?.Title}</label>
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Vendor & PO Details</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className='font'>Vendor Code</label>
+                      <select value={selectedVendorId || ""} onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const vendor = vendors.find((v) => v.Id === id);
+                        setSelectedVendorId(id); setSelectedVendorName(vendor?.VendorName || "");
+                        if (id) { void getPreviousAdvances(id); }
+                      }} className='formtext-control'>
+                        <option value="">Select Vendor</option>
+                        {vendors.map(
+                          (v,) => (
+                            <option key={v.Id} value={v.Id} >
+                              {v.VendorCode}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>Vendor Name</label>
+                      <input value={selectedVendorName} className='form-control readonly' />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>PO Number</label>
+                      <input value={poNumber} className='form-control' onChange={(e) => setPoNumber(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className='font'>PO Date</label>
+                      <input type="date" value={poDate} className='form-control' onChange={(e) => setPoDate(e.target.value)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>PO Advance Terms</label>
+                      <input value={poTerms} className='form-control' onChange={(e) => setPoTerms(e.target.value)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>PO Amount (GST)</label>
+                      <input value={poAmount} className='form-control' onChange={(e) => handleNumberChange(e.target.value, setPoAmount)} />
+                    </div>
+                  </div>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className="font">Request Advance Amount</label>
+                      <input value={advanceAmount} className='form-control' onChange={(e) => handleNumberChange(e.target.value, setAdvanceAmount)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font" style={{ color: "red" }}>Paid Amount</label>
+                      <input value={paidAmount} className='form-control' onChange={(e) => handleNumberChange(e.target.value, setPaidAmount)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>Expected Settlement Date</label>
+                      <input type="date" className="form-control" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className='font'>PIC Name</label>
+                      <PeoplePicker context={peoplePickerContext}
+                        personSelectionLimit={1} ensureUser={true} principalTypes={[PrincipalType.User]}
+                        onChange={(items) => setSelectedUser(items)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>GL Code</label>
+                      <input value={glCode} className='form-control readonly' />
+                    </div>
+                    <div className="col-md-4">
+                      <label className='font'>Cost Center</label>
+                      <input value={employee.CostCenter} className='form-control readonly' />
+                    </div>
+                  </div>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className="font">Remarks</label>
+                      <textarea value={remarks} className="font-control" onChange={(e) => setRemarks(e.target.value)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Project Description</label>
+                      <textarea value={projectDesc} className="font-control" onChange={(e) => setProjectDesc(e.target.value)} />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Attach</label>
+                      <input type="file" multiple onChange={(e) => { const files = e.target.files; if (!files) return; setSelectedFiles((prev) => [...prev, ...Array.from(files)]); }} />
+                      {selectedFiles.length > 0 && (
+                        <ul style={{ marginTop: "10px" }}>
+                          {selectedFiles.map((file, index) => (
+                            <li key={index}>
+                              {file.name}
+                              <button
+                                type="button"
+                                style={{
+                                  marginLeft: "10px",
+                                  color: "red",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => handleRemoveFile(index)}
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                  <div className="row mb-20">
+                    <div className="col-md-12">
+                      <div style={{ overflowX: "auto" }}>
+                        <div className="table-vert-scroll">
+                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                            <thead className="text-white" style={{ backgroundColor: "rgb(60, 62, 69)" }}>
+                              <tr>
+                                <th className="px-4 py-2">PO Number</th>
+                                <th className="px-4 py-2">Previous Advance</th>
+                                <th className="px-4 py-2">Requested Date</th>
+                                <th className="px-4 py-2">Paid Date</th>
+                                <th className="px-4 py-2">MRN No</th>
+                                <th className="px-4 py-2">Settled Amount</th>
+                                <th className="px-4 py-2">Pending Advance</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {previousAdvances.length === 0 ? (
+                                <tr>
+                                  <td colSpan={7} style={{ textAlign: "center" }}>
+                                    No Data
+                                  </td>
+                                </tr>
+                              ) : (
+                                previousAdvances.map((item: any, index: number) => {
+                                  const pending = Math.max(
+                                    0,
+                                    Number(item.RequestAdvanceAmount || 0) -
+                                    Number(item.PaidAmount || 0),
+                                  );
+                                  return (
+                                    <tr key={index}>
+                                      <td>{item.PONumber}</td>
+                                      <td>{item.RequestAdvanceAmount}</td>
+
+                                      <td>
+                                        {item.Created
+                                          ? new Date(item.Created).toLocaleDateString()
+                                          : ""}
+                                      </td>
+
+                                      <td>
+                                        {item.VoucherDate
+                                          ? new Date(item.VoucherDate).toLocaleDateString()
+                                          : ""}
+                                      </td>
+
+                                      <td>{item.VoucherNumber}</td>
+                                      <td>{item.PaidAmount}</td>
+                                      <td>{pending}</td>
+                                    </tr>
+                                  );
+                                })
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
+                    <a onClick={handleSubmit} className="submit-btn">
+                      Submit
+                    </a>
+                    <a onClick={handledraft} className="Rework-btn">
+                      Save as Draft
+                    </a>
+                    <a href="#" onClick={handleExit} className="reset-btn">
+                      Exit
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
-      {/* Employee Info */}
-      <div className="section">
-        <h3>Requestor Information</h3>
-
-        <div className="form-row">
-          <label>Employee Code</label>
-          <input value={employee.EmployeeCode || ""} readOnly />
-
-          <label>Employee Name</label>
-          <input value={employee.EmployeeName || ""} readOnly />
-
-          <label>Division</label>
-          <input value={employee.Division || ""} readOnly />
-
-          <label>Location</label>
-          <input value={employee.Location || ""} readOnly />
-        </div>
-
-        <div className="form-row">
-          <label>Email</label>
-          <input value={employee.EmployeeEmail || ""} readOnly />
-
-          <label>RM</label>
-          <input value={employee.ReportingManager?.Title || ""} readOnly />
-
-          <label>HOD</label>
-          <input value={employee.HOD?.Title || ""} readOnly />
-
-          <label>Contact No</label>
-          <input value={employee.ContactNo || ""} readOnly />
-        </div>
-
-        <div className="form-row">
-          <label>Employee Status</label>
-          <input value={employee.EmployeeStatus || ""} readOnly />
         </div>
       </div>
-
-      {/* Vendor Section */}
-      <div className="section">
-        <h3>Vendor & PO Details</h3>
-
-        <div className="form-row">
-          <label>Vendor Code</label>
-          <select
-            value={selectedVendorId || ""}
-            onChange={(e) => {
-              const id = Number(e.target.value);
-              const vendor = vendors.find((v) => v.Id === id);
-
-              setSelectedVendorId(id);
-              setSelectedVendorName(vendor?.VendorName || "");
-
-              // 🔥 FETCH DATA
-              if (id) {
-                void getPreviousAdvances(id);
-              }
-            }}
-          >
-            <option value="">Select Vendor</option>
-            {vendors.map(
-              (
-                v, // ✅ FIX
-              ) => (
-                <option key={v.Id} value={v.Id}>
-                  {v.VendorCode}
-                </option>
-              ),
-            )}
-          </select>
-
-          <br></br>
-          <label>Vendor Name</label>
-          <input value={selectedVendorName} readOnly />
-
-          <label>PO Number</label>
-          <input
-            value={poNumber}
-            onChange={(e) => setPoNumber(e.target.value)}
-          />
-
-          <label>PO Date</label>
-          <input
-            type="date"
-            value={poDate}
-            onChange={(e) => setPoDate(e.target.value)}
-          />
-        </div>
-
-        <div className="form-row">
-          <label>PO Advance Terms</label>
-          <input value={poTerms} onChange={(e) => setPoTerms(e.target.value)} />
-
-          <label>PO Amount (GST)</label>
-          <input
-            value={poAmount}
-            onChange={(e) => handleNumberChange(e.target.value, setPoAmount)}
-          />
-
-          <label>Request Advance Amount</label>
-          <input
-            value={advanceAmount}
-            onChange={(e) =>
-              handleNumberChange(e.target.value, setAdvanceAmount)
-            }
-          />
-
-          <label style={{ color: "red" }}>Paid Amount</label>
-          <input
-            value={paidAmount}
-            onChange={(e) => handleNumberChange(e.target.value, setPaidAmount)}
-          />
-        </div>
-      </div>
-
-      {/* Advance Section */}
-      <div className="section">
-        <h3>Advance Details</h3>
-
-        <div className="form-row">
-          <label>Expected Settlement Date</label>
-          <input
-            type="date"
-            value={expectedDate}
-            onChange={(e) => setExpectedDate(e.target.value)}
-          />
-
-          <label>PIC Name</label>
-          <PeoplePicker
-            context={peoplePickerContext}
-            personSelectionLimit={1}
-            ensureUser={true}
-            principalTypes={[PrincipalType.User]}
-            onChange={(items) => setSelectedUser(items)}
-          />
-
-          <label>GL Code</label>
-          <input value={glCode} readOnly />
-
-          <label>Cost Center</label>
-
-          <input value={employee.CostCenter || ""} readOnly />
-        </div>
-      </div>
-
-      {/* Remarks */}
-      <div className="section">
-        <h3>Remarks</h3>
-
-        <div className="form-row">
-          <label>Remarks</label>
-          <textarea
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-          />
-
-          <label>Project Description</label>
-          <textarea
-            value={projectDesc}
-            onChange={(e) => setProjectDesc(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="section">
-        <h3>Previous Advances</h3>
-
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>PO Number</th>
-              <th>Previous Advance</th>
-              <th>Requested Date</th>
-              <th>Paid Date</th>
-              <th>MRN No</th>
-              <th>Settled Amount</th>
-              <th>Pending Advance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {previousAdvances.length === 0 ? (
-              <tr>
-                <td colSpan={7} style={{ textAlign: "center" }}>
-                  No Data
-                </td>
-              </tr>
-            ) : (
-              previousAdvances.map((item: any, index: number) => {
-                const pending = Math.max(
-                  0,
-                  Number(item.RequestAdvanceAmount || 0) -
-                    Number(item.PaidAmount || 0),
-                );
-
-                return (
-                  <tr key={index}>
-                    <td>{item.PONumber}</td>
-                    <td>{item.RequestAdvanceAmount}</td>
-
-                    <td>
-                      {item.Created
-                        ? new Date(item.Created).toLocaleDateString()
-                        : ""}
-                    </td>
-
-                    <td>
-                      {item.VoucherDate
-                        ? new Date(item.VoucherDate).toLocaleDateString()
-                        : ""}
-                    </td>
-
-                    <td>{item.VoucherNumber}</td>
-                    <td>{item.PaidAmount}</td>
-                    <td>{pending}</td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-      <div className="col-md-4">
-        <label className="font">Attach</label>
-
-        <input
-          type="file"
-          multiple
-          onChange={(e) => {
-            const files = e.target.files;
-            if (!files) return;
-            setSelectedFiles((prev) => [...prev, ...Array.from(files)]);
-          }}
-        />
-
-        {/* 🔥 Show selected files */}
-        {selectedFiles.length > 0 && (
-          <ul style={{ marginTop: "10px" }}>
-            {selectedFiles.map((file, index) => (
-              <li key={index}>
-                {file.name}
-
-                {/* 🔥 Remove button */}
-                <button
-                  type="button"
-                  style={{
-                    marginLeft: "10px",
-                    color: "red",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleRemoveFile(index)}
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      {/* Attachment
-      <input
-        type="file"
-        multiple
-        onChange={(e) => {
-          if (e.target.files) {
-            setAttachments(Array.from(e.target.files));
-          }
-        }}
-      /> */}
-
-      {/* Buttons */}
-
-      <div className="actions">
-        <button className="primary" onClick={handleSubmit}>
-          Submit
-        </button>
-
-        <button className="secondary" onClick={handledraft}>
-          Save Draft
-        </button>
-
-        <button className="exit" onClick={handleExit}>
-          Exit
-        </button>
-      </div>
-      {/* <div className="actions">
-        <button className="primary" onClick={handleSubmit}>
-          Submit
-        </button>
-
-        <button className="secondary" onClick={handledraft}>
-          Save Draft
-        </button>
-        <button className="exit" onClick={handleExit}>
-          Exit
-        </button>
-      </div> */}
-    </div>
+    </>
   );
 };
 

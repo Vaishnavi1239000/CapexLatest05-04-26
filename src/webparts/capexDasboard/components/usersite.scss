@@ -58,3 +58,87 @@
 #workbenchPageContent {
     max-width: 100% !important;
 }
+
+
+
+.headSheet {
+    background: linear-gradient(90deg, #646770, #1c1d1d);
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    padding: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+.headSheet h2 {
+    font-weight: 600;
+    margin: 0;
+}
+
+.hero {
+    align-items: center;
+    background: url("../assets/Banner.jpg");
+    display: flex;
+    height: 100vh;
+    height: 88vh;
+    justify-content: center;
+    position: relative;
+}
+
+.overlay {
+    background: linear-gradient(90deg, rgba(0, 0, 0, .5), transparent);
+    inset: 0;
+    position: absolute;
+}
+
+.hero-content {
+    color: #fff;
+    max-width: 600px;
+    position: relative;
+}
+
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+    margin: 0 auto;
+    max-width: 900px;
+}
+
+.infoCard {
+    align-items: center;
+    display: flex;
+    background-color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    flex: 0 0 calc(33.333% - 20px);
+    left: 5px;
+    padding: 20px 25px;
+    position: relative;
+    width: 200px;
+    z-index: 2;
+}
+
+.cardalin,
+.infoCard {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+}
+
+.boximage {
+    border: 1px solid #000;
+    border-radius: 10px;
+    padding: 5px;
+}
+
+.cardContent h4 {
+    color: #333;
+    font-size: 13px;
+    margin: 0;
+    position: relative;
+    z-index: 2;
+}

@@ -1,11 +1,14 @@
 import * as React from 'react';
 import './usersite.scss';
-
 import UserDashboard from "./UserDashboard";
 import ApproverDashboard from "./ApproverDashboard";
 import APperformerDashboard from './APperformerDashboard';
 import APperformerdashboardforutr from './APperformerdashboardforutr';
 import { ICapexDasboardProps } from './ICapexDasboardProps';
+
+import ApLogo from '../assets/ApDashboard.png';
+import UserLogo from '../assets/UserDashboard.png';
+import ApproverLogo from '../assets/ApproverDashboard.png';
 
 export default function CapexDasboard(props: ICapexDasboardProps) {
 
@@ -49,25 +52,44 @@ export default function CapexDasboard(props: ICapexDasboardProps) {
       {/* ✅ HOME PAGE */}
       {page === "home" && (
         <div className="main-container">
-          <h1 className="title">Capex Advance form</h1>
-
-          <div className="buttonGrid">
-            <button className="btn" onClick={() => navigate("User")}>
-              User Dashboard
-            </button>
-
-            <button className="btn" onClick={() => navigate("Approver")}>
-              Approver Dashboard
-            </button>
-
-            <button className="btn fullWidth" onClick={() => navigate("Performer")}>
-              AP Performer Dashboard
-            </button>
-
-            {/* <button className="btn fullWidth" onClick={() => navigate("apPerformer")}>
-              AP Performer Dashboard for UTR
-            </button> */}
-          </div>
+          <div className="headSheet"><h2>Capex Advance form</h2></div>
+          <section className='hero'>
+            <div className="overlay"></div>
+            <div className="hero-content">
+              <div className='card-container'>
+                <div className="infoCard" onClick={() => navigate("User")}>
+                  <div className="cardContent">
+                    <div className="cardalin">
+                      <span className="boximage">
+                        <img src={UserLogo} width="25" height="25" />
+                      </span>
+                      <h4>User Dasboard</h4>
+                    </div>
+                  </div>
+                </div>
+                <div className="infoCard" onClick={() => navigate("Approver")}>
+                  <div className="cardContent">
+                    <div className="cardalin">
+                      <span className="boximage">
+                        <img src={ApproverLogo} width="25" height="25" />
+                      </span>
+                      <h4>Approver Dasboard</h4>
+                    </div>
+                  </div>
+                </div>
+                <div className="infoCard" onClick={() => navigate("Performer")}>
+                  <div className="cardContent">
+                    <div className="cardalin">
+                      <span className="boximage">
+                        <img src={ApLogo} width="25" height="25" />
+                      </span>
+                      <h4>Ap Performer Dasboard</h4>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       )}
 
