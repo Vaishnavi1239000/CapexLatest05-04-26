@@ -150,7 +150,10 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
         alert("All fields required");
         return;
       }
-
+  if (!UTRRemarks || UTRRemarks.trim() === "") {
+      alert("Please enter Remarks");
+      return;
+    }
       const flow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
         : [];
@@ -204,8 +207,8 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
   // ✅ Sent Back
   const handleSendBack = async () => {
     try {
-      if (!UTRRemarks) {
-        alert("Enter remarks");
+      if (!UTRRemarks || UTRRemarks.trim() === "") {
+        alert("Please enter Remarks");
         return;
       }
 
@@ -258,10 +261,11 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
   // ✅ Reject
   const handleReject = async () => {
     try {
-      if (!UTRRemarks) {
-        alert("Enter remarks");
-        return;
-      }
+      if (!UTRRemarks || UTRRemarks.trim() === "") {
+      alert("Please enter Remarks");
+      return;
+    }
+    
 
       const flow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
@@ -862,7 +866,7 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                         </a>
 
                         <a className="Rework-btn" onClick={handleSendBack}>
-                          Sent Back
+                          Send Back
                         </a>
 
                         <a className="Reject-btn" onClick={handleReject}>

@@ -24,6 +24,7 @@ const NewAdvanceform = ({ context }: any) => {
   const sp = spfi().using(SPFx(context));
   const [attachments, setAttachments] = useState<any[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [employee, setEmployee] = React.useState<any>({});
   //const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -101,10 +102,23 @@ const NewAdvanceform = ({ context }: any) => {
   };
   const handleRemoveFile = (index: number) => {
     const updatedFiles = [...selectedFiles];
-    updatedFiles.splice(index, 1);
-    setSelectedFiles(updatedFiles);
-  };
 
+    updatedFiles.splice(index, 1);
+
+    setSelectedFiles(updatedFiles);
+
+    // 🔥 Clear input if all files removed
+    if (updatedFiles.length === 0 && fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+  const today = new Date();
+
+  const localDate: string = new Date(
+    today.getTime() - today.getTimezoneOffset() * 60000,
+  )
+    .toISOString()
+    .split("T")[0];
   const handleExit = () => {
     window.location.href =
       "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
@@ -323,72 +337,67 @@ const NewAdvanceform = ({ context }: any) => {
     if (!poNumber) {
       errors.push("Please update PO Number");
       setIsSubmitting(false);
-
     }
 
     if (!poDate) {
       errors.push("Please update PO date");
       setIsSubmitting(false);
-
     }
 
     if (!poTerms) {
       errors.push("Please update PO Terms");
       setIsSubmitting(false);
-
     }
 
     if (!poAmount) {
       errors.push("Please update PO Amount");
       setIsSubmitting(false);
-
     }
 
     if (!advanceAmount || Number(advanceAmount) <= 0) {
       errors.push("Please update Advance Amount");
       setIsSubmitting(false);
-
     }
 
     if (!paidAmount || Number(paidAmount) <= 0) {
       errors.push("Please update Paid Amount");
       setIsSubmitting(false);
-
     }
 
     // 🔥 NEW VALIDATION
+    if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
+      errors.push(
+        "The requested advance amount cannot be greater than the PO Amount (Including GST)",
+      );
+    }
+
+    // 🔥 Paid Amount should not exceed Advance Amount
     if (
       advanceAmount &&
       paidAmount &&
       Number(paidAmount) > Number(advanceAmount)
     ) {
       errors.push("Paid Amount cannot be greater than Advance Amount");
-      setIsSubmitting(false);
-
     }
 
     if (!expectedDate) {
       errors.push("Please update Settlement Date");
       setIsSubmitting(false);
-
     }
 
     if (!selectedUser || selectedUser.length === 0) {
       errors.push("Please select PIC Name");
       setIsSubmitting(false);
-
     }
 
     if (!projectDesc) {
       errors.push("Please enter Project Description");
       setIsSubmitting(false);
-
     }
 
     if (!selectedFiles || selectedFiles.length === 0) {
       errors.push("Please upload at least one attachment");
       setIsSubmitting(false);
-
     }
 
     return errors;
@@ -487,7 +496,7 @@ const NewAdvanceform = ({ context }: any) => {
         CurrentApproverId: currentApprover,
 
         WorkFlowHistory: JSON.stringify(wfHistory),
-                ApproverStatus:"Pending at RM"
+        ApproverStatus: "Pending at RM",
       });
       debugger;
       await uploadAttachments(capexId); // 🔥 FIXED
@@ -522,16 +531,9 @@ const NewAdvanceform = ({ context }: any) => {
           ensuredUserId = ensuredUser.Id;
         }
       }
-      const userEmail = selectedUser[0]?.secondaryText;
-
-      if (!userEmail) {
-        alert("User email not found");
-        setIsSubmitting(false);
-        return;
-      }
 
       // ✅ Ensure User (FIX ERROR)
-      const ensuredUser = await sp.web.ensureUser(userEmail);
+      //  const ensuredUser = await sp.web.ensureUser(userEmail);
 
       const flow = await buildApprovalFlow();
 
@@ -612,7 +614,6 @@ const NewAdvanceform = ({ context }: any) => {
       console.error("ERROR:", error);
       alert("Error while saving ❌");
       setIsSubmitting(false);
-
     }
   };
 
@@ -625,12 +626,10 @@ const NewAdvanceform = ({ context }: any) => {
 
   return (
     <>
-
-
-      <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
-        <div className='row'>
-          <div className='col-md-12'>
-            <div className='Main-Boxpoup'>
+      <div className="MainUplodForm" style={{ margin: "5px 0px" }}>
+        <div className="row">
+          <div className="col-md-12">
+            <div className="Main-Boxpoup">
               {/* 🔹 Header */}
               <div className="bordered">
                 <img src={logo} />
@@ -640,15 +639,15 @@ const NewAdvanceform = ({ context }: any) => {
                 <p>Loading...</p>
               ) : (
                 <div className="displayWF">
-
                   <ul className="approval-flow">
                     <li className={`approval-step`}>
-
                       {`Initiator`} - {employee.EmployeeName}
-
                     </li>
                     {approvalMatrix.map((a, index) => (
-                      <li key={index} className={`approval-step ${index === 0 ? "active" : ""}`}>
+                      <li
+                        key={index}
+                        className={`approval-step ${index === 0 ? "active" : ""}`}
+                      >
                         {a.Role} - {a.Name}
                       </li>
                     ))}
@@ -905,143 +904,302 @@ const NewAdvanceform = ({ context }: any) => {
                   </a>
                 </div>
               </div> */}
-              <div className='borderedbox'>
-
+              <div className="borderedbox">
                 <div className="heading1">
                   <label>Requestor Information</label>
                 </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeCode}</label>
+                <div className="main-formcontainer">
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Code" className="font">
+                        Employee Code
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {employee.EmployeeCode}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeName}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Name" className="font">
+                        Employee Name{" "}
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {employee.EmployeeName}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeEmail}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Email" className="font">
+                        Employee Email{" "}
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {employee.EmployeeEmail}
+                      </label>
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.ContactNo}</label>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label htmlFor="Contact No" className="font">
+                        Contact No
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {employee.ContactNo}</label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeStatus}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Status" className="font">
+                        Employee Status
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {employee.EmployeeStatus}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.Division}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Division" className="font">
+                        Division
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {employee.Division}</label>
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.Location}</label>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label htmlFor="Location" className="font">
+                        Location
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {employee.Location}</label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.ReportingManager?.Title}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="RM" className="font">
+                        RM
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {employee.ReportingManager?.Title}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.HOD?.Title}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="HOD" className="font">
+                        HOD
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {employee.HOD?.Title}</label>
                     </div>
                   </div>
                 </div>
                 <div className="heading1" style={{ marginTop: "10px" }}>
                   <label>Capex Details</label>
                 </div>
-                <div className='main-formcontainer'>
+                <div className="main-formcontainer">
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className='font'>Vendor Code</label>
-                      <select value={selectedVendorId || ""} onChange={(e) => {
-                        const id = Number(e.target.value);
-                        const vendor = vendors.find((v) => v.Id === id);
-                        setSelectedVendorId(id); setSelectedVendorName(vendor?.VendorName || "");
-                        if (id) { void getPreviousAdvances(id); }
-                      }} className='formtext-control'>
+                      <label className="font">Vendor Code</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <select
+                        value={selectedVendorId || ""}
+                        onChange={(e) => {
+                          const id = Number(e.target.value);
+                          const vendor = vendors.find((v) => v.Id === id);
+                          setSelectedVendorId(id);
+                          setSelectedVendorName(vendor?.VendorName || "");
+                          if (id) {
+                            void getPreviousAdvances(id);
+                          }
+                        }}
+                        className="formtext-control"
+                      >
                         <option value="">Select Vendor</option>
-                        {vendors.map(
-                          (v,) => (
-                            <option key={v.Id} value={v.Id} >
-                              {v.VendorCode}
-                            </option>
-                          ),
-                        )}
+                        {vendors.map((v) => (
+                          <option key={v.Id} value={v.Id}>
+                            {v.VendorCode}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div className="col-md-4">
-                      <label className='font'>Vendor Name</label>
-                      <input value={selectedVendorName} className='form-control readonly' />
+                      <label className="font">Vendor Name</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={selectedVendorName}
+                        className="form-control readonly"
+                      />
                     </div>
                     <div className="col-md-4">
-                      <label className='font'>PO Number</label>
-                      <input value={poNumber} className='form-control' onChange={(e) => setPoNumber(e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="row mb-20">
-                    <div className="col-md-4">
-                      <label className='font'>PO Date</label>
-                      <input type="date" value={poDate} className='form-control' onChange={(e) => setPoDate(e.target.value)} />
-                    </div>
-                    <div className="col-md-4">
-                      <label className='font'>PO Advance Terms</label>
-                      <input value={poTerms} className='form-control' onChange={(e) => setPoTerms(e.target.value)} />
-                    </div>
-                    <div className="col-md-4">
-                      <label className='font'>PO Amount (GST)</label>
-                      <input value={poAmount} className='form-control' onChange={(e) => handleNumberChange(e.target.value, setPoAmount)} />
-                    </div>
-                  </div>
-                  <div className="row mb-20">
-                    <div className="col-md-4">
-                      <label className="font">Request Advance Amount</label>
-                      <input value={advanceAmount} className='form-control' onChange={(e) => handleNumberChange(e.target.value, setAdvanceAmount)} />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font" style={{ color: "red" }}>Paid Amount</label>
-                      <input value={paidAmount} className='form-control' onChange={(e) => handleNumberChange(e.target.value, setPaidAmount)} />
-                    </div>
-                    <div className="col-md-4">
-                      <label className='font'>Expected Settlement Date</label>
-                      <input type="date" className="form-control" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} />
+                      <label className="font">PO Number</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={poNumber}
+                        className="form-control"
+                        onChange={(e) => setPoNumber(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className='font'>PIC Name</label>
-                      <PeoplePicker context={peoplePickerContext}
-                        personSelectionLimit={1} ensureUser={true} principalTypes={[PrincipalType.User]}
-                        onChange={(items) => setSelectedUser(items)} />
+                      <label className="font">PO Date</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        type="date"
+                        value={poDate}
+                        className="form-control"
+                        onChange={(e) => setPoDate(e.target.value)}
+                      />
                     </div>
                     <div className="col-md-4">
-                      <label className='font'>GL Code</label>
-                      <input value={glCode} className='form-control readonly' />
+                      <label className="font">PO Advance Terms</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={poTerms}
+                        className="form-control"
+                        onChange={(e) => setPoTerms(e.target.value)}
+                      />
                     </div>
                     <div className="col-md-4">
-                      <label className='font'>Cost Center</label>
-                      <input value={employee.CostCenter} className='form-control readonly' />
+                      <label className="font">PO Amount (GST)</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={poAmount}
+                        className="form-control"
+                        onChange={(e) =>
+                          handleNumberChange(e.target.value, setPoAmount)
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className="font">Request Advance Amount</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={advanceAmount}
+                        className="form-control"
+                        onChange={(e) =>
+                          handleNumberChange(e.target.value, setAdvanceAmount)
+                        }
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font" style={{ color: "red" }}>
+                        Paid Amount
+                      </label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={paidAmount}
+                        className="form-control"
+                        onChange={(e) =>
+                          handleNumberChange(e.target.value, setPaidAmount)
+                        }
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Expected Settlement Date</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={expectedDate}
+                        min={localDate}
+                        onChange={(e) => setExpectedDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className="font">PIC Name</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <PeoplePicker
+                        context={peoplePickerContext}
+                        personSelectionLimit={1}
+                        ensureUser={true}
+                        principalTypes={[PrincipalType.User]}
+                        onChange={(items) => setSelectedUser(items)}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">GL Code</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input value={glCode} className="form-control readonly" />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="font">Cost Center</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={employee.CostCenter}
+                        className="form-control readonly"
+                      />
                     </div>
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
                       <label className="font">Remarks</label>
-                      <textarea value={remarks} className="font-control" onChange={(e) => setRemarks(e.target.value)} />
+                      <textarea
+                        value={remarks}
+                        className="font-control"
+                        onChange={(e) => setRemarks(e.target.value)}
+                      />
                     </div>
                     <div className="col-md-4">
-                      <label className="font">Project Description</label>
-                      <textarea value={projectDesc} className="font-control" onChange={(e) => setProjectDesc(e.target.value)} />
+                      <label className="font">Project Description</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <textarea
+                        value={projectDesc}
+                        className="font-control"
+                        onChange={(e) => setProjectDesc(e.target.value)}
+                      />
                     </div>
                     <div className="col-md-4">
                       <label className="font">Attach</label>
-                      <input type="file" multiple onChange={(e) => { const files = e.target.files; if (!files) return; setSelectedFiles((prev) => [...prev, ...Array.from(files)]); }} />
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        onChange={(e) => {
+                          const files = e.target.files;
+
+                          if (!files) return;
+
+                          setSelectedFiles((prev) => [
+                            ...prev,
+                            ...Array.from(files),
+                          ]);
+                        }}
+                      />
                       {selectedFiles.length > 0 && (
                         <ul style={{ marginTop: "10px" }}>
                           {selectedFiles.map((file, index) => (
@@ -1069,7 +1227,10 @@ const NewAdvanceform = ({ context }: any) => {
                       <div style={{ overflowX: "auto" }}>
                         <div className="table-vert-scroll">
                           <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                            <thead className="text-white" style={{ backgroundColor: "rgb(60, 62, 69)" }}>
+                            <thead
+                              className="text-white"
+                              style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                            >
                               <tr>
                                 <th className="px-4 py-2">PO Number</th>
                                 <th className="px-4 py-2">Previous Advance</th>
@@ -1083,40 +1244,49 @@ const NewAdvanceform = ({ context }: any) => {
                             <tbody>
                               {previousAdvances.length === 0 ? (
                                 <tr>
-                                  <td colSpan={7} style={{ textAlign: "center" }}>
+                                  <td
+                                    colSpan={7}
+                                    style={{ textAlign: "center" }}
+                                  >
                                     No Data
                                   </td>
                                 </tr>
                               ) : (
-                                previousAdvances.map((item: any, index: number) => {
-                                  const pending = Math.max(
-                                    0,
-                                    Number(item.RequestAdvanceAmount || 0) -
-                                    Number(item.PaidAmount || 0),
-                                  );
-                                  return (
-                                    <tr key={index}>
-                                      <td>{item.PONumber}</td>
-                                      <td>{item.RequestAdvanceAmount}</td>
+                                previousAdvances.map(
+                                  (item: any, index: number) => {
+                                    const pending = Math.max(
+                                      0,
+                                      Number(item.RequestAdvanceAmount || 0) -
+                                        Number(item.PaidAmount || 0),
+                                    );
+                                    return (
+                                      <tr key={index}>
+                                        <td>{item.PONumber}</td>
+                                        <td>{item.RequestAdvanceAmount}</td>
 
-                                      <td>
-                                        {item.Created
-                                          ? new Date(item.Created).toLocaleDateString()
-                                          : ""}
-                                      </td>
+                                        <td>
+                                          {item.Created
+                                            ? new Date(
+                                                item.Created,
+                                              ).toLocaleDateString()
+                                            : ""}
+                                        </td>
 
-                                      <td>
-                                        {item.VoucherDate
-                                          ? new Date(item.VoucherDate).toLocaleDateString()
-                                          : ""}
-                                      </td>
+                                        <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                                item.VoucherDate,
+                                              ).toLocaleDateString()
+                                            : ""}
+                                        </td>
 
-                                      <td>{item.VoucherNumber}</td>
-                                      <td>{item.PaidAmount}</td>
-                                      <td>{pending}</td>
-                                    </tr>
-                                  );
-                                })
+                                        <td>{item.VoucherNumber}</td>
+                                        <td>{item.PaidAmount}</td>
+                                        <td>{pending}</td>
+                                      </tr>
+                                    );
+                                  },
+                                )
                               )}
                             </tbody>
                           </table>
@@ -1124,14 +1294,22 @@ const NewAdvanceform = ({ context }: any) => {
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      gap: "5px",
+                      marginBottom: "1rem",
+                      marginTop: "1rem",
+                    }}
+                  >
                     <a
                       onClick={!isSubmitting ? handleSubmit : undefined}
                       className="submit-btn"
                       style={{
                         pointerEvents: isSubmitting ? "none" : "auto",
                         opacity: isSubmitting ? 0.6 : 1,
-                        cursor: isSubmitting ? "not-allowed" : "pointer"
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
                       }}
                     >
                       {isSubmitting ? "Submitting..." : "Submit"}
@@ -1142,7 +1320,7 @@ const NewAdvanceform = ({ context }: any) => {
                       style={{
                         pointerEvents: isSubmitting ? "none" : "auto",
                         opacity: isSubmitting ? 0.6 : 1,
-                        cursor: isSubmitting ? "not-allowed" : "pointer"
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
                       }}
                     >
                       {isSubmitting ? "Saving..." : "Save as Draft"}

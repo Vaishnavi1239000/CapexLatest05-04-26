@@ -64,7 +64,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   };
 
   // ✅ GET LIST DATA
-  const getCapexData = async () => {
+  const getCapexData12 = async () => {
     try {
       const user = await sp.web.currentUser();
       const userId = user.Id;
@@ -84,6 +84,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           "Status",
         )
         .expand("VendorCode") // ✅ ADD THIS LINE
+        //
         .filter(`Status eq 'Pending for Approver'  and CurrentApproverId eq '${userId}'`)
         .orderBy("ID", false)();
 
@@ -109,6 +110,62 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     }
   };
 
+  const getCapexData = async () => {
+  try {
+    const user = await sp.web.currentUser();
+    const userId = user.Id;
+
+    let filterQuery = "";
+
+    // 🔥 Dynamic filter based on menu
+    if (activeMenu === "Paid") {
+      filterQuery = `Status eq 'Paid' and CurrentApproverId eq '${userId}'`;
+    } else if (activeMenu === "Rejected") {
+      filterQuery = `Status eq 'Rejected' and CurrentApproverId eq '${userId}'`;
+    } else {
+      filterQuery = `Status eq 'Pending for Approver' and CurrentApproverId eq '${userId}'`;
+    }
+
+    const items = await sp.web.lists
+      .getByTitle("CapexAdvance")
+      .items.select(
+        "ID",
+        "Title",
+        "Created",
+        "EmployeeName",
+        "VendorName",
+        "VendorCode/Id",
+        "VendorCode/VendorCode",
+        "PONumber",
+        "RequestAdvanceAmount",
+        "Status"
+      )
+      .expand("VendorCode")
+      .filter(filterQuery)
+      .orderBy("ID", false)();
+
+    const formatted = items.map((item: any) => ({
+      ID: item.ID,
+      id: item.Title,
+      date: item.Created
+        ? new Date(item.Created).toLocaleDateString("en-GB")
+        : "",
+      EmployeeName: item.EmployeeName,
+
+      vendor: item.VendorName || "",
+      vendorCode: item.VendorCode?.VendorCode || "",
+
+      po: item.PONumber || "",
+      amount: item.RequestAdvanceAmount || 0,
+      status: item.Status || "",
+    }));
+
+    setData(formatted);
+
+  } catch (error) {
+    console.error("Data error:", error);
+  }
+};
   // ✅ VIEW CLICK
   const handleViewClick = async (item: any) => {
     try {
@@ -151,12 +208,13 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   });
 
   // ✅ LOAD DATA
-  React.useEffect(() => {
-    if (!context) return;
-    void getLoggedInUser();
-    void getCapexData();
-  }, [context]);
+ React.useEffect(() => {
+  if (!context) return;
 
+  void getLoggedInUser();
+  void getCapexData();
+
+}, [context, activeMenu]);
   // ✅ OPEN VIEW PAGE
   if (showForm) {
     if (formType === "approve") {

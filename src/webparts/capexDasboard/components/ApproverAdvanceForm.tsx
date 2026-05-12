@@ -91,20 +91,23 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
     }
   };
 
-
   // ✅ Fetch Item by ID
   const getItemById = async () => {
     try {
-
-
       const item = await sp.web.lists
         .getByTitle("CapexAdvance")
         .items.getById(itemId)
-        .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode","Author/Id","Author/Title","Author/EMail")
-        .expand("PICName", "VendorCode", "Author")
-        // 👈 ADD
-        ();
-
+        .select(
+          "*",
+          "PICName/Title",
+          "VendorCode/Id",
+          "VendorCode/VendorCode",
+          "Author/Id",
+          "Author/Title",
+          "Author/EMail",
+        )
+        .expand("PICName", "VendorCode", "Author")();
+      // 👈 ADD
 
       setItemData(item);
       //setApproverRemarks(item.ApproverRemarks || "");
@@ -157,20 +160,17 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
     if (!context || !itemId) return;
 
     const loadData = async () => {
-      await getItemById();    // 👈 FIRST load item to get VendorCode
-      await getVendors();     // 👈 FIRST load vendors
-      await getItemById();    // 👈 THEN item
+      await getItemById(); // 👈 FIRST load item to get VendorCode
+      await getVendors(); // 👈 FIRST load vendors
+      await getItemById(); // 👈 THEN item
     };
 
     void loadData();
   }, [context, itemId]);
 
-
   // ✅ Approve
   const buildApprovalFlow = async () => {
-
     try {
-
       // =========================
       // 🔹 EXISTING FLOW (SOURCE OF TRUTH)
       // =========================
@@ -182,7 +182,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
       // 🔹 KEEP RM + HOD FROM OLD FLOW
       // =========================
       const baseApprovers = existingFlow.filter(
-        (a: any) => a.Role === "RM" || a.Role === "HOD"
+        (a: any) => a.Role === "RM" || a.Role === "HOD",
       );
 
       // =========================
@@ -190,8 +190,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
       // =========================
       const matrixData = await sp.web.lists
         .getByTitle("CapexApprovalMatrix")
-        .items
-        .select("Role/RoleName,Approver/Id,Approver/Title,Level/Level")
+        .items.select("Role/RoleName,Approver/Id,Approver/Title,Level/Level")
         .expand("Approver,Role,Level")
         .filter("Status eq 'Active'")
         .orderBy("Level", true)();
@@ -201,7 +200,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         Name: item.Approver?.Title,
         Role: item.Role?.RoleName,
         Level: baseApprovers.length + index + 1,
-        Status: "Pending"
+        Status: "Pending",
       }));
 
       // =========================
@@ -213,11 +212,10 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
       // 🔹 REMOVE DUPLICATES
       // =========================
       const uniqueFlow = fullFlow.filter(
-        (v, i, self) => self.findIndex(x => x.Id === v.Id) === i
+        (v, i, self) => self.findIndex((x) => x.Id === v.Id) === i,
       );
 
       return uniqueFlow;
-
     } catch (error) {
       console.error("Approval Flow Error:", error);
       return [];
@@ -226,11 +224,11 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
 
   const handleApprove = async () => {
     try {
-      if (!approverRemarks) {
-        alert("Please enter Remarks");
-        return;
-      }
-
+     if (!approverRemarks || approverRemarks.trim() === "") {
+      alert("Please enter Remarks");
+      return;
+    }
+   
       // =========================
       // 🔹 EXISTING FLOW
       // =========================
@@ -282,7 +280,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
 
       const currentUserId = context.pageContext.legacyPageContext.userId;
       const currentIndex = existingFlow.findIndex(
-        (a: any) => a.Id === currentUserId
+        (a: any) => a.Id === currentUserId,
       );
 
       if (currentIndex === -1) {
@@ -331,11 +329,11 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         CurrentApprover: context.pageContext.user.displayName,
         ActionTaken: "Approved",
         Comment: approverRemarks,
-        Date: new Date().toISOString()
+        Date: new Date().toISOString(),
       });
 
       let ApproverStatus;
-      
+
       if (currentRole === "RM") {
         ApproverStatus = "Pending for HOD";
       } else if (currentRole === "HOD") {
@@ -360,14 +358,13 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
           CurrentApproverId: nextApproverId,
 
           WorkFlowHistory: JSON.stringify(history),
-          ApproverStatus: ApproverStatus
+          ApproverStatus: ApproverStatus,
         });
 
       alert("Approved successfully ✅");
 
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
-
     } catch (error) {
       console.error("Approve error:", error);
       alert("Error ❌");
@@ -377,7 +374,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
   // ✅ Sent Back
   const handleSendBack = async () => {
     try {
-      if (!approverRemarks) {
+      if (!approverRemarks || approverRemarks.trim() === "") {
         alert("Please enter Remarks");
         return;
       }
@@ -388,9 +385,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
 
       const currentUserId = context.pageContext.legacyPageContext.userId;
 
-      const currentIndex = flow.findIndex(
-        (a: any) => a.Id === currentUserId
-      );
+      const currentIndex = flow.findIndex((a: any) => a.Id === currentUserId);
 
       if (currentIndex !== -1) {
         flow[currentIndex].Status = "Send Back";
@@ -404,7 +399,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         CurrentApprover: context.pageContext.user.displayName,
         ActionTaken: "Send Back",
         Comment: approverRemarks,
-        Date: new Date().toISOString()
+        Date: new Date().toISOString(),
       });
 
       await sp.web.lists
@@ -417,12 +412,12 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
           ApprovalMatrix: JSON.stringify(flow),
           WorkFlowHistory: JSON.stringify(history),
 
-          CurrentApproverId: itemData.CurrentApproverId
+          CurrentApproverId: itemData.CurrentApproverId,
         });
 
       alert("Send Back ✅");
-      window.location.href = "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
-
+      window.location.href =
+        "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
     } catch (error) {
       console.error(error);
     }
@@ -431,7 +426,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
   // ✅ Reject
   const handleReject = async () => {
     try {
-      if (!approverRemarks) {
+      if (!approverRemarks || approverRemarks.trim() === "") {
         alert("Please enter Remarks");
         return;
       }
@@ -442,9 +437,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
 
       const currentUserId = context.pageContext.legacyPageContext.userId;
 
-      const currentIndex = flow.findIndex(
-        (a: any) => a.Id === currentUserId
-      );
+      const currentIndex = flow.findIndex((a: any) => a.Id === currentUserId);
 
       if (currentIndex !== -1) {
         flow[currentIndex].Status = "Rejected";
@@ -458,7 +451,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         CurrentApprover: context.pageContext.user.displayName,
         ActionTaken: "Rejected",
         Comment: approverRemarks,
-        Date: new Date().toISOString()
+        Date: new Date().toISOString(),
       });
 
       await sp.web.lists
@@ -471,12 +464,12 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
           ApprovalMatrix: JSON.stringify(flow),
           WorkFlowHistory: JSON.stringify(history),
 
-          CurrentApproverId: null
+          CurrentApproverId: null,
         });
 
       alert("Rejected ❌");
-      window.location.href = "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
-
+      window.location.href =
+        "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
     } catch (error) {
       console.error(error);
     }
@@ -490,10 +483,10 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
   if (!itemData) return <div>Loading...</div>;
 
   return (
-    <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
-      <div className='row'>
-        <div className='col-md-12'>
-          <div className='Main-Boxpoup'>
+    <div className="MainUplodForm" style={{ margin: "5px 0px" }}>
+      <div className="row">
+        <div className="col-md-12">
+          <div className="Main-Boxpoup">
             <div className="bordered">
               <img src={logo} />
               <h1> Approval Matrix </h1>
@@ -504,19 +497,18 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
               <div className="displayWF">
                 <ul className="approval-flow">
                   <li className={`approval-step`}>
-                      
-                           {`Initiator`} - {itemData.Author.Title}
-                        
-                    </li>
+                    {`Initiator`} - {itemData.Author.Title}
+                  </li>
                   {approvalMatrix.map((a, index) => (
                     <li
                       key={index}
-                      className={`approval-step ${a.Status === "In Progress"
-                        ? "active"
-                        : a.Status === "Approved"
-                          ? "approved"
-                          : ""
-                        }`}
+                      className={`approval-step ${
+                        a.Status === "In Progress"
+                          ? "active"
+                          : a.Status === "Approved"
+                            ? "approved"
+                            : ""
+                      }`}
                     >
                       {a.Role} - {a.Name}
                     </li>
@@ -757,59 +749,92 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                 </a>
               </div>
             </div> */}
-            <div className='borderedbox'>
+            <div className="borderedbox">
               <div className="heading1" style={{ marginTop: "10px" }}>
                 <label>Requestor Information</label>
               </div>
-              <div className='main-formcontainer'>
-                <div className='row mb-20'>
-                  <div className='col-md-4'>
-                    <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
-                    <label className='fonttext'>  {itemData.EmployeeCode}</label>
+              <div className="main-formcontainer">
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label htmlFor="Employee Code" className="font">
+                      Employee Code
+                    </label>{" "}
+                    : &nbsp;&nbsp;
+                    <label className="fonttext"> {itemData.EmployeeCode}</label>
                   </div>
-                  <div className='col-md-4'>
-                    <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
-                    <label className='fonttext'>  {itemData.EmployeeName}</label>
+                  <div className="col-md-4">
+                    <label htmlFor="Employee Name" className="font">
+                      Employee Name{" "}
+                    </label>{" "}
+                    : &nbsp;&nbsp;
+                    <label className="fonttext"> {itemData.EmployeeName}</label>
                   </div>
-                  <div className='col-md-4'>
-                    <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
-                    <label className='fonttext'>  {itemData.EmployeeEmail}</label>
-                  </div>
-                </div>
-                <div className='row mb-20'>
-                  <div className='col-md-4'>
-                    <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
-                    <label className='fonttext'>  {itemData.ContactNo}</label>
-                  </div>
-                  <div className='col-md-4'>
-                    <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
-                    <label className='fonttext'>  {itemData.EmployeeStatus}</label>
-                  </div>
-                  <div className='col-md-4'>
-                    <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
-                    <label className='fonttext'>  {itemData.Division}</label>
+                  <div className="col-md-4">
+                    <label htmlFor="Employee Email" className="font">
+                      Employee Email{" "}
+                    </label>{" "}
+                    : &nbsp;&nbsp;
+                    <label className="fonttext">
+                      {" "}
+                      {itemData.EmployeeEmail}
+                    </label>
                   </div>
                 </div>
-                <div className='row mb-20'>
-                  <div className='col-md-4'>
-                    <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
-                    <label className='fonttext'>  {itemData.Location}</label>
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label htmlFor="Contact No" className="font">
+                      Contact No
+                    </label>{" "}
+                    : &nbsp;&nbsp;
+                    <label className="fonttext"> {itemData.ContactNo}</label>
                   </div>
-                  <div className='col-md-4'>
-                    <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
-                    <label className='fonttext'>  {itemData.RM}</label>
+                  <div className="col-md-4">
+                    <label htmlFor="Employee Status" className="font">
+                      Employee Status
+                    </label>{" "}
+                    : &nbsp;&nbsp;
+                    <label className="fonttext">
+                      {" "}
+                      {itemData.EmployeeStatus}
+                    </label>
                   </div>
-                  <div className='col-md-4'>
-                    <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
-                    <label className='fonttext'>  {itemData.HOD}</label>
+                  <div className="col-md-4">
+                    <label htmlFor="Division" className="font">
+                      Division
+                    </label>{" "}
+                    : &nbsp;&nbsp;
+                    <label className="fonttext"> {itemData.Division}</label>
+                  </div>
+                </div>
+                <div className="row mb-20">
+                  <div className="col-md-4">
+                    <label htmlFor="Location" className="font">
+                      Location
+                    </label>{" "}
+                    : &nbsp;&nbsp;
+                    <label className="fonttext"> {itemData.Location}</label>
+                  </div>
+                  <div className="col-md-4">
+                    <label htmlFor="RM" className="font">
+                      RM
+                    </label>{" "}
+                    : &nbsp;&nbsp;
+                    <label className="fonttext"> {itemData.RM}</label>
+                  </div>
+                  <div className="col-md-4">
+                    <label htmlFor="HOD" className="font">
+                      HOD
+                    </label>{" "}
+                    : &nbsp;&nbsp;
+                    <label className="fonttext"> {itemData.HOD}</label>
                   </div>
                 </div>
               </div>
               <div className="heading1" style={{ marginTop: "10px" }}>
                 <label>Capex Details</label>
               </div>
-              <div className='main-formcontainer'>
-                <div className='row mb-20'>
+              <div className="main-formcontainer">
+                <div className="row mb-20">
                   <div className="col-md-4">
                     <label className="font">Vendor Code</label>
                     <select
@@ -820,7 +845,8 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                         const vendor = vendors.find((v) => v.Id === id);
                         setSelectedVendorId(id);
                         setSelectedVendorName(vendor?.VendorName || "");
-                      }} className="formtext-control"
+                      }}
+                      className="formtext-control"
                     >
                       <option value="">Select Vendor</option>
                       {vendors.map((v) => (
@@ -832,40 +858,75 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                   </div>
                   <div className="col-md-4">
                     <label>Vendor Name</label>
-                    <input value={itemData.VendorName || ""} className="form-control readonly" />
+                    <input
+                      value={itemData.VendorName || ""}
+                      className="form-control readonly"
+                    />
                   </div>
                   <div className="col-md-4">
                     <label>PO Number</label>
-                    <input value={itemData.PONumber || ""} className="form-control readonly" />
+                    <input
+                      value={itemData.PONumber || ""}
+                      className="form-control readonly"
+                    />
                   </div>
                 </div>
-                <div className='row mb-20'>
+                <div className="row mb-20">
                   <div className="col-md-4">
                     <label className="font">PO Date</label>
-                    <input value={itemData.PODate ? new Date(itemData.PODate).toLocaleDateString("en-GB") : ""} className="font-control readonly" />
+                    <input
+                      value={
+                        itemData.PODate
+                          ? new Date(itemData.PODate).toLocaleDateString(
+                              "en-GB",
+                            )
+                          : ""
+                      }
+                      className="font-control readonly"
+                    />
                   </div>
                   <div className="col-md-4">
                     <label className="font">PO Terms</label>
-                    <input value={itemData.POAdvanceTerms || ""} className="font-control readonly" />
+                    <input
+                      value={itemData.POAdvanceTerms || ""}
+                      className="font-control readonly"
+                    />
                   </div>
                   <div className="col-md-4">
                     <label className="font">PO Amount</label>
-                    <input value={itemData.POAmtGST || ""} className="font-control readonly" />
+                    <input
+                      value={itemData.POAmtGST || ""}
+                      className="font-control readonly"
+                    />
                   </div>
                 </div>
-                <div className='row mb-20'>
-                  <div className='col-md-4'>
+                <div className="row mb-20">
+                  <div className="col-md-4">
                     <label className="font">Advance Amount</label>
-                    <input value={itemData.RequestAdvanceAmount || ""} className="font-control readonly" />
+                    <input
+                      value={itemData.RequestAdvanceAmount || ""}
+                      className="font-control readonly"
+                    />
                   </div>
-                  <div className='col-md-4'>
+                  <div className="col-md-4">
                     <label className="font">Paid Amount</label>
-                    <input value={itemData.PaidAmount || ""} className="font-control readonly" />
+                    <input
+                      value={itemData.PaidAmount || ""}
+                      className="font-control readonly"
+                    />
                   </div>
                   <div className="col-md-4">
                     <label className="font">Expected Settlement</label>
-                    <input value={itemData.ExpectedDateofSettlement ? new Date(itemData.ExpectedDateofSettlement,).toLocaleDateString("en-GB") : ""}
-                      className="font-control readonly" />
+                    <input
+                      value={
+                        itemData.ExpectedDateofSettlement
+                          ? new Date(
+                              itemData.ExpectedDateofSettlement,
+                            ).toLocaleDateString("en-GB")
+                          : ""
+                      }
+                      className="font-control readonly"
+                    />
                   </div>
                 </div>
                 <div className="row mb-20">
@@ -883,22 +944,30 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                   </div>
                   <div className="col-md-4">
                     <label className="font">GL Code</label>
-                    <input value={itemData.GL || ""} className="font-control readonly" />
+                    <input
+                      value={itemData.GL || ""}
+                      className="font-control readonly"
+                    />
                   </div>
                   <div className="col-md-4">
                     <label className="font">Cost Center</label>
-                    <input value={itemData.CostCenter || ""} className="font-control readonly" />
+                    <input
+                      value={itemData.CostCenter || ""}
+                      className="font-control readonly"
+                    />
                   </div>
                 </div>
-                <div className='row mb-20'>
-                  <div className='col-md-12'>
+                <div className="row mb-20">
+                  <div className="col-md-12">
                     {workflowHistory.length === 0 ? (
                       <p>No history available</p>
                     ) : (
                       <div className="workflow-history">
                         {workflowHistory.map((h, index) => (
                           <div key={index} className="history-item">
-                            <div><b>{h.ActionTaken}</b></div>
+                            <div>
+                              <b>{h.ActionTaken}</b>
+                            </div>
                             <div>{h.CurrentApprover}</div>
                             <div>{h.Comment}</div>
                             <div className="date">
@@ -913,15 +982,22 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                 <div className="row mb-20">
                   <div className="col-md-4">
                     <label className="font">User Remarks</label>
-                    <textarea value={itemData.Remarks || ""} className="font-control readonly" />
+                    <textarea
+                      value={itemData.Remarks || ""}
+                      className="font-control readonly"
+                    />
                   </div>
                   <div className="col-md-4">
                     <label className="font">Project Description</label>
-                    <textarea value={itemData.ProjectDescription || ""} className="font-control readonly" />
+                    <textarea
+                      value={itemData.ProjectDescription || ""}
+                      className="font-control readonly"
+                    />
                   </div>
                   <div className="col-md-4">
                     <label className="font">Approver Remarks</label>
-                    <textarea className="font-control"
+                    <textarea
+                      className="font-control"
                       value={approverRemarks}
                       onChange={(e) => setApproverRemarks(e.target.value)}
                     />
@@ -945,12 +1021,20 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                     )}
                   </div>
                 </div>
-                <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "5px",
+                    marginBottom: "1rem",
+                    marginTop: "1rem",
+                  }}
+                >
                   <a onClick={handleApprove} className="submit-btn">
                     Approve
                   </a>
                   <a onClick={handleSendBack} className="Rework-btn">
-                    Sent Back
+                    Send Back
                   </a>
                   <a onClick={handleReject} className="Reject-btn">
                     Reject
@@ -964,8 +1048,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
           </div>
         </div>
       </div>
-
-    </div >
+    </div>
   );
 };
 
