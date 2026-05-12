@@ -179,10 +179,10 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         alert("Please enter Voucher Number");
         return;
       }
-      if (!approverRemarks) {
-        alert("Please enter Remarks");
-        return;
-      }
+     if (!approverRemarks || approverRemarks.trim() === "") {
+      alert("Please enter Remarks");
+      return;
+    }
 
       // =========================
       // 🔹 OLD FLOW
@@ -268,10 +268,10 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
   // ✅ Sent Back
   const handleSendBack = async () => {
     try {
-      if (!approverRemarks) {
-        alert("Remarks required");
-        return;
-      }
+     if (!approverRemarks || approverRemarks.trim() === "") {
+      alert("Please enter Remarks");
+      return;
+    }
 
       const flow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
@@ -322,10 +322,11 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
   // ✅ Reject
   const handleReject = async () => {
     try {
-      if (!approverRemarks) {
-        alert("Remarks required");
-        return;
-      }
+      if (!approverRemarks || approverRemarks.trim() === "") {
+      alert("Please enter Remarks");
+      return;
+    }
+     
 
       const flow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
@@ -899,7 +900,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                       Vouch
                     </a>
                     <a onClick={handleSendBack} className="Rework-btn">
-                      Sent Back
+                      Send Back
                     </a>
                     <a onClick={handleReject} className="Reject-btn">
                       Reject

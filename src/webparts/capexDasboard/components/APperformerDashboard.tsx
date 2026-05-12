@@ -73,59 +73,137 @@ const APperformerDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     }
   };
 
-  const getCapexData = async () => {
-    try {
-      const user = await sp.web.currentUser();
-      const userId = user.Id;
+  // const getCapexData = async () => {
+  //   try {
+  //     const user = await sp.web.currentUser();
+  //     const userId = user.Id;
 
-      const items = await sp.web.lists
-        .getByTitle("CapexAdvance")
-        .items.select(
-          "ID",
-          "Title",
-          "Created",
-          "EmployeeName",
-          "VendorName",
-          "VendorCode/Id",
-          "VendorCode/VendorCode",
-          "PONumber",
-          "RequestAdvanceAmount",
-          "Status",
-        )
-        .expand("VendorCode")
+  //     const items = await sp.web.lists
+  //       .getByTitle("CapexAdvance")
+  //       .items.select(
+  //         "ID",
+  //         "Title",
+  //         "Created",
+  //         "EmployeeName",
+  //         "VendorName",
+  //         "VendorCode/Id",
+  //         "VendorCode/VendorCode",
+  //         "PONumber",
+  //         "RequestAdvanceAmount",
+  //         "Status",
+  //       )
+  //       .expand("VendorCode")
 
-        .filter(
-          `(Status eq 'Pending for PF Approver' 
-   or Status eq 'Pending for PF Approver UTR'
-   or Status eq 'Paid') and CurrentApproverId eq '${userId}'
-   `,
-        )
+  //       .filter(
+  //         `(Status eq 'Pending for PF Approver' 
+  //  or Status eq 'Pending for PF Approver UTR'
+  //  or Status eq 'Paid') and CurrentApproverId eq '${userId}'
+  //  `,
+  //       )
 
-        .orderBy("ID", false)();
+  //       .orderBy("ID", false)();
 
-      const formatted = items.map((item: any) => ({
-        ID: item.ID,
-        id: item.Title,
-        date: item.Created
-          ? new Date(item.Created).toLocaleDateString("en-GB")
-          : "",
-        EmployeeName: item.EmployeeName,
+  //     const formatted = items.map((item: any) => ({
+  //       ID: item.ID,
+  //       id: item.Title,
+  //       date: item.Created
+  //         ? new Date(item.Created).toLocaleDateString("en-GB")
+  //         : "",
+  //       EmployeeName: item.EmployeeName,
 
-        vendor: item.VendorName || "",
-        vendorCode: item.VendorCode?.VendorCode || "", // 👈 FIX
+  //       vendor: item.VendorName || "",
+  //       vendorCode: item.VendorCode?.VendorCode || "", // 👈 FIX
 
-        po: item.PONumber || "",
-        amount: item.RequestAdvanceAmount || 0,
-        status: item.Status || "",
-      }));
+  //       po: item.PONumber || "",
+  //       amount: item.RequestAdvanceAmount || 0,
+  //       status: item.Status || "",
+  //     }));
 
-      setData(formatted);
-    } catch (error) {
-      console.error("Data error:", error);
-    }
-  };
+  //     setData(formatted);
+  //   } catch (error) {
+  //     console.error("Data error:", error);
+  //   }
+  // };
   // ✅ GET LIST DATA
+const getCapexData = async () => {
+  try {
+    const user = await sp.web.currentUser();
+    const userId = user.Id;
 
+    let filterQuery = "";
+
+    // 🔥 Dynamic menu-wise filter
+    if (activeMenu === "Paid") {
+
+      filterQuery = `
+        Status eq 'Paid' 
+        and CurrentApproverId eq '${userId}'
+      `;
+
+    } else if (activeMenu === "Rejected") {
+
+      filterQuery = `
+        Status eq 'Rejected'
+        and CurrentApproverId eq '${userId}'
+      `;
+
+    } else {
+
+      // My Request
+      filterQuery = `
+        (
+          Status eq 'Pending for PF Approver' 
+          or Status eq 'Pending for PF Approver UTR'
+        )
+        and CurrentApproverId eq '${userId}'
+      `;
+    }
+
+    const items = await sp.web.lists
+      .getByTitle("CapexAdvance")
+      .items.select(
+        "ID",
+        "Title",
+        "Created",
+        "EmployeeName",
+        "VendorName",
+        "VendorCode/Id",
+        "VendorCode/VendorCode",
+        "PONumber",
+        "RequestAdvanceAmount",
+        "Status"
+      )
+      .expand("VendorCode")
+      .filter(filterQuery)
+      .orderBy("ID", false)();
+
+    const formatted = items.map((item: any) => ({
+      ID: item.ID,
+      id: item.Title,
+
+      date: item.Created
+        ? new Date(item.Created).toLocaleDateString("en-GB")
+        : "",
+
+      EmployeeName: item.EmployeeName,
+
+      vendor: item.VendorName || "",
+
+      vendorCode: item.VendorCode?.VendorCode || "",
+
+      po: item.PONumber || "",
+
+      amount: item.RequestAdvanceAmount || 0,
+
+      status: item.Status || "",
+    }));
+
+    setData(formatted);
+
+  } catch (error) {
+    console.error("Data error:", error);
+  }
+};
   // ✅ VIEW CLICK
   const handleViewClick = async (item: any) => {
     try {
@@ -167,10 +245,12 @@ const APperformerDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   });
   // ✅ LOAD DATA
   React.useEffect(() => {
-    if (!context) return;
-    void getLoggedInUser();
-    void getCapexData();
-  }, [context]);
+  if (!context) return;
+
+  void getLoggedInUser();
+  void getCapexData();
+
+}, [context, activeMenu]);
   if (showForm) {
     if (formType === "approve") {
       return (

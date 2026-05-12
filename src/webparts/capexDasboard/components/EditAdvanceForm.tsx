@@ -17,7 +17,13 @@ interface IVendor {
 
 const EditAdvanceForm = ({ context, formData, onClose }: any) => {
   const sp = spfi().using(SPFx(context));
+const today = new Date();
 
+const localDate: string = new Date(
+  today.getTime() - today.getTimezoneOffset() * 60000
+)
+  .toISOString()
+  .split("T")[0];
   // =========================
   // STATES
   // =========================
@@ -76,6 +82,12 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
     } catch (error) {
       console.error("Delete error:", error);
     }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    const updatedFiles = [...selectedFiles];
+    updatedFiles.splice(index, 1);
+    setSelectedFiles(updatedFiles);
   };
   const handleNumberChange = (value: string, setter: any) => {
     // Allow only numbers and decimal (max one dot)
@@ -157,9 +169,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
       const safe = capexId.replace(/\//g, "_");
       const path = `/sites/SonaFinance/CapexAdvanceDocs/${safe}`;
 
-      const files = await sp.web
-        .getFolderByServerRelativePath(path)
-        .files();
+      const files = await sp.web.getFolderByServerRelativePath(path).files();
 
       void setAttachments(files);
     } catch {
@@ -206,6 +216,13 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
     }
 
     // 🔥 NEW VALIDATION
+    if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
+      errors.push(
+        "The requested advance amount cannot be greater than the PO Amount (Including GST)",
+      );
+    }
+
+    // 🔥 Paid Amount should not exceed Advance Amount
     if (
       advanceAmount &&
       paidAmount &&
@@ -235,9 +252,6 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
 
     return errors;
   };
-
-
-
 
   const handleExit = () => {
     if (onClose) {
@@ -277,14 +291,142 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
 
       setSelectedFiles([]);
       await getAttachments(formData.CapexID);
-
     } catch (error) {
       console.error("Upload error:", error);
       alert("File upload failed ❌");
     }
   };
 
+  const uploadAttachments = async (capexId: string) => {
+    try {
+      if (!selectedFiles || selectedFiles.length === 0) return;
 
+      const safeCapexId = capexId.replace(/\//g, "_");
+
+      const libraryName = "CapexAdvanceDocs";
+      const webUrl = context.pageContext.web.serverRelativeUrl;
+
+      const folderPath = `${webUrl}/${libraryName}/${safeCapexId}`;
+
+      // ✅ Ensure folder
+      await sp.web.folders.addUsingPath(`${libraryName}/${safeCapexId}`);
+
+      // ✅ Upload files properly
+      for (const file of selectedFiles) {
+        await sp.web
+          .getFolderByServerRelativePath(folderPath)
+          .files.addUsingPath(file.name, file, { Overwrite: true });
+      }
+
+      console.log("✅ Files uploaded successfully");
+    } catch (error) {
+      console.error("❌ Upload error:", error);
+    }
+  };
+const handleDraft = async () => {
+    try {
+      //if (isSubmitting) return;
+      //setIsSubmitting(true);
+      //const capexId = await generateCapexId();
+
+      let ensuredUserId: number | null = null;
+
+      // ✅ Only process if user selected
+      if (selectedUser && selectedUser.length > 0) {
+        const userEmail = selectedUser[0]?.secondaryText;
+
+        if (userEmail) {
+          const ensuredUser = await sp.web.ensureUser(userEmail);
+          ensuredUserId = ensuredUser.Id;
+        }
+      }
+
+      // ✅ Ensure User (FIX ERROR)
+      //  const ensuredUser = await sp.web.ensureUser(userEmail);
+
+      //const flow = await buildApprovalFlow();
+
+      // 🔥 Set first approver as current
+      // if (flow.length > 0) {
+      //   flow[0].Status = "In Progress";
+      // }
+
+     // const currentApprover = flow.length > 0 ? flow[0].Id : null;
+      const currentUser = context.pageContext?.user?.displayName || "User";
+      const wfHistory = [
+        {
+          CurrentApprover: currentUser,
+          ActionTaken: "Submitted",
+          Comment: remarks || "",
+          Date: new Date().toISOString(),
+        },
+      ];
+
+      await sp.web.lists.getByTitle("CapexAdvance").items.add({
+        Title: formData.CapexID,
+        CapexID: formData.CapexID,
+
+        // Employee
+        EmployeeCode: employee.EmployeeCode,
+        EmployeeName: employee.EmployeeName,
+        Division: employee.Division,
+        Location: employee.Location,
+        Email: employee.EmployeeEmail,
+        RM: employee.ReportingManager?.Title,
+        HOD: employee.HOD?.Title,
+        ContactNo: employee.ContactNo,
+        EmployeeStatus: employee.EmployeeStatus,
+
+        // Vendor
+        VendorCodeId: selectedVendorId,
+        VendorName: selectedVendorName,
+
+        // PO
+        PONumber: poNumber,
+        PODate: poDate ? new Date(poDate) : null,
+        POAdvanceTerms: poTerms,
+
+        // Amount
+        POAmtGST: poAmount,
+        RequestAdvanceAmount: advanceAmount,
+        PaidAmount: paidAmount,
+
+        // Advance
+        ExpectedDateofSettlement: expectedDate ? new Date(expectedDate) : null,
+
+        // ✅ PIC (OPTIONAL)
+        ...(ensuredUserId && { PICNameId: ensuredUserId }),
+
+        // Other
+        GL: glCode,
+        CostCenter: employee.CostCenter,
+        Remarks: remarks,
+        ProjectDescription: projectDesc,
+
+        Status: "Draft",
+
+      //  ApprovalMatrix: JSON.stringify(flow),
+
+       // CurrentApproverId: currentApprover,
+
+        //WorkFlowHistory: JSON.stringify(wfHistory),
+      });
+
+      const safeCapexId = formData.capexId.replace(/\//g, "_");
+      void uploadAttachments(safeCapexId);
+
+      alert("Draft saved successfully ✅");
+
+      window.location.href =
+        "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
+    } catch (error) {
+      console.error("ERROR:", error);
+      alert("Error while saving ❌");
+     // setIsSubmitting(false);
+    }
+  };
+
+  
   // =========================
   // UPDATE
   // =========================
@@ -297,7 +439,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
       }
 
       const ensuredUser = await sp.web.ensureUser(
-        selectedUser[0]?.secondaryText
+        selectedUser[0]?.secondaryText,
       );
       // 🔥 PRESERVE FLOW
       const existingFlow = formData.ApprovalMatrix
@@ -305,7 +447,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
         : [];
       const updatedFlow = existingFlow.map((a: any, index: number) => ({
         ...a,
-        Status: index === 0 ? "In Progress" : "Pending"
+        Status: index === 0 ? "In Progress" : "Pending",
       }));
       const currentApprover = updatedFlow.length > 0 ? updatedFlow[0].Id : null;
       // 🔥 PRESERVE HISTORY + ADD EDIT ENTRY
@@ -317,7 +459,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
         CurrentApprover: employee.EmployeeName,
         ActionTaken: "Edited",
         Comment: remarks,
-        Date: new Date().toISOString()
+        Date: new Date().toISOString(),
       });
       await sp.web.lists
         .getByTitle("CapexAdvance")
@@ -358,16 +500,14 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
           Remarks: remarks,
           ProjectDescription: projectDesc,
 
-
-
           Status: "Pending for Approver",
-          // Status: formData.Status, 
+          // Status: formData.Status,
 
           ApprovalMatrix: JSON.stringify(updatedFlow),
 
           WorkFlowHistory: JSON.stringify(history),
 
-          CurrentApproverId: currentApprover
+          CurrentApproverId: currentApprover,
         });
 
       if (selectedFiles.length > 0) {
@@ -383,7 +523,6 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
       alert("Error ❌");
     }
   };
-
 
   // =========================
   // BIND DATA
@@ -403,7 +542,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
     setSelectedVendorId(formData.VendorCodeId || null); // ✅ ADD THIS
     void getPreviousAdvances(formData.VendorCodeId || null);
 
-    setSelectedVendorName(formData.VendorName || "");   // ✅ ADD THIS
+    setSelectedVendorName(formData.VendorName || ""); // ✅ ADD THIS
 
     setGlCode(formData.GL || "");
     setCostCenter(formData.CostCenter || "");
@@ -458,7 +597,6 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
     if (formData.CapexID) {
       void getAttachments(formData.CapexID);
     }
-
   }, [formData]);
 
   useEffect(() => {
@@ -471,12 +609,10 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
   // =========================
   return (
     <>
-
-      <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
-
-        <div className='row'>
-          <div className='col-md-12'>
-            <div className='Main-Boxpoup'>
+      <div className="MainUplodForm" style={{ margin: "5px 0px" }}>
+        <div className="row">
+          <div className="col-md-12">
+            <div className="Main-Boxpoup">
               {/* 🔹 Header */}
               <div className="bordered">
                 <img src={logo} />
@@ -487,20 +623,19 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
               ) : (
                 <div className="displayWF">
                   <ul className="approval-flow">
-                     <li className={`approval-step`}>
-                      
-                           {`Initiator`} - {employee.EmployeeName}
-                        
+                    <li className={`approval-step`}>
+                      {`Initiator`} - {employee.EmployeeName}
                     </li>
                     {approvalMatrix.map((a, index) => (
                       <li
                         key={index}
-                        className={`approval-step ${a.Status === "In Progress"
-                          ? "active"
-                          : a.Status === "Approved"
-                            ? "approved"
-                            : ""
-                          }`}
+                        className={`approval-step ${
+                          a.Status === "In Progress"
+                            ? "active"
+                            : a.Status === "Approved"
+                              ? "approved"
+                              : ""
+                        }`}
                       >
                         {a.Role} - {a.Name}
                       </li>
@@ -775,62 +910,108 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                   </a>
                 </div>
               </div> */}
-              <div className='borderedbox'>
+              <div className="borderedbox">
                 <div className="heading1">
                   <label>Requestor Information</label>
                 </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeCode}</label>
+                <div className="main-formcontainer">
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Code" className="font">
+                        Employee Code
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {employee.EmployeeCode}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeName}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Name" className="font">
+                        Employee Name{" "}
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {employee.EmployeeName}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeEmail}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Email" className="font">
+                        Employee Email{" "}
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {employee.EmployeeEmail}
+                      </label>
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.ContactNo}</label>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label htmlFor="Contact No" className="font">
+                        Contact No
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {employee.ContactNo}</label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeStatus}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Status" className="font">
+                        Employee Status
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {employee.EmployeeStatus}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.Division}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Division" className="font">
+                        Division
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {employee.Division}</label>
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.Location}</label>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label htmlFor="Location" className="font">
+                        Location
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {employee.Location}</label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.ReportingManager?.Title}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="RM" className="font">
+                        RM
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {employee.ReportingManager?.Title}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.HOD?.Title}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="HOD" className="font">
+                        HOD
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {employee.HOD?.Title}</label>
                     </div>
                   </div>
                 </div>
                 <div className="heading1" style={{ marginTop: "10px" }}>
                   <label>Capex Details</label>
                 </div>
-                <div className='main-formcontainer'>
+                <div className="main-formcontainer">
                   <div className="row mb-20">
                     <div className="col-md-4">
                       <label className="font">Vendor Code</label>
-                      <select value={selectedVendorId || ""}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <select
+                        value={selectedVendorId || ""}
                         onChange={(e) => {
                           const id = Number(e.target.value);
                           const vendor = vendors.find((v) => v.Id === id);
@@ -849,44 +1030,113 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                     </div>
                     <div className="col-md-4">
                       <label className="font">Vendor Name</label>
-                      <input value={selectedVendorName || vendorName} className="form-control readonly" />
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={selectedVendorName || vendorName}
+                        className="form-control readonly"
+                      />
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Number</label>
-                      <input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="form-control" />
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={poNumber}
+                        onChange={(e) => setPoNumber(e.target.value)}
+                        className="form-control"
+                      />
                     </div>
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
                       <label className="font">PO Date</label>
-                      <input type="date" value={poDate} onChange={(e) => setPoDate(e.target.value)} className="form-control" />
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        type="date"
+                        value={poDate}
+                        onChange={(e) => setPoDate(e.target.value)}
+                        className="form-control"
+                      />
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Advance Terms</label>
-                      <input value={poTerms} onChange={(e) => setPoTerms(e.target.value)} className="form-control" />
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={poTerms}
+                        onChange={(e) => setPoTerms(e.target.value)}
+                        className="form-control"
+                      />
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Amount (GST)</label>
-                      <input value={poAmount} onChange={(e) => handleNumberChange(e.target.value, setPoAmount)} className="form-control" />
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={poAmount}
+                        onChange={(e) =>
+                          handleNumberChange(e.target.value, setPoAmount)
+                        }
+                        className="form-control"
+                      />
                     </div>
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
                       <label className="font">Request Advance Amount</label>
-                      <input value={advanceAmount} onChange={(e) => handleNumberChange(e.target.value, setAdvanceAmount)} className="form-control" />
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={advanceAmount}
+                        onChange={(e) =>
+                          handleNumberChange(e.target.value, setAdvanceAmount)
+                        }
+                        className="form-control"
+                      />
                     </div>
                     <div className="col-md-4">
-                      <label className="font" style={{ color: "red" }}>Paid Amount</label>
-                      <input value={paidAmount} onChange={(e) => handleNumberChange(e.target.value, setPaidAmount)} className="form-control" />
+                      <label className="font" style={{ color: "red" }}>
+                        Paid Amount
+                      </label>
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={paidAmount}
+                        onChange={(e) =>
+                          handleNumberChange(e.target.value, setPaidAmount)
+                        }
+                        className="form-control"
+                      />
                     </div>
-                    <div className='col-md-4'>
+                    <div className="col-md-4">
                       <label className="font">Expected Settlement Date</label>
-                      <input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} className="form-control" />
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        type="date"
+                        value={expectedDate}
+                       min={localDate} 
+                        onChange={(e) => setExpectedDate(e.target.value)}
+                        className="form-control"
+                      />
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
                       <label className="font">PIC Name</label>
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
                       <PeoplePicker
                         context={peoplePickerContext}
                         personSelectionLimit={1}
@@ -894,36 +1144,77 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                         principalTypes={[PrincipalType.User]}
                         defaultSelectedUsers={
                           selectedUser.length > 0
-                            ? [selectedUser[0].secondaryText]  // ✅ use email
+                            ? [selectedUser[0].secondaryText] // ✅ use email
                             : []
                         }
                         onChange={(items) => setSelectedUser(items)}
                       />
                     </div>
-                    <div className='col-md-4'>
+                    <div className="col-md-4">
                       <label className="font">GL Code</label>
-                      <input value={glCode} onChange={(e) => setExpectedDate(e.target.value)} className="form-control" />
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={glCode}
+                        onChange={(e) => setExpectedDate(e.target.value)}
+                        className="form-control"
+                      />
                     </div>
-                    <div className='col-md-4'>
+                    <div className="col-md-4">
                       <label className="font">Cost Center</label>
-                      <input value={employee.CostCenter || ""} className="font-control readoly" />
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <input
+                        value={employee.CostCenter || ""}
+                        className="form-control"
+                        readOnly
+                      />
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
                       <label className="font">Remarks</label>
-                      <textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} className="form-control" />
+                      <textarea
+                        value={remarks}
+                        onChange={(e) => setRemarks(e.target.value)}
+                        className="form-control"
+                      />
                     </div>
-                    <div className='col-md-4'>
-                      <label className="font">Purpose</label>
-                      <textarea value={projectDesc} onChange={(e) => setProjectDesc(e.target.value)} className="form-control" />
+                    <div className="col-md-4">
+                      <label className="font">Project Description</label>
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                      <textarea
+                        value={projectDesc}
+                        onChange={(e) => setProjectDesc(e.target.value)}
+                        className="form-control"
+                      />
                     </div>
-                    <div className='col-md-4'>
-                      <label className="font">Attachments</label>
+
+                    <div className="col-md-4">
+                      <label className="font">
+                        Attachments
+                        <span className="required" style={{ color: "red" }}>
+                          *
+                        </span>
+                      </label>
+
+                      {/* Existing Attachments */}
                       {attachments.length > 0 && (
-                        <ul>
+                        <ul className="mt-2">
                           {attachments.map((file: any, index: number) => (
-                            <li key={index}>
+                            <li
+                              key={index}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                marginBottom: "5px",
+                              }}
+                            >
                               <a
                                 href={file.ServerRelativeUrl}
                                 target="_blank"
@@ -931,13 +1222,71 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                               >
                                 {file.Name}
                               </a>
+
+                              {/* Remove Existing Attachment */}
+                              {selectedFiles.length > 0 && (
+                        <ul style={{ marginTop: "10px" }}>
+                          {selectedFiles.map((file, index) => (
+                            <li key={index}>
+                              {file.name}
+                              <button
+                                type="button"
+                                style={{
+                                  marginLeft: "10px",
+                                  color: "red",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => handleRemoveFile(index)}
+                              >
+                                Remove
+                              </button>
                             </li>
                           ))}
                         </ul>
                       )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {/* Newly Selected Files */}
+                      {selectedFiles.length > 0 && (
+                        <ul className="mt-2">
+                          {selectedFiles.map((file: File, index: number) => (
+                            <li
+                              key={index}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                marginBottom: "5px",
+                              }}
+                            >
+                              <span>{file.name}</span>
+
+                              {/* Remove Selected File */}
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-danger"
+                                onClick={() => {
+                                  const updatedFiles = selectedFiles.filter(
+                                    (_: File, i: number) => i !== index,
+                                  );
+
+                                  setSelectedFiles(updatedFiles);
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
                       <input
                         type="file"
-                        multiple className="form-control"
+                        multiple
+                        className="form-control"
                         onChange={(e) => {
                           if (e.target.files) {
                             setSelectedFiles(Array.from(e.target.files));
@@ -946,12 +1295,15 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                       />
                     </div>
                   </div>
-                  <div className='row mb-20'>
+                  <div className="row mb-20">
                     <div className="col-md-12">
                       <div style={{ overflowX: "auto" }}>
                         <div className="table-vert-scroll">
                           <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                            <thead className="text-white" style={{ backgroundColor: "rgb(60, 62, 69)" }}>
+                            <thead
+                              className="text-white"
+                              style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                            >
                               <tr>
                                 <th className="px-4 py-2">PO Number</th>
                                 <th className="px-4 py-2">Previous Advance</th>
@@ -974,8 +1326,8 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                       </div>
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-12'>
+                  <div className="row mb-20">
+                    <div className="col-md-12">
                       {workflowHistory.length === 0 ? (
                         <p>No history available</p>
                       ) : (
@@ -989,7 +1341,9 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                                 {h.ActionTaken}
                               </div>
 
-                              <div><b>{h.CurrentApprover}</b></div>
+                              <div>
+                                <b>{h.CurrentApprover}</b>
+                              </div>
                               <div>{h.Comment}</div>
                               <div className="date">
                                 {new Date(h.Date).toLocaleString()}
@@ -1000,9 +1354,19 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                       )}
                     </div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "center", gap: "10px", margin: "10px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      gap: "10px",
+                      margin: "10px",
+                    }}
+                  >
                     <a className="submit-btn" onClick={handleSubmit}>
                       Submit
+                    </a>
+                    <a className="draft-btn" onClick={handleDraft}>
+                      Draft
                     </a>
                     <a className="reset-btn" onClick={handleExit}>
                       Exit
@@ -1013,13 +1377,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
             </div>
           </div>
         </div>
-      </div >
-
-
-
-
-
-
+      </div>
     </>
   );
 };
