@@ -21,7 +21,17 @@ interface IVendor {
 }
 const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
   const sp = spfi().using(SPFx(context));
+  const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const [attachments, setAttachments] = useState<any[]>([]);
+  const today = new Date();
+
+const localDate: string = new Date(
+  today.getTime() - today.getTimezoneOffset() * 60000
+)
+  .toISOString()
+  .split("T")[0];
+  const actionLock = React.useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [itemData, setItemData] = useState<any>(null);
   const [approverRemarks, setApproverRemarks] = useState("");
   const [voucherDate, setVoucherDate] = useState("");
@@ -45,6 +55,35 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
       setVendors(data);
     } catch (error) {
       console.error("Vendor fetch error:", error);
+    }
+  };
+  const getPreviousAdvances = async (vendorId: number) => {
+    try {
+      debugger;
+      console.log("Fetching for Vendor:", vendorId);
+
+      const data = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.select(
+          "PONumber",
+          "RequestAdvanceAmount",
+          "Created",
+          "VoucherDate",
+
+          "PaidAmount",
+          "Status",
+          "VendorCode/Id",
+        )
+        .expand("VendorCode")
+        .filter(`VendorCode/Id eq ${vendorId} and Status eq 'Paid'`)
+        .orderBy("Created", false)();
+
+      console.log("DATA:", data);
+
+      void setPreviousAdvances(data);
+    } catch (error) {
+      console.error("Error fetching previous advances:", error);
+      void setPreviousAdvances([]);
     }
   };
   const getAttachments = async (capexId: string) => {
@@ -122,7 +161,10 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
     const loadData = async () => {
       await getItemById(); // 👈 FIRST load item to get VendorCode
       await getVendors(); // 👈 FIRST load vendors
-      await getItemById(); // 👈 THEN item
+     // await getItemById(); // 👈 THEN item
+      if (selectedVendorId) {
+      void getPreviousAdvances(selectedVendorId);
+    }
     };
 
     void loadData();
@@ -170,17 +212,35 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
   };
   // ✅ Approve
   const handleApprove = async () => {
+    if (actionLock.current) return;
+
+  actionLock.current = true;
+    if (isSubmitting) return;
     try {
-      if (!voucherDate) {
-        alert("Please select Voucher Date");
+      setIsSubmitting(true);
+      if (!voucherDate || voucherDate.trim() === "") {
+      alert("Please enter Voucher Date");
+      actionLock.current = false;
+        setIsSubmitting(false);
+      return;
+    }
+      if (voucherDate > localDate) {
+      alert("VoucherDate cannot be a future date");
+      // return;
+       actionLock.current = false;
+        setIsSubmitting(false);
         return;
-      }
-      if (!voucherNumber) {
-        alert("Please enter Voucher Number");
-        return;
-      }
+    }
+    if (!voucherNumber || voucherNumber.trim() === "") {
+      alert("Please enter Voucher Number");
+      actionLock.current = false;
+        setIsSubmitting(false);
+      return;
+    }
      if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
+      actionLock.current = false;
+        setIsSubmitting(false);
       return;
     }
 
@@ -255,6 +315,8 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         });
 
       alert("Approved successfully ✅");
+      actionLock.current = false;
+      setIsSubmitting(false);
 
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
@@ -262,14 +324,22 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
     } catch (error) {
       console.error("Approve error:", error);
       alert("Error ❌");
+      actionLock.current = false;
+        setIsSubmitting(false);
     }
   };
 
   // ✅ Sent Back
   const handleSendBack = async () => {
+    if (actionLock.current) return;
+    actionLock.current = true;
+    setIsSubmitting(true);
+
     try {
      if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
+      actionLock.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -312,18 +382,28 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         });
 
       alert("Send Back ✅");
+      actionLock.current = false;
+      setIsSubmitting(false);
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
     } catch (error) {
       console.error(error);
+      actionLock.current = false;
+      setIsSubmitting(false);
     }
   };
 
   // ✅ Reject
   const handleReject = async () => {
+    if (actionLock.current) return;
+    actionLock.current = true;
+    setIsSubmitting(true);
+
     try {
       if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
+      actionLock.current = false;
+      setIsSubmitting(false);
       return;
     }
      
@@ -367,11 +447,15 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         });
 
       alert("Rejected ❌");
+      actionLock.current = false;
+      setIsSubmitting(false);
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
 
     } catch (error) {
       console.error(error);
+      actionLock.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -391,7 +475,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
             <div className='Main-Boxpoup'>
               <div className="bordered">
                 <img src={logo} />
-                <h1> Advance Payment (Approver) </h1>
+                <h1>Capex Advance Payment (Approver) </h1>
               </div>
               {approvalMatrix.length === 0 ? (
                 <p>No approval data</p>
@@ -876,7 +960,8 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                       <input
                         type="date"
                         value={voucherDate}
-                        onChange={(e) => setVoucherDate(e.target.value)} className='form-control'
+                        onChange={(e) => setVoucherDate(e.target.value)}
+                        max={new Date().toISOString().split("T")[0]}  className='form-control'
                       />
                     </div>
                     <div className="col-md-4">
@@ -895,16 +980,103 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                     </div>
 
                   </div>
+                   <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Previous Advances</label>
+              </div>
+              <div className="main-formcontainer">
+                <div className="row mb-20">
+                  <div className="col-md-12">
+                    <div style={{ overflowX: "auto" }}>
+                      <div className="table-vert-scroll">
+                        <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                          <thead
+                            className="text-white"
+                            style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                          >
+                            <tr>
+                              <th className="px-4 py-2">PO Number</th>
+                              <th className="px-4 py-2">Previous Advance</th>
+                              <th className="px-4 py-2">Requested Date</th>
+                              <th className="px-4 py-2">Paid Date</th>
+                              <th className="px-4 py-2">MRN No</th>
+                              <th className="px-4 py-2">Settled Amount</th>
+                              <th className="px-4 py-2">Pending Advance</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {previousAdvances.length === 0 ? (
+                              <tr>
+                                <td colSpan={7} style={{ textAlign: "center" }}>
+                                  No previous advances available
+                                </td>
+                              </tr>
+                            ) : (
+                              previousAdvances.map(
+                                (item: any, index: number) => {
+                                  const pending = Math.max(
+                                    0,
+                                    Number(item.RequestAdvanceAmount || 0) -
+                                      Number(item.PaidAmount || 0),
+                                  );
+                                  return (
+                                    <tr key={index}>
+                                      <td>{item.PONumber}</td>
+                                      <td>{item.RequestAdvanceAmount}</td>
+
+                                      <td>
+                                        {item.Created
+                                          ? new Date(
+                                              item.Created,
+                                            ).toLocaleDateString("en-GB")
+                                          : ""}
+                                      </td>
+
+                                      <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                                item.VoucherDate,
+                                              ).toLocaleDateString('en-GB')
+                                            : ""}
+                                        </td>
+
+                                      <td>{item.VoucherNumber}</td>
+                                      <td>{item.PaidAmount}</td>
+                                      <td>{pending}</td>
+                                    </tr>
+                                  );
+                                },
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                         
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
                   <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
-                    <a onClick={handleApprove} className="submit-btn">
-                      Vouch
+                  <a
+                      className={`submit-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                      onClick={!isSubmitting ? handleApprove : undefined}
+                    >
+                      {isSubmitting ? "Processing..." : "Approve"}
                     </a>
-                    <a onClick={handleSendBack} className="Rework-btn">
-                      Send Back
+
+                    <a
+                      className={`Rework-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                      onClick={!isSubmitting ? handleSendBack : undefined}
+                    >
+                      {isSubmitting ? "Processing..." : "Send Back"}
                     </a>
-                    <a onClick={handleReject} className="Reject-btn">
-                      Reject
+
+                    <a
+                      className={`Reject-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                      onClick={!isSubmitting ? handleReject : undefined}
+                    >
+                      {isSubmitting ? "Processing..." : "Reject"}
                     </a>
+
                     <a href="#" onClick={handleExit} className="reset-btn">
                       Exit
                     </a>

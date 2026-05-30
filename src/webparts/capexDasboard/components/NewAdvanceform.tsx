@@ -1,8 +1,9 @@
-import * as React from "react";
+
 import "./advanced.scss";
 import { spfi } from "@pnp/sp";
 import { SPFx } from "@pnp/sp/presets/all";
-import { useEffect, useState } from "react";
+import * as React from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   PeoplePicker,
   PrincipalType,
@@ -22,10 +23,13 @@ interface IVendor {
 
 const NewAdvanceform = ({ context }: any) => {
   const sp = spfi().using(SPFx(context));
+   const submitRef = useRef(false);
+  const draftRef = useRef(false);
   const [attachments, setAttachments] = useState<any[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-
+const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDraftSaving, setIsDraftSaving] = useState(false);
   const [employee, setEmployee] = React.useState<any>({});
   //const [selectedUser, setSelectedUser] = useState<any>(null);
   //const [attachments, setAttachments] = useState<File[]>([]);
@@ -61,8 +65,7 @@ const NewAdvanceform = ({ context }: any) => {
     spHttpClient: context.spHttpClient,
   };
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDraftSaving, setIsDraftSaving] = useState(false);
+ 
   const handleNumberChange = (value: string, setter: any) => {
     // Allow only numbers and decimal (max one dot)
     const regex = /^\d*\.?\d*$/;
@@ -157,12 +160,18 @@ const NewAdvanceform = ({ context }: any) => {
     }
   };
   const getVendors = async () => {
+  try {
     const data = await sp.web.lists
       .getByTitle("VendorMaster")
-      .items.select("Id", "VendorCode", "VendorName")(); // ✅ Id required
+      .items.select("Id", "VendorCode", "VendorName", "Status")
+      .filter("Status eq 'Active'")()
+;
 
-    void setVendors(data);
-  };
+    setVendors(data);
+  } catch (error) {
+    console.error("Vendor fetch error:", error);
+  }
+};
 
   const getFinancialYear = () => {
     const today = new Date();
@@ -343,6 +352,10 @@ const NewAdvanceform = ({ context }: any) => {
       errors.push("Please update PO date");
       setIsSubmitting(false);
     }
+    if (poDate > localDate) {
+      errors.push("PO Date cannot be a future date");
+      // return;
+    }
 
     if (!poTerms) {
       errors.push("Please update PO Terms");
@@ -363,15 +376,13 @@ const NewAdvanceform = ({ context }: any) => {
       errors.push("Please update Paid Amount");
       setIsSubmitting(false);
     }
-
-    // 🔥 NEW VALIDATION
-    if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
+if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
       errors.push(
         "The requested advance amount cannot be greater than the PO Amount (Including GST)",
       );
     }
 
-    // 🔥 Paid Amount should not exceed Advance Amount
+    // 🔥 NEW VALIDATION
     if (
       advanceAmount &&
       paidAmount &&
@@ -379,6 +390,20 @@ const NewAdvanceform = ({ context }: any) => {
     ) {
       errors.push("Paid Amount cannot be greater than Advance Amount");
     }
+
+
+    // 🔥 NEW VALIDATION
+   
+    
+      if (expectedDate) {
+      const today = new Date().setHours(0, 0, 0, 0);
+      const selected = new Date(expectedDate).setHours(0, 0, 0, 0);
+
+      if (selected < today) {
+        errors.push("Settlement date cannot be a past date");
+      }
+    }
+
 
     if (!expectedDate) {
       errors.push("Please update Settlement Date");
@@ -404,51 +429,76 @@ const NewAdvanceform = ({ context }: any) => {
   };
 
   const handleSubmit = async () => {
-    try {
-      debugger;
-      if (isSubmitting) return;
-      setIsSubmitting(true);
-      const errors = validateForm();
+  if (submitRef.current) return;
 
-      if (errors.length > 0) {
-        alert(errors.join("\n")); // 👈 shows exactly like your screenshot
-        return;
-      }
+  submitRef.current = true;
+  setIsSubmitting(true);
 
-      const capexId = await generateCapexId();
+  try {
+    const errors = validateForm();
 
-      // ✅ Validate Vendor
+    if (errors.length > 0) {
+      alert(errors.join("\n"));
 
-      // ✅ Get Email from PeoplePicker
-      const userEmail = selectedUser[0]?.secondaryText;
+      submitRef.current = false;
+      setIsSubmitting(false);
+      return;
+    }
 
-      if (!userEmail) {
-        alert("User email not found");
-        return;
-      }
+    // ✅ Prevent past date
+    const today = new Date().toISOString().split("T")[0];
 
-      // ✅ Ensure User (FIX ERROR)
-      const ensuredUser = await sp.web.ensureUser(userEmail);
+    if (expectedDate < today) {
+      alert("Settlement date cannot be a past date");
 
-      const flow = await buildApprovalFlow();
+      submitRef.current = false;
+      setIsSubmitting(false);
+      return;
+    }
 
-      // 🔥 Set first approver as current
-      if (flow.length > 0) {
-        flow[0].Status = "In Progress";
-      }
+    const capexId = await generateCapexId();
 
-      const currentApprover = flow.length > 0 ? flow[0].Id : null;
-      const currentUser = context.pageContext?.user?.displayName || "User";
-      const wfHistory = [
-        {
-          CurrentApprover: currentUser,
-          ActionTaken: "Submitted",
-          Comment: remarks || "",
-          Date: new Date().toISOString(),
-        },
-      ];
+    // ✅ Get Email from PeoplePicker
+    const userEmail = selectedUser[0]?.secondaryText;
 
-      await sp.web.lists.getByTitle("CapexAdvance").items.add({
+    if (!userEmail) {
+      alert("User email not found");
+
+      submitRef.current = false;
+      setIsSubmitting(false);
+      return;
+    }
+
+    // ✅ Ensure User
+    const ensuredUser = await sp.web.ensureUser(userEmail);
+
+    // ✅ Approval Flow
+    const flow = await buildApprovalFlow();
+
+    if (flow.length > 0) {
+      flow[0].Status = "In Progress";
+    }
+
+    const currentApprover =
+      flow.length > 0 ? flow[0].Id : null;
+
+    const currentUser =
+      context.pageContext?.user?.displayName || "User";
+
+    // ✅ Workflow History
+    const wfHistory = [
+      {
+        CurrentApprover: currentUser,
+        ActionTaken: "Submitted",
+        Comment: remarks || "",
+        Date: new Date().toISOString(),
+      },
+    ];
+
+    // ✅ Save Item
+    await sp.web.lists
+      .getByTitle("CapexAdvance")
+      .items.add({
         Title: capexId,
         CapexID: capexId,
 
@@ -463,8 +513,8 @@ const NewAdvanceform = ({ context }: any) => {
         ContactNo: employee.ContactNo,
         EmployeeStatus: employee.EmployeeStatus,
 
-        // Vendor (LOOKUP)
-        VendorCodeId: selectedVendorId, // ✅ FIX
+        // Vendor
+        VendorCodeId: selectedVendorId,
         VendorName: selectedVendorName,
 
         // PO
@@ -477,11 +527,14 @@ const NewAdvanceform = ({ context }: any) => {
         RequestAdvanceAmount: advanceAmount,
         PaidAmount: paidAmount,
 
-        // Advance
-        ExpectedDateofSettlement: expectedDate ? new Date(expectedDate) : null,
+        // Settlement
+        ExpectedDateofSettlement:
+          expectedDate
+            ? new Date(expectedDate)
+            : null,
 
-        // Person field
-        PICNameId: ensuredUser.Id, // ✅ FIX
+        // PIC
+        PICNameId: ensuredUser.Id,
 
         // Other
         GL: glCode,
@@ -496,41 +549,73 @@ const NewAdvanceform = ({ context }: any) => {
         CurrentApproverId: currentApprover,
 
         WorkFlowHistory: JSON.stringify(wfHistory),
+
         ApproverStatus: "Pending at RM",
       });
-      debugger;
-      await uploadAttachments(capexId); // 🔥 FIXED
 
-      console.log("Attachments:", selectedFiles);
-      alert("Submitted successfully ✅");
+    // ✅ Upload Attachments
+    await uploadAttachments(capexId);
 
-      // 🔥 REDIRECT
-      window.location.href =
-        "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
-    } catch (error) {
-      console.error("ERROR:", error);
-      alert("Error while saving ❌");
-      setIsSubmitting(false);
-    }
-  };
+    console.log("Attachments:", selectedFiles);
+
+    alert("Submitted successfully ✅");
+
+    // ✅ Reset
+    submitRef.current = false;
+    setIsSubmitting(false);
+
+    // ✅ Redirect
+    window.location.href =
+      "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
+
+  } catch (error) {
+    console.error("ERROR:", error);
+
+    alert("Error while saving ❌");
+
+    submitRef.current = false;
+    setIsSubmitting(false);
+  }
+};
 
   const handledraft = async () => {
-    try {
-      if (isSubmitting) return;
-      setIsSubmitting(true);
-      const capexId = await generateCapexId();
 
-      let ensuredUserId: number | null = null;
+    if (draftRef.current) return;
 
-      // ✅ Only process if user selected
-      if (selectedUser && selectedUser.length > 0) {
-        const userEmail = selectedUser[0]?.secondaryText;
+  draftRef.current = true;
 
-        if (userEmail) {
-          const ensuredUser = await sp.web.ensureUser(userEmail);
-          ensuredUserId = ensuredUser.Id;
-        }
+  try {
+    setIsDraftSaving(true);
+
+    const capexId = await generateCapexId();
+
+    let ensuredUserId: number | null = null;
+
+    if (selectedUser && selectedUser.length > 0) {
+      const userEmail = selectedUser[0]?.secondaryText;
+
+      if (userEmail) {
+        const ensuredUser = await sp.web.ensureUser(userEmail);
+        ensuredUserId = ensuredUser.Id;
       }
+    }
+
+    
+      // if (isSubmitting) return;
+      // setIsSubmitting(true);
+      // const capexId = await generateCapexId();
+
+      // let ensuredUserId: number | null = null;
+
+      // // ✅ Only process if user selected
+      // if (selectedUser && selectedUser.length > 0) {
+      //   const userEmail = selectedUser[0]?.secondaryText;
+
+      //   if (userEmail) {
+      //     const ensuredUser = await sp.web.ensureUser(userEmail);
+      //     ensuredUserId = ensuredUser.Id;
+      //   }
+      // }
 
       // ✅ Ensure User (FIX ERROR)
       //  const ensuredUser = await sp.web.ensureUser(userEmail);
@@ -610,12 +695,14 @@ const NewAdvanceform = ({ context }: any) => {
 
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
-    } catch (error) {
-      console.error("ERROR:", error);
-      alert("Error while saving ❌");
-      setIsSubmitting(false);
-    }
-  };
+     } catch (error) {
+    console.error("ERROR:", error);
+    alert("Error while saving ❌");
+
+    draftRef.current = false;
+    setIsDraftSaving(false);
+  }
+};
 
   React.useEffect(() => {
     if (!context) return;
@@ -633,7 +720,7 @@ const NewAdvanceform = ({ context }: any) => {
               {/* 🔹 Header */}
               <div className="bordered">
                 <img src={logo} />
-                <h1> (New advanceed)Advance Payment </h1>
+                <h1> Capex Advance Payment </h1>
               </div>
               {approvalMatrix.length === 0 ? (
                 <p>Loading...</p>
@@ -868,13 +955,13 @@ const NewAdvanceform = ({ context }: any) => {
 
                                       <td>
                                         {item.Created
-                                          ? new Date(item.Created).toLocaleDateString()
+                                          ? new Date(item.Created).toLocaleDateString("en-GB")
                                           : ""}
                                       </td>
 
                                       <td>
                                         {item.VoucherDate
-                                          ? new Date(item.VoucherDate).toLocaleDateString()
+                                          ? new Date(item.VoucherDate).toLocaleDateString("en-GB")
                                           : ""}
                                       </td>
 
@@ -1047,6 +1134,7 @@ const NewAdvanceform = ({ context }: any) => {
                       />
                     </div>
                   </div>
+                  
                   <div className="row mb-20">
                     <div className="col-md-4">
                       <label className="font">PO Date</label>{" "}
@@ -1057,6 +1145,7 @@ const NewAdvanceform = ({ context }: any) => {
                         type="date"
                         value={poDate}
                         className="form-control"
+                        max={new Date().toISOString().split("T")[0]} 
                         onChange={(e) => setPoDate(e.target.value)}
                       />
                     </div>
@@ -1222,6 +1311,9 @@ const NewAdvanceform = ({ context }: any) => {
                       )}
                     </div>
                   </div>
+                   <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Previous Advances</label>
+              </div>
                   <div className="row mb-20">
                     <div className="col-md-12">
                       <div style={{ overflowX: "auto" }}>
@@ -1248,7 +1340,7 @@ const NewAdvanceform = ({ context }: any) => {
                                     colSpan={7}
                                     style={{ textAlign: "center" }}
                                   >
-                                    No Data
+                                   No previous advances available
                                   </td>
                                 </tr>
                               ) : (
@@ -1268,15 +1360,15 @@ const NewAdvanceform = ({ context }: any) => {
                                           {item.Created
                                             ? new Date(
                                                 item.Created,
-                                              ).toLocaleDateString()
+                                              ).toLocaleDateString("en-GB")
                                             : ""}
                                         </td>
 
-                                        <td>
+                                         <td>
                                           {item.VoucherDate
                                             ? new Date(
                                                 item.VoucherDate,
-                                              ).toLocaleDateString()
+                                              ).toLocaleDateString('en-GB')
                                             : ""}
                                         </td>
 
@@ -1303,29 +1395,33 @@ const NewAdvanceform = ({ context }: any) => {
                       marginTop: "1rem",
                     }}
                   >
-                    <a
-                      onClick={!isSubmitting ? handleSubmit : undefined}
-                      className="submit-btn"
-                      style={{
-                        pointerEvents: isSubmitting ? "none" : "auto",
-                        opacity: isSubmitting ? 0.6 : 1,
-                        cursor: isSubmitting ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      {isSubmitting ? "Submitting..." : "Submit"}
-                    </a>
-                    <a
-                      onClick={!isSubmitting ? handledraft : undefined}
-                      className="Rework-btn"
-                      style={{
-                        pointerEvents: isSubmitting ? "none" : "auto",
-                        opacity: isSubmitting ? 0.6 : 1,
-                        cursor: isSubmitting ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      {isSubmitting ? "Saving..." : "Save as Draft"}
-                    </a>
-                    <a href="#" onClick={handleExit} className="reset-btn">
+                   <button
+                  type="button"
+                  onClick={!isSubmitting ? handleSubmit : undefined}
+                  disabled={isSubmitting}
+                  className="submit-btn"
+                  style={{
+                    pointerEvents: isSubmitting ? "none" : "auto",
+                    opacity: isSubmitting ? 0.6 : 1,
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit"}
+                </button>
+                <button
+                  type="button"
+                  onClick={!isDraftSaving ? handledraft : undefined}
+                  disabled={isDraftSaving}
+                  className="Rework-btn"
+                  style={{
+                    pointerEvents: isDraftSaving ? "none" : "auto",
+                    opacity: isDraftSaving ? 0.6 : 1,
+                    cursor: isDraftSaving ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isDraftSaving ? "Saving..." : "Save as Draft"}
+                </button>
+                 <a href="#" onClick={handleExit} className="reset-btn">
                       Exit
                     </a>
                   </div>

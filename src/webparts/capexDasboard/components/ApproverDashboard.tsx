@@ -12,7 +12,6 @@ import ApproverAdvanceForm from "./ApproverAdvanceForm";
 import { spfi } from "@pnp/sp";
 import { SPFx } from "@pnp/sp/presets/all";
 
-
 import logo from "../assets/SonaPNGLogo.png";
 import Edit from "../assets/Pencil.png";
 import User from "../assets/Userlogo.png";
@@ -23,6 +22,8 @@ interface UserDashboardProps {
 
 const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   const sp = spfi().using(SPFx(context));
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   //const [formType, setFormType] = useState<"new" | "view" | null>(null);
   const [formType, setFormType] = useState<"new" | "view" | "approve" | null>(
     null,
@@ -42,7 +43,6 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
       const user = await sp.web.currentUser();
       setCurrentUserName(user.Title);
       setCurrentUserId(user.Id);
-
     } catch (error) {
       console.error("User error:", error);
     }
@@ -64,10 +64,21 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   };
 
   // ✅ GET LIST DATA
-  const getCapexData12 = async () => {
+  const getCapexData = async () => {
+    const currentUser = await sp.web.currentUser();
+
     try {
-      const user = await sp.web.currentUser();
-      const userId = user.Id;
+      let filterQuery = "";
+
+      // ✅ Dynamic filter based on menu
+      if (activeMenu === "Paid") {
+        filterQuery = `Status eq 'Paid'`;
+      } else if (activeMenu === "Rejected") {
+        filterQuery = `Status eq 'Rejected'`;
+      } else {
+        // Default Approver Pending
+        filterQuery = `Status eq 'Pending for Approver'`;
+      }
 
       const items = await sp.web.lists
         .getByTitle("CapexAdvance")
@@ -83,9 +94,8 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           "RequestAdvanceAmount",
           "Status",
         )
-        .expand("VendorCode") // ✅ ADD THIS LINE
-        //
-        .filter(`Status eq 'Pending for Approver'  and CurrentApproverId eq '${userId}'`)
+        .expand("VendorCode")
+        .filter(filterQuery)
         .orderBy("ID", false)();
 
       const formatted = items.map((item: any) => ({
@@ -95,10 +105,8 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           ? new Date(item.Created).toLocaleDateString("en-GB")
           : "",
         EmployeeName: item.EmployeeName,
-
         vendor: item.VendorName || "",
-        vendorCode: item.VendorCode?.VendorCode || "", // 👈 FIX
-
+        vendorCode: item.VendorCode?.VendorCode || "",
         po: item.PONumber || "",
         amount: item.RequestAdvanceAmount || 0,
         status: item.Status || "",
@@ -110,62 +118,63 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     }
   };
 
-  const getCapexData = async () => {
-  try {
-    const user = await sp.web.currentUser();
-    const userId = user.Id;
+  //   const getCapexData = async () => {
+  //   try {
+  //     debugger;
+  //     const user = await sp.web.currentUser();
+  //     const userId = user.Id;
 
-    let filterQuery = "";
+  //     let filterQuery = "";
 
-    // 🔥 Dynamic filter based on menu
-    if (activeMenu === "Paid") {
-      filterQuery = `Status eq 'Paid' and CurrentApproverId eq '${userId}'`;
-    } else if (activeMenu === "Rejected") {
-      filterQuery = `Status eq 'Rejected' and CurrentApproverId eq '${userId}'`;
-    } else {
-      filterQuery = `Status eq 'Pending for Approver' and CurrentApproverId eq '${userId}'`;
-    }
+  //     // 🔥 Dynamic filter based on menu
+  //     if (activeMenu === "Paid") {
+  //       filterQuery = `Status eq 'Paid' and CurrentApproverId eq '${userId}'`;
+  //     } else if (activeMenu === "Rejected") {
+  //       filterQuery = `Status eq 'Rejected' and CurrentApproverId eq '${userId}'`;
+  //     } else {
+  //       filterQuery = `Status eq 'Pending for Approver' and CurrentApproverId eq '${userId}'`;
+  //     }
 
-    const items = await sp.web.lists
-      .getByTitle("CapexAdvance")
-      .items.select(
-        "ID",
-        "Title",
-        "Created",
-        "EmployeeName",
-        "VendorName",
-        "VendorCode/Id",
-        "VendorCode/VendorCode",
-        "PONumber",
-        "RequestAdvanceAmount",
-        "Status"
-      )
-      .expand("VendorCode")
-      .filter(filterQuery)
-      .orderBy("ID", false)();
+  //     const items = await sp.web.lists
+  //       .getByTitle("CapexAdvance")
+  //       .items.select(
+  //         "ID",
+  //         "Title",
+  //         "Created",
+  //         "EmployeeName",
+  //         "VendorName",
+  //         "VendorCode/Id",
+  //         "VendorCode/VendorCode",
+  //         "PONumber",
+  //         "RequestAdvanceAmount",
+  //         "Status"
+  //       )
+  //       .expand("VendorCode")
+  //       .filter(filterQuery)
+  //       .orderBy("ID", false)();
 
-    const formatted = items.map((item: any) => ({
-      ID: item.ID,
-      id: item.Title,
-      date: item.Created
-        ? new Date(item.Created).toLocaleDateString("en-GB")
-        : "",
-      EmployeeName: item.EmployeeName,
+  //     const formatted = items.map((item: any) => ({
+  //       ID: item.ID,
+  //       id: item.Title,
+  //       date: item.Created
+  //         ? new Date(item.Created).toLocaleDateString("en-GB")
+  //         : "",
+  //       EmployeeName: item.EmployeeName,
 
-      vendor: item.VendorName || "",
-      vendorCode: item.VendorCode?.VendorCode || "",
+  //       vendor: item.VendorName || "",
+  //       vendorCode: item.VendorCode?.VendorCode || "",
 
-      po: item.PONumber || "",
-      amount: item.RequestAdvanceAmount || 0,
-      status: item.Status || "",
-    }));
+  //       po: item.PONumber || "",
+  //       amount: item.RequestAdvanceAmount || 0,
+  //       status: item.Status || "",
+  //     }));
 
-    setData(formatted);
+  //     setData(formatted);
 
-  } catch (error) {
-    console.error("Data error:", error);
-  }
-};
+  //   } catch (error) {
+  //     console.error("Data error:", error);
+  //   }
+  // };
   // ✅ VIEW CLICK
   const handleViewClick = async (item: any) => {
     try {
@@ -206,30 +215,37 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
       (!status || item.status?.toLowerCase().includes(status))
     );
   });
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText, statusFilter, activeMenu]);
 
   // ✅ LOAD DATA
- React.useEffect(() => {
-  if (!context) return;
+  React.useEffect(() => {
+    if (!context) return;
 
-  void getLoggedInUser();
-  void getCapexData();
-
-}, [context, activeMenu]);
+    void getLoggedInUser();
+    void getCapexData();
+  }, [context, activeMenu]);
   // ✅ OPEN VIEW PAGE
   if (showForm) {
     if (formType === "approve") {
       return (
         <ApproverAdvanceForm
           context={context}
-          itemId={selectedItem?.ID} // ✅ FIX
+          itemId={selectedItem?.ID}
+          // ✅ FIX
         />
       );
     }
   }
 
   return (
-
-
     <>
       <div style={{ display: "flex", width: "100%" }}>
         <div className="sidebar">
@@ -241,29 +257,55 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           </div>
 
           <div className="sidehead-user">
-            <img src={User} style={{ margin: "10px 20px" }} width={20} height={20} />
+            <img
+              src={User}
+              style={{ margin: "10px 20px" }}
+              width={20}
+              height={20}
+            />
             {currentUserName}
           </div>
 
           <ul className="nav">
             <li className="nav-item">
-              <a className={activeMenu === "My Request" ? " nav-link active" : "nav-link"} onClick={() => setActiveMenu("My Request")} style={{ cursor: "pointer" }}>
+              <a
+                className={
+                  activeMenu === "My Request" ? " nav-link active" : "nav-link"
+                }
+                onClick={() => setActiveMenu("My Request")}
+                style={{ cursor: "pointer" }}
+              >
                 My Request
               </a>
             </li>
             <li className="nav-item">
-              <a className={activeMenu === "Paid" ? " nav-link  active" : "nav-link"} onClick={() => setActiveMenu("Paid")} style={{ cursor: "pointer" }}>
+              <a
+                className={
+                  activeMenu === "Paid" ? " nav-link  active" : "nav-link"
+                }
+                onClick={() => setActiveMenu("Paid")}
+                style={{ cursor: "pointer" }}
+              >
                 Paid
               </a>
             </li>
             <li className="nav-item">
-              <a className={activeMenu === "Rejected" ? "nav-link  active" : "nav-link"} onClick={() => setActiveMenu("Rejected")} style={{ cursor: "pointer" }}>
+              <a
+                className={
+                  activeMenu === "Rejected" ? "nav-link  active" : "nav-link"
+                }
+                onClick={() => setActiveMenu("Rejected")}
+                style={{ cursor: "pointer" }}
+              >
                 Rejected
               </a>
             </li>
           </ul>
         </div>
-        <div className="main" style={{ width: "calc(100% - 250px)", transition: "width 0.3s" }}>
+        <div
+          className="main"
+          style={{ width: "calc(100% - 250px)", transition: "width 0.3s" }}
+        >
           <div className="header">
             <div className="left-banner">
               <div className="logo-text">
@@ -273,10 +315,20 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           </div>
           <div className="col-md-12 mainsecond">
             <div>
-              <input placeholder="Search" value={searchText} className="form-control" style={{ width: "250px;" }} onChange={(e) => setSearchText(e.target.value)} />
+              <input
+                placeholder="Search"
+                value={searchText}
+                className="form-control"
+                style={{ width: "250px;" }}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
             </div>
             <div>
-              <select value={statusFilter} className='formtext-control' onChange={(e) => setStatusFilter(e.target.value)}>
+              <select
+                value={statusFilter}
+                className="formtext-control"
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
                 <option value="">All</option>
                 <option value="Submitted">Submitted</option>
                 <option value="Approved">Approved</option>
@@ -289,7 +341,10 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
             <div style={{ overflowX: "auto" }}>
               <div className="table-vert-scroll">
                 <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                  <thead className="text-white" style={{ backgroundColor: "rgb(60, 62, 69)" }}>
+                  <thead
+                    className="text-white"
+                    style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                  >
                     <tr>
                       <th className="px-4 py-2">Payment ID</th>
                       <th className="px-4 py-2">Requestor Date</th>
@@ -312,7 +367,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                         </td>
                       </tr>
                     ) : (
-                      filteredData.map((item, i) => (
+                      paginatedData.map((item, i) => (
                         <tr key={i}>
                           <td className="px-4 py-2">{item.id}</td>
                           <td className="px-4 py-2">{item.date}</td>
@@ -325,18 +380,47 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                           <td className="px-4 py-2">Approver</td>
                           <td className="px-4 py-2">{item.status}</td>
                           <td className="px-4 py-2">
-                            <span onClick={() => handleApproveClick(item)} style={{ cursor: "pointer" }}>
+                            <span
+                              onClick={() => handleApproveClick(item)}
+                              style={{ cursor: "pointer" }}
+                            >
                               <img src={Edit} width={15} alt="View" />
                             </span>
-
                           </td>
                         </tr>
                       ))
                     )}
                   </tbody>
-
                 </table>
+                 <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginTop: "15px",
+                }}
+              >
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Previous
+                </button>
+
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next
+                </button>
               </div>
+              </div>
+              
             </div>
           </main>
         </div>

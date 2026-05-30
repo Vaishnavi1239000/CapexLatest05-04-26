@@ -19,7 +19,10 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
   const [attachments, setAttachments] = useState<any[]>([]);
   const sp = spfi().using(SPFx(context));
   const [employee, setEmployee] = useState<any>({});
+  const actionLock = React.useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // 🔹 Employee
+  const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedUser, setSelectedUser] = useState<any[]>([]);
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
@@ -79,6 +82,36 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
     }
   };
 
+  const getPreviousAdvances = async (vendorId: number) => {
+    try {
+      debugger;
+      console.log("Fetching for Vendor:", vendorId);
+
+      const data = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.select(
+          "PONumber",
+          "RequestAdvanceAmount",
+          "Created",
+          "VoucherDate",
+
+          "PaidAmount",
+          "Status",
+          "VendorCode/Id",
+        )
+        .expand("VendorCode")
+        .filter(`VendorCode/Id eq ${vendorId} and Status eq 'Paid'`)
+        .orderBy("Created", false)();
+
+      console.log("DATA:", data);
+
+      void setPreviousAdvances(data);
+    } catch (error) {
+      console.error("Error fetching previous advances:", error);
+      void setPreviousAdvances([]);
+    }
+  };
+
   const uploadFiles = async () => {
     if (!formData?.CapexID || selectedFiles.length === 0) return;
 
@@ -105,6 +138,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
 
   // ✅ Bind SharePoint Data
   useEffect(() => {
+    debugger;
     if (!formData) return;
 
     setPoNumber(formData.PONumber || "");
@@ -114,7 +148,9 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
     setAdvanceAmount(formData.RequestAdvanceAmount || "");
     setPaidAmount(formData.PaidAmount || "");
     setExpectedDate(formData.ExpectedDateofSettlement?.split("T")[0] || "");
-
+ if (formData.VendorCodeId) {
+      void getPreviousAdvances(formData.VendorCodeId);
+    }
     setVendorName(formData.VendorName || "");
     setSelectedVendorId(formData.VendorCodeId || null); // ✅ ADD THIS
     setSelectedVendorName(formData.VendorName || ""); // ✅ ADD THIS
@@ -216,6 +252,9 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
   useEffect(() => {
     void getLoggedInUser();
     void getVendors();
+     if (selectedVendorId) {
+      void getPreviousAdvances(selectedVendorId);
+    }
   }, []);
   return (
     <>
@@ -227,7 +266,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
               {/* 🔹 Header */}
               <div className="bordered">
                 <img src={logo} />
-                <h1> Advance Payment (View) </h1>
+                <h1> Capex Advance Payment (View) </h1>
               </div>
               {approvalMatrix.length === 0 ? (
                 <p>No approval data</p>
@@ -700,6 +739,37 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                           ))}
                         </ul>
                       )}
+                    </div>
+                  </div>
+                    <div className="row mb-20">
+                    <div className="col-md-12">
+                      <div style={{ overflowX: "auto" }}>
+                        <div className="table-vert-scroll">
+                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                            <thead
+                              className="text-white"
+                              style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                            >
+                              <tr>
+                                <th className="px-4 py-2">PO Number</th>
+                                <th className="px-4 py-2">Previous Advance</th>
+                                <th className="px-4 py-2">Requested Date</th>
+                                <th className="px-4 py-2">Paid Date</th>
+                                <th className="px-4 py-2">MRN No</th>
+                                <th className="px-4 py-2">Settled Amount</th>
+                                <th className="px-4 py-2">Pending Advance</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td colSpan={7} style={{ textAlign: "center" }}>
+                                No previous advances available
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className='row mb-20'>

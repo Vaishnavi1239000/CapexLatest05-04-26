@@ -2,7 +2,7 @@ import * as React from "react";
 import "./advanced.scss";
 import { spfi } from "@pnp/sp";
 import { SPFx } from "@pnp/sp/presets/all";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   PeoplePicker,
   PrincipalType,
@@ -27,12 +27,15 @@ const localDate: string = new Date(
   // =========================
   // STATES
   // =========================
+  const [isDraftSaving, setIsDraftSaving] = useState(false);
+  const submitRef = useRef(false);
+  const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const [vendors, setVendors] = useState<IVendor[]>([]);
   const [employee, setEmployee] = useState<any>({});
   const [attachments, setAttachments] = useState<any[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedUser, setSelectedUser] = useState<any[]>([]);
-
+const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [selectedVendorName, setSelectedVendorName] = useState("");
 
@@ -56,7 +59,7 @@ const localDate: string = new Date(
   const [UTRNumber, setUTRNumber] = useState("");
   const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
   const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
-  const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
+  //const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const peoplePickerContext: IPeoplePickerContext = {
     absoluteUrl: context.pageContext.web.absoluteUrl,
     msGraphClientFactory: context.msGraphClientFactory,
@@ -127,11 +130,18 @@ const localDate: string = new Date(
     }
   };
   const getVendors = async () => {
+  try {
     const data = await sp.web.lists
       .getByTitle("VendorMaster")
-      .items.select("Id", "VendorCode", "VendorName")();
-    void setVendors(data);
-  };
+      .items.select("Id", "VendorCode", "VendorName", "Status")
+      .filter("Status eq 'Active'")()
+;
+
+    setVendors(data);
+  } catch (error) {
+    console.error("Vendor fetch error:", error);
+  }
+};
 
   const getLoggedInUser = async () => {
     try {
@@ -198,6 +208,10 @@ const localDate: string = new Date(
     if (!poDate) {
       errors.push("Please update PO date");
     }
+    if (poDate > localDate) {
+      errors.push("PO Date cannot be a future date");
+      // return;
+    }
 
     if (!poTerms) {
       errors.push("Please update PO Terms");
@@ -215,14 +229,13 @@ const localDate: string = new Date(
       errors.push("Please update Paid Amount");
     }
 
-    // 🔥 NEW VALIDATION
-    if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
+   if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
       errors.push(
         "The requested advance amount cannot be greater than the PO Amount (Including GST)",
       );
     }
 
-    // 🔥 Paid Amount should not exceed Advance Amount
+    // 🔥 NEW VALIDATION
     if (
       advanceAmount &&
       paidAmount &&
@@ -231,10 +244,19 @@ const localDate: string = new Date(
       errors.push("Paid Amount cannot be greater than Advance Amount");
     }
 
-    if (!expectedDate) {
-      errors.push("Please update Settlement Date");
-    }
 
+    // 🔥 NEW VALIDATION
+   
+    
+      if (expectedDate) {
+      const today = new Date().setHours(0, 0, 0, 0);
+      const selected = new Date(expectedDate).setHours(0, 0, 0, 0);
+
+      if (selected < today) {
+        errors.push("Settlement date cannot be a past date");
+      }
+    }
+ 
     if (!selectedUser || selectedUser.length === 0) {
       errors.push("Please select PIC Name");
     }
@@ -425,16 +447,105 @@ const handleDraft = async () => {
      // setIsSubmitting(false);
     }
   };
+ const handledraft = async () => {
+    try {
+      debugger;
 
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+     // const flow = await buildApprovalFlow();
+     // const currentApprover = flow.length > 0 ? flow[0].Id : null;
+      
+     const loginName =
+         selectedUser[0]?.secondaryText;
+const ensuredUser = await sp.web.ensureUser(loginName);
+
+      const ensuredUserId = ensuredUser.Id;
+    
+      const existingFlow = formData.ApprovalMatrix
+        ? JSON.parse(formData.ApprovalMatrix)
+        : [];
+
+      // 🔥 preserve history
+      const history = formData.WorkFlowHistory
+        ? JSON.parse(formData.WorkFlowHistory)
+        : [];
+
+      history.push({
+        CurrentApprover: employee.EmployeeName,
+        ActionTaken: "Edited",
+        Comment: remarks,
+        Date: new Date().toISOString(),
+      });
+
+      await sp.web.lists
+        .getByTitle("OpexAdvance")
+        .items.getById(formData.ID)
+        .update({
+          Title: formData.CapexID,
+          CapexID: formData.CapexID,
+
+          EmployeeCode: employee.EmployeeCode,
+          EmployeeName: employee.EmployeeName,
+
+          VendorCodeId: selectedVendorId,
+          VendorName: selectedVendorName,
+
+          PONumber: poNumber,
+          PODate: poDate ? new Date(poDate) : null,
+
+          POAmtGST: poAmount,
+          RequestAdvanceAmount: advanceAmount,
+          PaidAmount: paidAmount,
+
+          ExpectedDateofSettlement: expectedDate
+            ? new Date(expectedDate)
+            : null,
+
+          PICNameId: ensuredUserId,
+
+          GL: glCode,
+          CostCenter: costCenter,
+          Remarks: remarks,
+          Purpose: projectDesc,
+
+          Status: "Draft", // ✅ important change
+          //ApprovalMatrix: JSON.stringify(flow),
+
+         // CurrentApproverId: currentApprover, // 🔥 not started
+
+          WorkFlowHistory: JSON.stringify(history),
+        });
+
+      if (selectedFiles.length > 0) {
+        await uploadFiles();
+      }
+
+      alert("Draft saved successfully ✅");
+      window.location.href =
+        "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/OpexAdvancedForm.aspx?page=User";
+      void handleExit();
+      // window.location.reload();
+    } catch (error) {
+      console.error("ERROR:", error);
+      alert("Error while saving ❌");
+    }
+  };
   
   // =========================
   // UPDATE
   // =========================
   const handleSubmit = async () => {
+      if (submitRef.current) return;
+
+  submitRef.current = true;
+  setIsSubmitting(true);
     try {
       const errors = validateForm();
       if (errors.length > 0) {
         alert(errors.join("\n"));
+        submitRef.current = false;
+      setIsSubmitting(false);
         return;
       }
 
@@ -515,11 +626,15 @@ const handleDraft = async () => {
       }
 
       alert("Updated successfully ✅");
+      submitRef.current = false;
+    setIsSubmitting(false);
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
       void handleExit();
     } catch (e) {
       console.error(e);
+       submitRef.current = false;
+      setIsSubmitting(false);
       alert("Error ❌");
     }
   };
@@ -540,7 +655,11 @@ const handleDraft = async () => {
 
     setVendorName(formData.VendorName || "");
     setSelectedVendorId(formData.VendorCodeId || null); // ✅ ADD THIS
-    void getPreviousAdvances(formData.VendorCodeId || null);
+
+     if (formData.VendorCodeId) {
+      void getPreviousAdvances(formData.VendorCodeId);
+    }
+    //void getPreviousAdvances(formData.VendorCodeId || null);
 
     setSelectedVendorName(formData.VendorName || ""); // ✅ ADD THIS
 
@@ -602,7 +721,12 @@ const handleDraft = async () => {
   useEffect(() => {
     void getLoggedInUser();
     void getVendors();
+    if (selectedVendorId) {
+      void getPreviousAdvances(selectedVendorId);
+    }
   }, []);
+
+  
 
   // =========================
   // UI
@@ -616,7 +740,7 @@ const handleDraft = async () => {
               {/* 🔹 Header */}
               <div className="bordered">
                 <img src={logo} />
-                <h1>Edit Advance Payment </h1>
+                <h1>Capex Edit Advance Payment </h1>
               </div>
               {approvalMatrix.length === 0 ? (
                 <p>No approval data</p>
@@ -1059,6 +1183,7 @@ const handleDraft = async () => {
                       <input
                         type="date"
                         value={poDate}
+                        max={new Date().toISOString().split("T")[0]} 
                         onChange={(e) => setPoDate(e.target.value)}
                         className="form-control"
                       />
@@ -1317,7 +1442,7 @@ const handleDraft = async () => {
                             <tbody>
                               <tr>
                                 <td colSpan={7} style={{ textAlign: "center" }}>
-                                  No Data
+                                  No previous advances available
                                 </td>
                               </tr>
                             </tbody>
@@ -1362,12 +1487,33 @@ const handleDraft = async () => {
                       margin: "10px",
                     }}
                   >
-                    <a className="submit-btn" onClick={handleSubmit}>
-                      Submit
-                    </a>
-                    <a className="draft-btn" onClick={handleDraft}>
-                      Draft
-                    </a>
+                    <button
+                  type="button"
+                  onClick={!isSubmitting ? handleSubmit : undefined}
+                  disabled={isSubmitting}
+                  className="submit-btn"
+                  style={{
+                    pointerEvents: isSubmitting ? "none" : "auto",
+                    opacity: isSubmitting ? 0.6 : 1,
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit"}
+                </button>
+                <button
+                  type="button"
+                  onClick={!isDraftSaving ? handledraft : undefined}
+                  disabled={isDraftSaving}
+                  className="Rework-btn"
+                  style={{
+                    pointerEvents: isDraftSaving ? "none" : "auto",
+                    opacity: isDraftSaving ? 0.6 : 1,
+                    cursor: isDraftSaving ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isDraftSaving ? "Saving..." : "Save as Draft"}
+                </button>
+
                     <a className="reset-btn" onClick={handleExit}>
                       Exit
                     </a>

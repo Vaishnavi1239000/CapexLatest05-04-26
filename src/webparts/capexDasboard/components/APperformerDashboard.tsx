@@ -24,6 +24,8 @@ interface UserDashboardProps {
 
 const APperformerDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   const sp = spfi().using(SPFx(context));
+  const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
   //const [formType, setFormType] = useState<"new" | "view" | null>(null);
   //const [formType, setFormType] = useState<"new" | "view" | "approve" | null>(null);
   const [formType, setFormType] = useState<
@@ -125,85 +127,146 @@ const APperformerDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   //   }
   // };
   // ✅ GET LIST DATA
-const getCapexData = async () => {
-  try {
-    const user = await sp.web.currentUser();
-    const userId = user.Id;
 
-    let filterQuery = "";
+   const getCapexData = async () => {
+    const currentUser = await sp.web.currentUser();
 
-    // 🔥 Dynamic menu-wise filter
-    if (activeMenu === "Paid") {
+    try {
+      let filterQuery = "";
 
-      filterQuery = `
-        Status eq 'Paid' 
-        and CurrentApproverId eq '${userId}'
-      `;
-
-    } else if (activeMenu === "Rejected") {
-
-      filterQuery = `
-        Status eq 'Rejected'
-        and CurrentApproverId eq '${userId}'
-      `;
-
-    } else {
-
-      // My Request
-      filterQuery = `
-        (
-          Status eq 'Pending for PF Approver' 
-          or Status eq 'Pending for PF Approver UTR'
-        )
-        and CurrentApproverId eq '${userId}'
-      `;
-    }
-
-    const items = await sp.web.lists
-      .getByTitle("CapexAdvance")
-      .items.select(
-        "ID",
-        "Title",
-        "Created",
-        "EmployeeName",
-        "VendorName",
-        "VendorCode/Id",
-        "VendorCode/VendorCode",
-        "PONumber",
-        "RequestAdvanceAmount",
-        "Status"
+      if (activeMenu === "My Request") {
+        filterQuery = `
+      (
+        Status eq 'Pending for PF Approver'
+        or Status eq 'Pending for PF Approver UTR'
       )
-      .expand("VendorCode")
-      .filter(filterQuery)
-      .orderBy("ID", false)();
+      and CurrentApprover/Id eq ${currentUser.Id}
+      `;
+      } else if (activeMenu === "Paid") {
+        filterQuery = `Status eq 'Paid'`;
+      } else if (activeMenu === "Rejected") {
+        filterQuery = `Status eq 'Rejected'`;
+      }
 
-    const formatted = items.map((item: any) => ({
-      ID: item.ID,
-      id: item.Title,
+      const items = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.select(
+          "ID",
+          "Title",
+          "Created",
+          "EmployeeName",
+          "VendorName",
+          "VendorCode/Id",
+          "VendorCode/VendorCode",
+          "PONumber",
+          "RequestAdvanceAmount",
+          "Status",
+          "CurrentApprover/Id",
+        )
+        .expand("VendorCode", "CurrentApprover")
+        .filter(filterQuery)
+        .orderBy("ID", false)();
 
-      date: item.Created
-        ? new Date(item.Created).toLocaleDateString("en-GB")
-        : "",
+      const formatted = items.map((item: any) => ({
+        ID: item.ID,
+        id: item.Title,
+        date: item.Created
+          ? new Date(item.Created).toLocaleDateString("en-GB")
+          : "",
+        EmployeeName: item.EmployeeName,
 
-      EmployeeName: item.EmployeeName,
+        vendor: item.VendorName || "",
+        vendorCode: item.VendorCode?.VendorCode || "",
 
-      vendor: item.VendorName || "",
+        po: item.PONumber || "",
+        amount: item.RequestAdvanceAmount || 0,
+        status: item.Status || "",
+      }));
 
-      vendorCode: item.VendorCode?.VendorCode || "",
+      setData(formatted);
+    } catch (error) {
+      console.error("Data error:", error);
+    }
+  };
+// const getCapexData = async () => {
+//   try {
+//     const user = await sp.web.currentUser();
+//     const userId = user.Id;
 
-      po: item.PONumber || "",
+//     let filterQuery = "";
 
-      amount: item.RequestAdvanceAmount || 0,
+//     // 🔥 Dynamic menu-wise filter
+//     if (activeMenu === "Paid") {
 
-      status: item.Status || "",
-    }));
+//       filterQuery = `
+//         Status eq 'Paid' 
+//         and CurrentApproverId eq '${userId}'
+//       `;
 
-    setData(formatted);
+//     } else if (activeMenu === "Rejected") {
 
-  } catch (error) {
-    console.error("Data error:", error);
-  }
-};
+//       filterQuery = `
+//         Status eq 'Rejected'
+//         and CurrentApproverId eq '${userId}'
+//       `;
+
+//     } else {
+
+//       // My Request
+//       filterQuery = `
+//         (
+//           Status eq 'Pending for PF Approver' 
+//           or Status eq 'Pending for PF Approver UTR'
+//         )
+//         and CurrentApproverId eq '${userId}'
+//       `;
+//     }
+
+//     const items = await sp.web.lists
+//       .getByTitle("CapexAdvance")
+//       .items.select(
+//         "ID",
+//         "Title",
+//         "Created",
+//         "EmployeeName",
+//         "VendorName",
+//         "VendorCode/Id",
+//         "VendorCode/VendorCode",
+//         "PONumber",
+//         "RequestAdvanceAmount",
+//         "Status"
+//       )
+//       .expand("VendorCode")
+//       .filter(filterQuery)
+//       .orderBy("ID", false)();
+
+//     const formatted = items.map((item: any) => ({
+//       ID: item.ID,
+//       id: item.Title,
+
+//       date: item.Created
+//         ? new Date(item.Created).toLocaleDateString("en-GB")
+//         : "",
+
+//       EmployeeName: item.EmployeeName,
+
+//       vendor: item.VendorName || "",
+
+//       vendorCode: item.VendorCode?.VendorCode || "",
+
+//       po: item.PONumber || "",
+
+//       amount: item.RequestAdvanceAmount || 0,
+
+//       status: item.Status || "",
+//     }));
+
+//     setData(formatted);
+
+//   } catch (error) {
+//     console.error("Data error:", error);
+//   }
+// };
   // ✅ VIEW CLICK
   const handleViewClick = async (item: any) => {
     try {
@@ -243,6 +306,15 @@ const getCapexData = async () => {
       (!status || item.status?.toLowerCase().includes(status))
     );
   });
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+  
+    const paginatedData = filteredData.slice(startIndex, endIndex);
+    React.useEffect(() => {
+      setCurrentPage(1);
+    }, [searchText, statusFilter, activeMenu]);
   // ✅ LOAD DATA
   React.useEffect(() => {
   if (!context) return;
@@ -353,7 +425,7 @@ const getCapexData = async () => {
                         </td>
                       </tr>
                     ) : (
-                      filteredData.map((item, i) => (
+                       paginatedData.map((item, i) => (
                         <tr key={i}>
                           <td className="px-4 py-2">{item.id}</td>
                           <td className="px-4 py-2">{item.date}</td>
@@ -379,6 +451,33 @@ const getCapexData = async () => {
                   </tbody>
 
                 </table>
+                  <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginTop: "15px",
+                }}
+              >
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Previous
+                </button>
+
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next
+                </button>
+              </div>
               </div>
             </div>
           </main>

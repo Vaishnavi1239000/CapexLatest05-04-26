@@ -10,7 +10,6 @@ import sonalogo from "../assets/SonaPNGLogo.png";
 import userlogo from "../assets/userlogo.png";
 import "../assets/bootstrap/css/bootstrap.css";
 
-
 import logo from "../assets/SonaPNGLogo.png";
 import Edit from "../assets/Pencil.png";
 import View from "../assets/Eye.png";
@@ -28,7 +27,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   const [formType, setFormType] = useState<"new" | "view" | "Edit" | null>(
     null,
   );
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [activeMenu, setActiveMenu] = React.useState("My Request");
   const [searchText, setSearchText] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("");
@@ -43,18 +43,49 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
       const user = await sp.web.currentUser();
       setCurrentUserName(user.Title);
       setCurrentUserId(user.Id);
-
     } catch (error) {
       console.error("User error:", error);
     }
   };
-
-  // ✅ GET LIST DATA
   const getCapexData = async () => {
-    debugger;
     try {
-      const user = await sp.web.currentUser();
-      const userId = user.Id;
+      const currentUser = await sp.web.currentUser();
+
+      let filterQuery = `Author/Id eq ${currentUser.Id}`;
+
+      // ✅ My Request
+      if (activeMenu === "My Request") {
+        filterQuery = `
+        Author/Id eq ${currentUser.Id}
+        and Status ne 'Paid'
+        and Status ne 'Rejected'
+      `
+          .replace(/\n/g, "")
+          .trim();
+      }
+
+      // ✅ Paid
+      else if (activeMenu === "Paid") {
+        filterQuery = `
+        Author/Id eq ${currentUser.Id}
+        and Status eq 'Paid'
+      `
+          .replace(/\n/g, "")
+          .trim();
+      }
+
+      // ✅ Rejected
+      else if (activeMenu === "Rejected") {
+        filterQuery = `
+        Author/Id eq ${currentUser.Id}
+        and Status eq 'Rejected'
+      `
+          .replace(/\n/g, "")
+          .trim();
+      }
+
+      console.log("Filter Query:", filterQuery);
+
       const items = await sp.web.lists
         .getByTitle("CapexAdvance")
         .items.select(
@@ -64,15 +95,15 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           "EmployeeName",
           "VendorName",
           "VendorCode/Id",
-          "VendorCode/VendorCode", // 👈 IMPORTANT
+          "VendorCode/VendorCode",
           "PONumber",
           "RequestAdvanceAmount",
-          "Status"
+          "Status",
+          "Author/Id",
         )
-        .expand("VendorCode")
-        .filter(`AuthorId eq '${userId}'`) // 👈 MUST
+        .expand("VendorCode", "Author")
+        .filter(filterQuery)
         .orderBy("ID", false)();
-
 
       const formatted = items.map((item: any) => ({
         ID: item.ID,
@@ -81,21 +112,64 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           ? new Date(item.Created).toLocaleDateString("en-GB")
           : "",
         EmployeeName: item.EmployeeName,
-
         vendor: item.VendorName || "",
-        vendorCode: item.VendorCode?.VendorCode || "", // 👈 FIX
-
+        vendorCode: item.VendorCode?.VendorCode || "",
         po: item.PONumber || "",
         amount: item.RequestAdvanceAmount || 0,
         status: item.Status || "",
       }));
-
 
       setData(formatted);
     } catch (error) {
       console.error("Data error:", error);
     }
   };
+
+  // ✅ GET LIST DATA
+  // const getCapexData = async () => {
+  //   debugger;
+  //   try {
+  //     const user = await sp.web.currentUser();
+  //     const userId = user.Id;
+  //     const items = await sp.web.lists
+  //       .getByTitle("CapexAdvance")
+  //       .items.select(
+  //         "ID",
+  //         "Title",
+  //         "Created",
+  //         "EmployeeName",
+  //         "VendorName",
+  //         "VendorCode/Id",
+  //         "VendorCode/VendorCode", // 👈 IMPORTANT
+  //         "PONumber",
+  //         "RequestAdvanceAmount",
+  //         "Status"
+  //       )
+  //       .expand("VendorCode")
+  //       .filter(`AuthorId eq '${userId}'`) // 👈 MUST
+  //       .orderBy("ID", false)();
+
+  //     const formatted = items.map((item: any) => ({
+  //       ID: item.ID,
+  //       id: item.Title,
+  //       date: item.Created
+  //         ? new Date(item.Created).toLocaleDateString("en-GB")
+  //         : "",
+  //       EmployeeName: item.EmployeeName,
+
+  //       vendor: item.VendorName || "",
+  //       vendorCode: item.VendorCode?.VendorCode || "", // 👈 FIX
+
+  //       po: item.PONumber || "",
+  //       amount: item.RequestAdvanceAmount || 0,
+  //       status: item.Status || "",
+  //     }));
+
+  //     setData(formatted);
+  //   } catch (error) {
+  //     console.error("Data error:", error);
+  //   }
+  // };
 
   // ✅ VIEW CLICK
   const handleViewClick = async (item: any) => {
@@ -152,6 +226,16 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     );
   });
 
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText, statusFilter, activeMenu]);
+
   // ✅ LOAD DATA
   React.useEffect(() => {
     if (!context) return;
@@ -205,7 +289,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
 
   return (
     <>
-
       <div style={{ display: "flex", width: "100%" }}>
         <div className="sidebar">
           <div className="sidehead">
@@ -216,29 +299,55 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           </div>
 
           <div className="sidehead-user">
-            <img src={User} style={{ margin: "10px 20px" }} width={20} height={20} />
+            <img
+              src={User}
+              style={{ margin: "10px 20px" }}
+              width={20}
+              height={20}
+            />
             {currentUserName}
           </div>
 
           <ul className="nav">
             <li className="nav-item">
-              <a className={activeMenu === "My Request" ? " nav-link active" : "nav-link"} onClick={() => setActiveMenu("My Request")} style={{ cursor: "pointer" }}>
+              <a
+                className={
+                  activeMenu === "My Request" ? " nav-link active" : "nav-link"
+                }
+                onClick={() => setActiveMenu("My Request")}
+                style={{ cursor: "pointer" }}
+              >
                 My Request
               </a>
             </li>
             <li className="nav-item">
-              <a className={activeMenu === "Paid" ? " nav-link  active" : "nav-link"} onClick={() => setActiveMenu("Paid")} style={{ cursor: "pointer" }}>
+              <a
+                className={
+                  activeMenu === "Paid" ? " nav-link  active" : "nav-link"
+                }
+                onClick={() => setActiveMenu("Paid")}
+                style={{ cursor: "pointer" }}
+              >
                 Paid
               </a>
             </li>
             <li className="nav-item">
-              <a className={activeMenu === "Rejected" ? "nav-link  active" : "nav-link"} onClick={() => setActiveMenu("Rejected")} style={{ cursor: "pointer" }}>
+              <a
+                className={
+                  activeMenu === "Rejected" ? "nav-link  active" : "nav-link"
+                }
+                onClick={() => setActiveMenu("Rejected")}
+                style={{ cursor: "pointer" }}
+              >
                 Rejected
               </a>
             </li>
           </ul>
         </div>
-        <div className="main" style={{ width: "calc(100% - 250px)", transition: "width 0.3s" }}>
+        <div
+          className="main"
+          style={{ width: "calc(100% - 250px)", transition: "width 0.3s" }}
+        >
           <div className="header">
             <div className="left-banner">
               <div className="logo-text">
@@ -249,10 +358,20 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           <div className="mainsecondapprove">
             <div className="mainsecondsmall">
               <div>
-                <input placeholder="Search" value={searchText} className="form-control" style={{ width: "250px;" }} onChange={(e) => setSearchText(e.target.value)} />
+                <input
+                  placeholder="Search"
+                  value={searchText}
+                  className="form-control"
+                  style={{ width: "250px;" }}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
               </div>
               <div>
-                <select value={statusFilter} className='formtext-control' onChange={(e) => setStatusFilter(e.target.value)}>
+                <select
+                  value={statusFilter}
+                  className="formtext-control"
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
                   <option value="">All</option>
                   <option value="Submitted">Submitted</option>
                   <option value="Approved">Approved</option>
@@ -262,14 +381,26 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
               </div>
             </div>
             <div>
-              <a onClick={() => { setSelectedItem(null); setFormType("new"); setShowForm(true); }} className='create-button'>New Request</a>
+              <a
+                onClick={() => {
+                  setSelectedItem(null);
+                  setFormType("new");
+                  setShowForm(true);
+                }}
+                className="create-button"
+              >
+                New Request
+              </a>
             </div>
           </div>
           <main className="Main-Dash mx-2">
             <div style={{ overflowX: "auto" }}>
               <div className="table-vert-scroll">
                 <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                  <thead className="text-white" style={{ backgroundColor: "rgb(60, 62, 69)" }}>
+                  <thead
+                    className="text-white"
+                    style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                  >
                     <tr>
                       <th className="px-4 py-2">Payment ID</th>
                       <th className="px-4 py-2">Requestor Date</th>
@@ -292,7 +423,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                         </td>
                       </tr>
                     ) : (
-                      filteredData.map((item, i) => (
+                      paginatedData.map((item, i) => (
                         <tr key={i}>
                           <td className="px-4 py-2">{item.id}</td>
                           <td className="px-4 py-2">{item.date}</td>
@@ -305,12 +436,25 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                           <td className="px-4 py-2">Approver</td>
                           <td className="px-4 py-2">{item.status}</td>
                           <td className="px-4 py-2">
-                            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                              <span onClick={() => handleViewClick(item)} style={{ cursor: "pointer" }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "10px",
+                                alignItems: "center",
+                              }}
+                            >
+                              <span
+                                onClick={() => handleViewClick(item)}
+                                style={{ cursor: "pointer" }}
+                              >
                                 <img src={View} width={15} alt="View" />
                               </span>
-                              {(item.status === "Draft" || item.status === "Send Back") && (
-                                <span onClick={() => handleEditClick(item)} style={{ cursor: "pointer" }}>
+                              {(item.status === "Draft" ||
+                                item.status === "Send Back") && (
+                                <span
+                                  onClick={() => handleEditClick(item)}
+                                  style={{ cursor: "pointer" }}
+                                >
                                   <img src={Edit} width={15} alt="View" />
                                 </span>
                               )}
@@ -321,6 +465,33 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                     )}
                   </tbody>
                 </table>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginTop: "15px",
+                  }}
+                >
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                    Previous
+                  </button>
+
+                  <span>
+                    Page {currentPage} of {totalPages}
+                  </span>
+
+                  <button
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
           </main>

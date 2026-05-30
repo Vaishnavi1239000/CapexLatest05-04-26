@@ -21,6 +21,9 @@ interface IVendor {
 }
 const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
   const sp = spfi().using(SPFx(context));
+  const actionLock = React.useRef(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const [selectedVendorName, setSelectedVendorName] = useState("");
   const [itemData, setItemData] = useState<any>(null);
   const [approverRemarks, setApproverRemarks] = useState("");
@@ -34,6 +37,35 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
     absoluteUrl: context.pageContext.web.absoluteUrl,
     msGraphClientFactory: context.msGraphClientFactory,
     spHttpClient: context.spHttpClient,
+  };
+  const getPreviousAdvances = async (vendorId: number) => {
+    try {
+      debugger;
+      console.log("Fetching for Vendor:", vendorId);
+
+      const data = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.select(
+          "PONumber",
+          "RequestAdvanceAmount",
+          "Created",
+          "VoucherDate",
+
+          "PaidAmount",
+          "Status",
+          "VendorCode/Id",
+        )
+        .expand("VendorCode")
+        .filter(`VendorCode/Id eq ${vendorId} and Status eq 'Paid'`)
+        .orderBy("Created", false)();
+
+      console.log("DATA:", data);
+
+      void setPreviousAdvances(data);
+    } catch (error) {
+      console.error("Error fetching previous advances:", error);
+      void setPreviousAdvances([]);
+    }
   };
   const getAttachments = async (capexId: string) => {
     debugger;
@@ -223,12 +255,18 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
   };
 
   const handleApprove = async () => {
+    if (actionLock.current) return;
+
+    actionLock.current = true;
     try {
      if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
+      actionLock.current = false;
       return;
     }
-   
+    if (isProcessing) return;
+
+      setIsProcessing(true);
       // =========================
       // 🔹 EXISTING FLOW
       // =========================
@@ -367,15 +405,22 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
     } catch (error) {
       console.error("Approve error:", error);
+       actionLock.current = false;
+      setIsProcessing(false);
       alert("Error ❌");
     }
   };
 
   // ✅ Sent Back
   const handleSendBack = async () => {
+    if (actionLock.current) return;
+    actionLock.current = true;
+    setIsProcessing(true);
     try {
       if (!approverRemarks || approverRemarks.trim() === "") {
         alert("Please enter Remarks");
+          actionLock.current = false;
+          setIsProcessing(false);
         return;
       }
 
@@ -420,14 +465,21 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
     } catch (error) {
       console.error(error);
+      actionLock.current = false;
+      setIsProcessing(false);
     }
   };
 
   // ✅ Reject
   const handleReject = async () => {
+    if (actionLock.current) return;
+    actionLock.current = true;
+    setIsProcessing(true);
     try {
       if (!approverRemarks || approverRemarks.trim() === "") {
         alert("Please enter Remarks");
+        actionLock.current = false;
+        setIsProcessing(false);
         return;
       }
 
@@ -472,6 +524,8 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
     } catch (error) {
       console.error(error);
+      actionLock.current = false;
+      setIsProcessing(false);
     }
   };
 
@@ -1021,6 +1075,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                     )}
                   </div>
                 </div>
+               
                 <div
                   style={{
                     display: "flex",
@@ -1030,15 +1085,26 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                     marginTop: "1rem",
                   }}
                 >
-                  <a onClick={handleApprove} className="submit-btn">
-                    Approve
-                  </a>
-                  <a onClick={handleSendBack} className="Rework-btn">
-                    Send Back
-                  </a>
-                  <a onClick={handleReject} className="Reject-btn">
-                    Reject
-                  </a>
+                  <a
+                      className={`submit-btn ${isProcessing ? "disabled-btn" : ""}`}
+                      onClick={!isProcessing ? handleApprove : undefined}
+                    >
+                      {isProcessing ? "Processing..." : "Approve"}
+                    </a>
+
+                    <a
+                      className={`Rework-btn ${isProcessing ? "disabled-btn" : ""}`}
+                      onClick={!isProcessing ? handleSendBack : undefined}
+                    >
+                      {isProcessing ? "Processing..." : "Send Back"}
+                    </a>
+
+                    <a
+                      className={`Reject-btn ${isProcessing ? "disabled-btn" : ""}`}
+                      onClick={!isProcessing ? handleReject : undefined}
+                    >
+                      {isProcessing ? "Processing..." : "Reject"}
+                    </a>
                   <a href="#" onClick={handleExit} className="reset-btn">
                     Exit
                   </a>
