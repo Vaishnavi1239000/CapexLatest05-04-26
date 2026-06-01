@@ -104,8 +104,82 @@ const getPreviousAdvances = async (vendorId: number) => {
       console.error("Vendor fetch error:", error);
     }
   };
-  // ✅ Fetch Item by ID
   const getItemById = async () => {
+    try {
+      debugger;
+
+      const item = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.getById(itemId)
+        .select(
+          "*",
+          "PICName/Title",
+          "VendorCode/Id",
+          "VendorCode/VendorCode",
+          "Author/Id",
+          "Author/Title",
+          "Author/EMail",
+        )
+        .expand("PICName", "VendorCode", "Author")();
+
+      console.log("ITEM DATA:", item);
+
+      setItemData(item);
+
+      // ✅ Vendor Id
+      const vendorId = item?.VendorCode?.Id || null;
+
+      console.log("Vendor Id:", vendorId);
+
+      setSelectedVendorId(vendorId);
+
+      // ✅ Vendor Name
+      setSelectedVendorName(item?.VendorName || "");
+
+      // ✅ Attachments
+      if (item.CapexID) {
+        await getAttachments(item.CapexID);
+      }
+
+      // ✅ Approval Matrix
+      if (item.ApprovalMatrix) {
+        try {
+          const parsed =
+            typeof item.ApprovalMatrix === "string"
+              ? JSON.parse(item.ApprovalMatrix)
+              : item.ApprovalMatrix;
+
+          setApprovalMatrix(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error("ApprovalMatrix parse error", e);
+          setApprovalMatrix([]);
+        }
+      } else {
+        setApprovalMatrix([]);
+      }
+
+      // ✅ Workflow History
+      if (item.WorkFlowHistory) {
+        try {
+          const parsed =
+            typeof item.WorkFlowHistory === "string"
+              ? JSON.parse(item.WorkFlowHistory)
+              : item.WorkFlowHistory;
+
+          setWorkflowHistory(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error("WorkFlowHistory parse error", e);
+          setWorkflowHistory([]);
+        }
+      } else {
+        setWorkflowHistory([]);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+  // ✅ Fetch Item by ID
+  const getItemByI1d = async () => {
     try {
 
 
@@ -167,34 +241,55 @@ const getPreviousAdvances = async (vendorId: number) => {
       console.error("Fetch error:", error);
     }
   };
-
-  useEffect(() => {
+ useEffect(() => {
     if (!context || !itemId) return;
 
     const loadData = async () => {
-      await getItemById();    // 👈 FIRST load item to get VendorCode
-      await getVendors();     // 👈 FIRST load vendors
-     // await getItemById();    // 👈 THEN item
-      if (selectedVendorId) {
-      void getPreviousAdvances(selectedVendorId);
-    }
+      debugger;
+
+      //await getLoggedInUser();
+
+      // ✅ Vendors
+      await getVendors();
+
+      // ✅ Item Details
+      await getItemById();
     };
 
     void loadData();
   }, [context, itemId]);
 
+  // useEffect(() => {
+  //   if (!context || !itemId) return;
+
+  //   const loadData = async () => {
+  //     await getItemById();    // 👈 FIRST load item to get VendorCode
+  //     await getVendors();     // 👈 FIRST load vendors
+  //    // await getItemById();    // 👈 THEN item
+     
+  //   };
+
+  //   void loadData();
+  // }, [context, itemId]);
+ useEffect(() => {
+    if (selectedVendorId) {
+      console.log("Calling Previous Advances:", selectedVendorId);
+
+      void getPreviousAdvances(selectedVendorId);
+    }
+  }, [selectedVendorId]);
 
   // ✅ Approve
   const handleApprove = async () => {
       if (actionLock.current) return;
 
-    actionLock.current = true;
+   // actionLock.current = true;
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
      if (!UTRDate || UTRDate.trim() === "") {
         alert("Please enter UTR Date");
-        actionLock.current = false;
+        //actionLock.current = false;
         setIsSubmitting(false);
         return;
       }
@@ -202,20 +297,20 @@ const getPreviousAdvances = async (vendorId: number) => {
         if (UTRDate > localDate) {
       alert("UTRDate cannot be a future date");
       // return;
-       actionLock.current = false;
+       //actionLock.current = false;
         setIsSubmitting(false);
         return;
     }
       if (!UTRNumber || UTRNumber.trim() === "") {
         alert("Please enter UTR Number");
-        actionLock.current = false;
+        //actionLock.current = false;
         setIsSubmitting(false);
         return;
       }
 
       if (!UTRRemarks || UTRRemarks.trim() === "") {
         alert("Please enter UTR Remarks");
-        actionLock.current = false;
+        //actionLock.current = false;
         setIsSubmitting(false);
         return;
       }
@@ -264,26 +359,28 @@ const getPreviousAdvances = async (vendorId: number) => {
         });
 
       alert("Paid ✅");
-      actionLock.current = false;
-      setIsSubmitting(false);
+     
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
     } catch (error) {
       console.error(error);
-      actionLock.current = false;
-      setIsSubmitting(false);
+      
     }
+     finally {
+    //actionLock.current = false;
+      setIsSubmitting(false);
+  }
   };
   // ✅ Sent Back
   const handleSendBack = async () => {
       if (actionLock.current) return;
-    actionLock.current = true;
+   // actionLock.current = true;
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
       if (!UTRRemarks || UTRRemarks.trim() === "") {
         alert("Please enter UTR Remarks");
-        actionLock.current = false;
+        //actionLock.current = false;
         setIsSubmitting(false);
         return;
       }
@@ -327,26 +424,29 @@ const getPreviousAdvances = async (vendorId: number) => {
         });
 
       alert("Send Back ✅");
-        actionLock.current = false;
+        //actionLock.current = false;
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
 
     } catch (error) {
       console.error(error);
-      actionLock.current = false;
-      setIsSubmitting(false);
+     
     }
+     finally {
+    //actionLock.current = false;
+      setIsSubmitting(false);
+  }
   };
   // ✅ Reject
   const handleReject = async () => {
       if (actionLock.current) return;
-    actionLock.current = true;
+   // actionLock.current = true;
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
       if (!UTRRemarks || UTRRemarks.trim() === "") {
       alert("Please enter UTR Remarks");
-      actionLock.current = false;
+      //actionLock.current = false;
       setIsSubmitting(false);
       return;
     }
@@ -391,16 +491,18 @@ const getPreviousAdvances = async (vendorId: number) => {
         });
 
       alert("Rejected ❌");
-      actionLock.current = false;
-      setIsSubmitting(false);
+     
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
 
     } catch (error) {
       console.error(error);
-      actionLock.current = false;
-      setIsSubmitting(false);
+     
     }
+     finally {
+    //actionLock.current = false;
+      setIsSubmitting(false);
+  }
   };
 
   const handleExit = () => {

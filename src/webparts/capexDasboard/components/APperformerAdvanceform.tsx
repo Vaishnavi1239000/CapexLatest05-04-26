@@ -214,32 +214,32 @@ const localDate: string = new Date(
   const handleApprove = async () => {
     if (actionLock.current) return;
 
-  actionLock.current = true;
+ // actionLock.current = true;
     if (isSubmitting) return;
     try {
       setIsSubmitting(true);
       if (!voucherDate || voucherDate.trim() === "") {
       alert("Please enter Voucher Date");
-      actionLock.current = false;
-        setIsSubmitting(false);
+      //actionLock.current = false;
+      setIsSubmitting(false);
       return;
     }
       if (voucherDate > localDate) {
       alert("VoucherDate cannot be a future date");
       // return;
-       actionLock.current = false;
+       //actionLock.current = false;
         setIsSubmitting(false);
         return;
     }
     if (!voucherNumber || voucherNumber.trim() === "") {
       alert("Please enter Voucher Number");
-      actionLock.current = false;
+      //actionLock.current = false;
         setIsSubmitting(false);
       return;
     }
      if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
-      actionLock.current = false;
+      //actionLock.current = false;
         setIsSubmitting(false);
       return;
     }
@@ -315,30 +315,31 @@ const localDate: string = new Date(
         });
 
       alert("Approved successfully ✅");
-      actionLock.current = false;
-      setIsSubmitting(false);
-
+      
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
 
     } catch (error) {
       console.error("Approve error:", error);
       alert("Error ❌");
-      actionLock.current = false;
-        setIsSubmitting(false);
+      
     }
+     finally {
+    //actionLock.current = false;
+      setIsSubmitting(false);
+  }
   };
 
   // ✅ Sent Back
   const handleSendBack = async () => {
     if (actionLock.current) return;
-    actionLock.current = true;
+   // actionLock.current = true;
     setIsSubmitting(true);
 
     try {
      if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
-      actionLock.current = false;
+      //actionLock.current = false;
       setIsSubmitting(false);
       return;
     }
@@ -382,27 +383,29 @@ const localDate: string = new Date(
         });
 
       alert("Send Back ✅");
-      actionLock.current = false;
-      setIsSubmitting(false);
+     
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
     } catch (error) {
       console.error(error);
-      actionLock.current = false;
-      setIsSubmitting(false);
+      
     }
+     finally {
+    //actionLock.current = false;
+      setIsSubmitting(false);
+  }
   };
 
   // ✅ Reject
   const handleReject = async () => {
     if (actionLock.current) return;
-    actionLock.current = true;
+   // actionLock.current = true;
     setIsSubmitting(true);
 
     try {
       if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
-      actionLock.current = false;
+      //actionLock.current = false;
       setIsSubmitting(false);
       return;
     }
@@ -447,16 +450,18 @@ const localDate: string = new Date(
         });
 
       alert("Rejected ❌");
-      actionLock.current = false;
-      setIsSubmitting(false);
+   
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
 
     } catch (error) {
       console.error(error);
-      actionLock.current = false;
-      setIsSubmitting(false);
+     
     }
+    finally {
+    //actionLock.current = false;
+      setIsSubmitting(false);
+  }
   };
 
   const handleExit = () => {

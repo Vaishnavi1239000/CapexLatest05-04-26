@@ -122,9 +122,82 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
       console.error("Vendor fetch error:", error);
     }
   };
+ const getItemById = async () => {
+    try {
+      debugger;
 
+      const item = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.getById(itemId)
+        .select(
+          "*",
+          "PICName/Title",
+          "VendorCode/Id",
+          "VendorCode/VendorCode",
+          "Author/Id",
+          "Author/Title",
+          "Author/EMail",
+        )
+        .expand("PICName", "VendorCode", "Author")();
+
+      console.log("ITEM DATA:", item);
+
+      setItemData(item);
+
+      // ✅ Vendor Id
+      const vendorId = item?.VendorCode?.Id || null;
+
+      console.log("Vendor Id:", vendorId);
+
+      setSelectedVendorId(vendorId);
+
+      // ✅ Vendor Name
+      setSelectedVendorName(item?.VendorName || "");
+
+      // ✅ Attachments
+      if (item.CapexID) {
+        await getAttachments(item.CapexID);
+      }
+
+      // ✅ Approval Matrix
+      if (item.ApprovalMatrix) {
+        try {
+          const parsed =
+            typeof item.ApprovalMatrix === "string"
+              ? JSON.parse(item.ApprovalMatrix)
+              : item.ApprovalMatrix;
+
+          setApprovalMatrix(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error("ApprovalMatrix parse error", e);
+          setApprovalMatrix([]);
+        }
+      } else {
+        setApprovalMatrix([]);
+      }
+
+      // ✅ Workflow History
+      if (item.WorkFlowHistory) {
+        try {
+          const parsed =
+            typeof item.WorkFlowHistory === "string"
+              ? JSON.parse(item.WorkFlowHistory)
+              : item.WorkFlowHistory;
+
+          setWorkflowHistory(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error("WorkFlowHistory parse error", e);
+          setWorkflowHistory([]);
+        }
+      } else {
+        setWorkflowHistory([]);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
   // ✅ Fetch Item by ID
-  const getItemById = async () => {
+  const getItemById1 = async () => {
     try {
       const item = await sp.web.lists
         .getByTitle("CapexAdvance")
@@ -192,14 +265,30 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
     if (!context || !itemId) return;
 
     const loadData = async () => {
-      await getItemById(); // 👈 FIRST load item to get VendorCode
-      await getVendors(); // 👈 FIRST load vendors
-      await getItemById(); // 👈 THEN item
+      debugger;
+
+      //await getLoggedInUser();
+
+      // ✅ Vendors
+      await getVendors();
+
+      // ✅ Item Details
+      await getItemById();
     };
 
     void loadData();
   }, [context, itemId]);
 
+  useEffect(() => {
+    if (selectedVendorId) {
+      console.log("Calling Previous Advances:", selectedVendorId);
+
+      void getPreviousAdvances(selectedVendorId);
+    }
+  }, [selectedVendorId]);
+
+
+ 
   // ✅ Approve
   const buildApprovalFlow = async () => {
     try {
@@ -257,11 +346,11 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
   const handleApprove = async () => {
     if (actionLock.current) return;
 
-    actionLock.current = true;
+    //actionLock.current = true;
     try {
      if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
-      actionLock.current = false;
+      //actionLock.current = false;
       return;
     }
     if (isProcessing) return;
@@ -405,21 +494,24 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
     } catch (error) {
       console.error("Approve error:", error);
-       actionLock.current = false;
-      setIsProcessing(false);
+   
       alert("Error ❌");
     }
+    finally {
+    //actionLock.current = false;
+      setIsProcessing(false);
+  }
   };
 
   // ✅ Sent Back
   const handleSendBack = async () => {
     if (actionLock.current) return;
-    actionLock.current = true;
+   // actionLock.current = true;
     setIsProcessing(true);
     try {
       if (!approverRemarks || approverRemarks.trim() === "") {
         alert("Please enter Remarks");
-          actionLock.current = false;
+          //actionLock.current = false;
           setIsProcessing(false);
         return;
       }
@@ -465,20 +557,23 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
     } catch (error) {
       console.error(error);
-      actionLock.current = false;
-      setIsProcessing(false);
+      
     }
+    finally {
+    //actionLock.current = false;
+      setIsProcessing(false);
+  }
   };
 
   // ✅ Reject
   const handleReject = async () => {
     if (actionLock.current) return;
-    actionLock.current = true;
+   // actionLock.current = true;
     setIsProcessing(true);
     try {
       if (!approverRemarks || approverRemarks.trim() === "") {
         alert("Please enter Remarks");
-        actionLock.current = false;
+        //actionLock.current = false;
         setIsProcessing(false);
         return;
       }
@@ -524,9 +619,12 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
     } catch (error) {
       console.error(error);
-      actionLock.current = false;
-      setIsProcessing(false);
+      
     }
+    finally {
+    //actionLock.current = false;
+      setIsProcessing(false);
+  }
   };
 
   const handleExit = () => {

@@ -86,7 +86,32 @@ const [isSubmitting, setIsSubmitting] = useState(false);
       console.error("Delete error:", error);
     }
   };
+const handleDeleteAttachment = async (fileName: string) => {
+    try {
+      if (!formData?.CapexID) return;
 
+      const safeCapexId = formData.CapexID.replace(/\//g, "_");
+
+      const folderPath = `/sites/SonaFinance/CapexAdvanceDocs/${safeCapexId}`;
+
+      await sp.web
+        .getFolderByServerRelativePath(folderPath)
+        .files.getByUrl(fileName)
+        .recycle();
+
+      // Update UI after delete
+      const updatedFiles = attachments.filter(
+        (file: any) => file.Name !== fileName,
+      );
+
+      setAttachments(updatedFiles);
+
+      alert("Attachment deleted successfully ✅");
+    } catch (error) {
+      console.error("Delete attachment error:", error);
+      alert("Error deleting attachment ❌");
+    }
+  };
   const handleRemoveFile = (index: number) => {
     const updatedFiles = [...selectedFiles];
     updatedFiles.splice(index, 1);
@@ -458,9 +483,12 @@ const handleDraft = async () => {
       
      const loginName =
          selectedUser[0]?.secondaryText;
-const ensuredUser = await sp.web.ensureUser(loginName);
+////const ensuredUser = await sp.web.ensureUser(loginName);
 
-      const ensuredUserId = ensuredUser.Id;
+      //const ensuredUserId = ensuredUser.Id;
+        const ensuredUser = await sp.web.ensureUser(
+        selectedUser[0]?.secondaryText,
+      );
     
       const existingFlow = formData.ApprovalMatrix
         ? JSON.parse(formData.ApprovalMatrix)
@@ -479,7 +507,7 @@ const ensuredUser = await sp.web.ensureUser(loginName);
       });
 
       await sp.web.lists
-        .getByTitle("OpexAdvance")
+        .getByTitle("CapexAdvance")
         .items.getById(formData.ID)
         .update({
           Title: formData.CapexID,
@@ -502,12 +530,12 @@ const ensuredUser = await sp.web.ensureUser(loginName);
             ? new Date(expectedDate)
             : null,
 
-          PICNameId: ensuredUserId,
+          PICNameId: ensuredUser.Id,
 
           GL: glCode,
           CostCenter: costCenter,
           Remarks: remarks,
-          Purpose: projectDesc,
+          ProjectDescription: projectDesc,
 
           Status: "Draft", // ✅ important change
           //ApprovalMatrix: JSON.stringify(flow),
@@ -523,13 +551,17 @@ const ensuredUser = await sp.web.ensureUser(loginName);
 
       alert("Draft saved successfully ✅");
       window.location.href =
-        "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/OpexAdvancedForm.aspx?page=User";
+        "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
       void handleExit();
       // window.location.reload();
     } catch (error) {
       console.error("ERROR:", error);
-      alert("Error while saving ❌");
+      alert(error);
     }
+    finally {
+   // submitRef.current = false;
+    setIsSubmitting(false);
+  }
   };
   
   // =========================
@@ -538,7 +570,7 @@ const ensuredUser = await sp.web.ensureUser(loginName);
   const handleSubmit = async () => {
       if (submitRef.current) return;
 
-  submitRef.current = true;
+  //submitRef.current = true;
   setIsSubmitting(true);
     try {
       const errors = validateForm();
@@ -626,23 +658,27 @@ const ensuredUser = await sp.web.ensureUser(loginName);
       }
 
       alert("Updated successfully ✅");
-      submitRef.current = false;
-    setIsSubmitting(false);
+      
+    
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
       void handleExit();
     } catch (e) {
       console.error(e);
-       submitRef.current = false;
-      setIsSubmitting(false);
+       
       alert("Error ❌");
     }
+    finally {
+    //submitRef.current = false;
+    setIsSubmitting(false);
+  }
   };
 
   // =========================
   // BIND DATA
   // =========================
   useEffect(() => {
+    debugger;
     if (!formData) return;
 
     setPoNumber(formData.PONumber || "");
@@ -718,7 +754,9 @@ const ensuredUser = await sp.web.ensureUser(loginName);
     }
   }, [formData]);
 
-  useEffect(() => {
+  useEffect(() => 
+    {
+      debugger;
     void getLoggedInUser();
     void getVendors();
     if (selectedVendorId) {
@@ -1282,8 +1320,9 @@ const ensuredUser = await sp.web.ensureUser(loginName);
                       </span>
                       <input
                         value={glCode}
-                        onChange={(e) => setExpectedDate(e.target.value)}
+                        // onChange={(e) => setExpectedDate(e.target.value)}
                         className="form-control"
+                        readOnly
                       />
                     </div>
                     <div className="col-md-4">
@@ -1319,106 +1358,94 @@ const ensuredUser = await sp.web.ensureUser(loginName);
                       />
                     </div>
 
-                    <div className="col-md-4">
-                      <label className="font">
-                        Attachments
-                        <span className="required" style={{ color: "red" }}>
-                          *
-                        </span>
-                      </label>
+                   <div className="col-md-4">
+                    <label className="font">
+                      Attachments
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                    </label>
 
-                      {/* Existing Attachments */}
-                      {attachments.length > 0 && (
-                        <ul className="mt-2">
-                          {attachments.map((file: any, index: number) => (
-                            <li
-                              key={index}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                marginBottom: "5px",
+                    {/* Existing Attachments */}
+                    {/* Existing Attachments */}
+                    {attachments.length > 0 && (
+                      <ul className="mt-2">
+                        {attachments.map((file: any, index: number) => (
+                          <li
+                            key={index}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              marginBottom: "5px",
+                            }}
+                          >
+                            <a
+                              href={file.ServerRelativeUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {file.Name}
+                            </a>
+
+                            {/* Delete Existing File */}
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleDeleteAttachment(file.Name)}
+                            >
+                              Delete
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {/* Newly Selected Files */}
+                    {selectedFiles.length > 0 && (
+                      <ul className="mt-2">
+                        {selectedFiles.map((file: File, index: number) => (
+                          <li
+                            key={index}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              marginBottom: "5px",
+                            }}
+                          >
+                            <span>{file.name}</span>
+
+                            {/* Remove Selected File */}
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={() => {
+                                const updatedFiles = selectedFiles.filter(
+                                  (_: File, i: number) => i !== index,
+                                );
+
+                                setSelectedFiles(updatedFiles);
                               }}
                             >
-                              <a
-                                href={file.ServerRelativeUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {file.Name}
-                              </a>
+                              Remove
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
 
-                              {/* Remove Existing Attachment */}
-                              {selectedFiles.length > 0 && (
-                        <ul style={{ marginTop: "10px" }}>
-                          {selectedFiles.map((file, index) => (
-                            <li key={index}>
-                              {file.name}
-                              <button
-                                type="button"
-                                style={{
-                                  marginLeft: "10px",
-                                  color: "red",
-                                  cursor: "pointer",
-                                }}
-                                onClick={() => handleRemoveFile(index)}
-                              >
-                                Remove
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-
-                      {/* Newly Selected Files */}
-                      {selectedFiles.length > 0 && (
-                        <ul className="mt-2">
-                          {selectedFiles.map((file: File, index: number) => (
-                            <li
-                              key={index}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                marginBottom: "5px",
-                              }}
-                            >
-                              <span>{file.name}</span>
-
-                              {/* Remove Selected File */}
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-danger"
-                                onClick={() => {
-                                  const updatedFiles = selectedFiles.filter(
-                                    (_: File, i: number) => i !== index,
-                                  );
-
-                                  setSelectedFiles(updatedFiles);
-                                }}
-                              >
-                                Remove
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-
-                      <input
-                        type="file"
-                        multiple
-                        className="form-control"
-                        onChange={(e) => {
-                          if (e.target.files) {
-                            setSelectedFiles(Array.from(e.target.files));
-                          }
-                        }}
-                      />
-                    </div>
+                    <input
+                      type="file"
+                      multiple
+                      className="form-control"
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          setSelectedFiles(Array.from(e.target.files));
+                        }
+                      }}
+                    />
+                  </div>
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-12">

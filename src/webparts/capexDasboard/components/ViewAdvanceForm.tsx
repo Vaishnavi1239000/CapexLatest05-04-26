@@ -148,11 +148,13 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
     setAdvanceAmount(formData.RequestAdvanceAmount || "");
     setPaidAmount(formData.PaidAmount || "");
     setExpectedDate(formData.ExpectedDateofSettlement?.split("T")[0] || "");
- if (formData.VendorCodeId) {
-      void getPreviousAdvances(formData.VendorCodeId);
-    }
+
     setVendorName(formData.VendorName || "");
     setSelectedVendorId(formData.VendorCodeId || null); // ✅ ADD THIS
+
+     if (formData.VendorCodeId) {
+      void getPreviousAdvances(formData.VendorCodeId);
+    }
     setSelectedVendorName(formData.VendorName || ""); // ✅ ADD THIS
 
     setGlCode(formData.GL || "");

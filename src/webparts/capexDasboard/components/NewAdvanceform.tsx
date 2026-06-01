@@ -431,7 +431,7 @@ if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
   const handleSubmit = async () => {
   if (submitRef.current) return;
 
-  submitRef.current = true;
+  //submitRef.current = true;
   setIsSubmitting(true);
 
   try {
@@ -464,8 +464,7 @@ if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
     if (!userEmail) {
       alert("User email not found");
 
-      submitRef.current = false;
-      setIsSubmitting(false);
+      
       return;
     }
 
@@ -561,9 +560,7 @@ if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
     alert("Submitted successfully ✅");
 
     // ✅ Reset
-    submitRef.current = false;
-    setIsSubmitting(false);
-
+    //resetForm();
     // ✅ Redirect
     window.location.href =
       "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
@@ -573,8 +570,12 @@ if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
 
     alert("Error while saving ❌");
 
-    submitRef.current = false;
-    setIsSubmitting(false);
+   
+  
+  }
+   finally {
+    //submitRef.current = false;
+   setIsSubmitting(false);
   }
 };
 
@@ -582,7 +583,7 @@ if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
 
     if (draftRef.current) return;
 
-  draftRef.current = true;
+ // draftRef.current = true;
 
   try {
     setIsDraftSaving(true);
@@ -699,8 +700,11 @@ if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
     console.error("ERROR:", error);
     alert("Error while saving ❌");
 
-    draftRef.current = false;
-    setIsDraftSaving(false);
+   
+  }
+   finally {
+   // draftRef.current = false;
+   setIsDraftSaving(false);
   }
 };
 
