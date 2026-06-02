@@ -12,7 +12,7 @@ import logo from "../assets/sona-comstarlogo.png";
 import { IPeoplePickerContext } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 interface IProps {
   context: any;
-  itemId: number; // 👈 IMPORTANT
+  itemId: number; 
 }
 interface IVendor {
   Id: number;
@@ -24,6 +24,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
   const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const [attachments, setAttachments] = useState<any[]>([]);
   const today = new Date();
+  const [employee, setEmployee] = useState<any>({});
 
 const localDate: string = new Date(
   today.getTime() - today.getTimezoneOffset() * 60000
@@ -98,25 +99,25 @@ const localDate: string = new Date(
       void setAttachments([]);
     }
   };
-  // ✅ Fetch Item by ID
-  const getItemById = async () => {
+  
+  const getItemById1 = async () => {
     try {
       const item = await sp.web.lists
         .getByTitle("CapexAdvance")
         .items.getById(itemId)
         .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode", "Author/Id","Author/Title","Author/EMail")
         .expand("PICName", "VendorCode", "Author")();
-      // 👈 ADD
+      
 
       setItemData(item);
       //  setApproverRemarks(item.ApproverRemarks || "");
 
-      // ✅ FIX: Set VendorId + Name
+      
       setSelectedVendorId(item.VendorCode?.Id || null);
-      // 🔥 IMPORTANT
+     
       setSelectedVendorName(item.VendorName); // optional
 
-      // ✅ FETCH ATTACHMENTS
+      
       if (item.CapexID) {
         await getAttachments(item.CapexID);
       }
@@ -154,22 +155,153 @@ const localDate: string = new Date(
       console.error("Fetch error:", error);
     }
   };
+const getLoggedInUser = async () => {
+    try {
+      const currentUser = await sp.web.currentUser();
+      const email = currentUser.Email;
 
-  useEffect(() => {
-    if (!context || !itemId) return;
+      const user = await sp.web.lists
+        .getByTitle("EmployeeMaster")
+        .items.select(
+          "EmployeeCode",
+          "EmployeeName",
+          "Division",
+          "Location",
+          "EmployeeEmail",
+          "ReportingManager/Title",
+          "HOD/Title",
+          "ContactNo",
+          "EmployeeStatus",
+          "CostCenter",
+        )
+        .expand("ReportingManager", "HOD")
+        .filter(`EmployeeEmail eq '${email}'`)
+        .top(1)();
 
-    const loadData = async () => {
-      await getItemById(); // 👈 FIRST load item to get VendorCode
-      await getVendors(); // 👈 FIRST load vendors
-     // await getItemById(); // 👈 THEN item
-      if (selectedVendorId) {
+      if (user.length > 0) {
+        setEmployee(user[0]);
+      }
+    } catch (error) {
+      console.log("Error fetching user:", error);
+    }
+  };
+ 
+   useEffect(() => {
+    if (selectedVendorId) {
+      console.log("Calling Previous Advances:", selectedVendorId);
+
       void getPreviousAdvances(selectedVendorId);
     }
+  }, [selectedVendorId]);
+
+  
+  const getItemById = async () => {
+    try {
+      debugger;
+
+      const item = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.getById(itemId)
+        .select(
+          "*",
+          "PICName/Title",
+          "VendorCode/Id",
+          "VendorCode/VendorCode",
+          "Author/Id",
+          "Author/Title",
+          "Author/EMail",
+        )
+        .expand("PICName", "VendorCode", "Author")();
+
+      console.log("ITEM DATA:", item);
+
+      setItemData(item);
+
+      
+      const vendorId = item?.VendorCode?.Id || null;
+
+      console.log("Vendor Id:", vendorId);
+
+      setSelectedVendorId(vendorId);
+
+      
+      setSelectedVendorName(item?.VendorName || "");
+
+      
+      if (item.CapexID) {
+        await getAttachments(item.CapexID);
+      }
+
+      
+      if (item.ApprovalMatrix) {
+        try {
+          const parsed =
+            typeof item.ApprovalMatrix === "string"
+              ? JSON.parse(item.ApprovalMatrix)
+              : item.ApprovalMatrix;
+
+          setApprovalMatrix(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error("ApprovalMatrix parse error", e);
+          setApprovalMatrix([]);
+        }
+      } else {
+        setApprovalMatrix([]);
+      }
+
+      
+      if (item.WorkFlowHistory) {
+        try {
+          const parsed =
+            typeof item.WorkFlowHistory === "string"
+              ? JSON.parse(item.WorkFlowHistory)
+              : item.WorkFlowHistory;
+
+          setWorkflowHistory(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error("WorkFlowHistory parse error", e);
+          setWorkflowHistory([]);
+        }
+      } else {
+        setWorkflowHistory([]);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+
+  
+   useEffect(() => {
+    if (!context || !itemId) return;
+    debugger;
+    const loadData = async () => {
+      debugger;
+
+      await getLoggedInUser();
+
+      
+      await getVendors();
+
+     
+      await getItemById();
     };
 
     void loadData();
   }, [context, itemId]);
 
+
+  useEffect(() => {
+    if (!context || !itemId) return;
+
+    const loadData = async () => {
+      void getLoggedInUser();
+      await getItemById(); 
+      await getVendors(); 
+     
+    };
+
+    void loadData();
+  }, [context, itemId]);
   const buildApprovalFlow = async () => {
 
     const existingFlow = itemData.ApprovalMatrix
@@ -210,7 +342,7 @@ const localDate: string = new Date(
       };
     });
   };
-  // ✅ Approve
+ 
   const handleApprove = async () => {
     if (actionLock.current) return;
 
@@ -244,26 +376,17 @@ const localDate: string = new Date(
       return;
     }
 
-      // =========================
-      // 🔹 OLD FLOW
-      // =========================
       const oldFlow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
         : [];
 
-      // =========================
-      // 🔥 REBUILD NEW FLOW
-      // =========================
+     
       const latestFlow = await buildApprovalFlow();
 
-      // =========================
-      // 🔥 PRESERVE STATUS
-      // =========================
+      
       const finalFlow = mergeFlowWithStatus(oldFlow, latestFlow);
 
-      // =========================
-      // 🔥 CURRENT USER
-      // =========================
+      
       const currentUserId = context.pageContext.legacyPageContext.userId;
 
       const currentIndex = finalFlow.findIndex(
@@ -309,7 +432,7 @@ const localDate: string = new Date(
 
           ApprovalMatrix: JSON.stringify(finalFlow),
 
-          // 🔥 IMPORTANT
+         
           CurrentApproverId: nextApproverId,
           ApproverStatus: "Pending for PF Approver UTR"
         });
@@ -330,7 +453,7 @@ const localDate: string = new Date(
   }
   };
 
-  // ✅ Sent Back
+ 
   const handleSendBack = async () => {
     if (actionLock.current) return;
    // actionLock.current = true;
@@ -396,7 +519,7 @@ const localDate: string = new Date(
   }
   };
 
-  // ✅ Reject
+  
   const handleReject = async () => {
     if (actionLock.current) return;
    // actionLock.current = true;
@@ -468,7 +591,7 @@ const localDate: string = new Date(
     window.location.href = `https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer`;
   };
 
-  // ⛔ Wait until data loads
+  
   if (!itemData) return <div>Loading...</div>;
 
   return (
@@ -859,7 +982,13 @@ const localDate: string = new Date(
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Terms</label>
-                      <input value={itemData.POAdvanceTerms || ""} className="form-control readonly" />
+                      <textarea
+    value={itemData.POAdvanceTerms || ""}
+    className="form-control readonly"
+    rows={3}
+    readOnly
+  />
+                      {/* <input value={itemData.POAdvanceTerms || ""} className="form-control readonly" /> */}
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Amount</label>
@@ -1065,7 +1194,7 @@ const localDate: string = new Date(
                       className={`submit-btn ${isSubmitting ? "disabled-btn" : ""}`}
                       onClick={!isSubmitting ? handleApprove : undefined}
                     >
-                      {isSubmitting ? "Processing..." : "Approve"}
+                      {isSubmitting ? "Processing..." : "Submit"}
                     </a>
 
                     <a

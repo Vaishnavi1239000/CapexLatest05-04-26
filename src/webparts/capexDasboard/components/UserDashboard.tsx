@@ -37,7 +37,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   const [currentUserName, setCurrentUserName] = React.useState("");
   const [selectedItem, setSelectedItem] = React.useState<any>(null);
   const [CurrentUserId, setCurrentUserId] = React.useState<any>(null);
-  // ✅ GET CURRENT USER
+
   const getLoggedInUser = async () => {
     try {
       const user = await sp.web.currentUser();
@@ -47,13 +47,14 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
       console.error("User error:", error);
     }
   };
+
   const getCapexData = async () => {
     try {
       const currentUser = await sp.web.currentUser();
 
       let filterQuery = `Author/Id eq ${currentUser.Id}`;
 
-      // ✅ My Request
+      
       if (activeMenu === "My Request") {
         filterQuery = `
         Author/Id eq ${currentUser.Id}
@@ -64,7 +65,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           .trim();
       }
 
-      // ✅ Paid
+      
       else if (activeMenu === "Paid") {
         filterQuery = `
         Author/Id eq ${currentUser.Id}
@@ -74,7 +75,107 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
           .trim();
       }
 
-      // ✅ Rejected
+      
+      else if (activeMenu === "Rejected") {
+        filterQuery = `
+        Author/Id eq ${currentUser.Id}
+        and Status eq 'Rejected'
+      `
+          .replace(/\n/g, "")
+          .trim();
+      }
+
+      console.log("Filter Query:", filterQuery);
+
+      const items = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.select(
+          "ID",
+          "Title",
+          "Created",
+          "EmployeeName",
+          "VendorName",
+          "VendorCode/Id",
+          "VendorCode/VendorCode",
+          "PONumber",
+          "RequestAdvanceAmount",
+          "Status",
+          "Author/Id",
+        )
+        .expand("VendorCode", "Author")
+        .filter(filterQuery)
+        .orderBy("ID", false)();
+
+      const formatted = items.map((item: any) => ({
+        ID: item.ID,
+        id: item.Title,
+        date: item.Created
+          ? new Date(item.Created).toLocaleDateString("en-GB")
+          : "",
+        EmployeeName: item.EmployeeName,
+        vendor: item.VendorName || "",
+        vendorCode: item.VendorCode?.VendorCode || "",
+        po: item.PONumber || "",
+        amount: item.RequestAdvanceAmount || 0,
+        status: item.Status || "",
+      }));
+
+      setData(formatted);
+    } catch (error) {
+      console.error("Data error:", error);
+    }
+  };
+  const filteredData = data.filter((item) => {
+    const text = searchText.toLowerCase();
+    const status = statusFilter.toLowerCase();
+
+    let menuFilter = true;
+
+    if (activeMenu === "Paid") {
+      menuFilter = item.status?.toLowerCase() === "paid";
+    } else if (activeMenu === "Rejected") {
+      menuFilter = item.status?.toLowerCase() === "rejected";
+    } else if (activeMenu === "My Request") {
+      menuFilter = true;
+    }
+
+    return (
+      menuFilter &&
+      (item.id?.toLowerCase().includes(text) ||
+        item.vendor?.toLowerCase().includes(text) ||
+        item.po?.toLowerCase().includes(text)) &&
+      (!status || item.status?.toLowerCase().includes(status))
+    );
+  });
+
+  const getCapexData1 = async () => {
+    try {
+      const currentUser = await sp.web.currentUser();
+
+      let filterQuery = `Author/Id eq ${currentUser.Id}`;
+
+     
+      if (activeMenu === "My Request") {
+        filterQuery = `
+        Author/Id eq ${currentUser.Id}
+        and Status ne 'Paid'
+        and Status ne 'Rejected'
+      `
+          .replace(/\n/g, "")
+          .trim();
+      }
+
+      
+      else if (activeMenu === "Paid") {
+        filterQuery = `
+        Author/Id eq ${currentUser.Id}
+        and Status eq 'Paid'
+      `
+          .replace(/\n/g, "")
+          .trim();
+      }
+
+      
       else if (activeMenu === "Rejected") {
         filterQuery = `
         Author/Id eq ${currentUser.Id}
@@ -125,53 +226,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     }
   };
 
-  // ✅ GET LIST DATA
-  // const getCapexData = async () => {
-  //   debugger;
-  //   try {
-  //     const user = await sp.web.currentUser();
-  //     const userId = user.Id;
-  //     const items = await sp.web.lists
-  //       .getByTitle("CapexAdvance")
-  //       .items.select(
-  //         "ID",
-  //         "Title",
-  //         "Created",
-  //         "EmployeeName",
-  //         "VendorName",
-  //         "VendorCode/Id",
-  //         "VendorCode/VendorCode", // 👈 IMPORTANT
-  //         "PONumber",
-  //         "RequestAdvanceAmount",
-  //         "Status"
-  //       )
-  //       .expand("VendorCode")
-  //       .filter(`AuthorId eq '${userId}'`) // 👈 MUST
-  //       .orderBy("ID", false)();
 
-  //     const formatted = items.map((item: any) => ({
-  //       ID: item.ID,
-  //       id: item.Title,
-  //       date: item.Created
-  //         ? new Date(item.Created).toLocaleDateString("en-GB")
-  //         : "",
-  //       EmployeeName: item.EmployeeName,
-
-  //       vendor: item.VendorName || "",
-  //       vendorCode: item.VendorCode?.VendorCode || "", // 👈 FIX
-
-  //       po: item.PONumber || "",
-  //       amount: item.RequestAdvanceAmount || 0,
-  //       status: item.Status || "",
-  //     }));
-
-  //     setData(formatted);
-  //   } catch (error) {
-  //     console.error("Data error:", error);
-  //   }
-  // };
-
-  // ✅ VIEW CLICK
+  
   const handleViewClick = async (item: any) => {
     try {
       const fullItem = await sp.web.lists
@@ -203,28 +259,28 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     }
   };
 
-  const filteredData = data.filter((item) => {
-    const text = searchText.toLowerCase();
-    const status = statusFilter.toLowerCase();
+  // const filteredData = data.filter((item) => {
+  //   const text = searchText.toLowerCase();
+  //   const status = statusFilter.toLowerCase();
 
-    let menuFilter = true;
+  //   let menuFilter = true;
 
-    if (activeMenu === "Paid") {
-      menuFilter = item.status?.toLowerCase() === "paid";
-    } else if (activeMenu === "Rejected") {
-      menuFilter = item.status?.toLowerCase() === "rejected";
-    } else if (activeMenu === "My Request") {
-      menuFilter = true;
-    }
+  //   if (activeMenu === "Paid") {
+  //     menuFilter = item.status?.toLowerCase() === "paid";
+  //   } else if (activeMenu === "Rejected") {
+  //     menuFilter = item.status?.toLowerCase() === "rejected";
+  //   } else if (activeMenu === "My Request") {
+  //     menuFilter = true;
+  //   }
 
-    return (
-      menuFilter &&
-      (item.id?.toLowerCase().includes(text) ||
-        item.vendor?.toLowerCase().includes(text) ||
-        item.po?.toLowerCase().includes(text)) &&
-      (!status || item.status?.toLowerCase().includes(status))
-    );
-  });
+  //   return (
+  //     menuFilter &&
+  //     (item.id?.toLowerCase().includes(text) ||
+  //       item.vendor?.toLowerCase().includes(text) ||
+  //       item.po?.toLowerCase().includes(text)) &&
+  //     (!status || item.status?.toLowerCase().includes(status))
+  //   );
+  // });
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
@@ -236,14 +292,15 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     setCurrentPage(1);
   }, [searchText, statusFilter, activeMenu]);
 
-  // ✅ LOAD DATA
-  React.useEffect(() => {
-    if (!context) return;
-    void getLoggedInUser();
-    void getCapexData();
-  }, [context]);
 
-  // ✅ OPEN VIEW PAGE
+ React.useEffect(() => {
+  if (!context) return;
+
+  void getLoggedInUser();
+  void getCapexData();
+}, [context, activeMenu]);
+
+ 
   if (showForm) {
     if (formType === "view") {
       return (
@@ -276,7 +333,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
       return (
         <EditAdvanceForm
           context={context}
-          formData={selectedItem} // ✅ THIS LINE IS MISSING
+          formData={selectedItem}
           onClose={() => {
             setShowForm(false);
             setFormType(null);

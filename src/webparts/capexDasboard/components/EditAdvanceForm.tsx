@@ -24,9 +24,7 @@ const localDate: string = new Date(
 )
   .toISOString()
   .split("T")[0];
-  // =========================
-  // STATES
-  // =========================
+ 
   const [isDraftSaving, setIsDraftSaving] = useState(false);
   const submitRef = useRef(false);
   const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
@@ -66,9 +64,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
     spHttpClient: context.spHttpClient,
   };
 
-  // =========================
-  // LOAD DATA
-  // =========================
+  
 
   const handleDeleteExistingFile = async (file: any) => {
     try {
@@ -128,6 +124,10 @@ const handleDeleteAttachment = async (fileName: string) => {
   const getPreviousAdvances = async (vendorId: number) => {
     try {
       debugger;
+       if (!vendorId) {
+      setPreviousAdvances([]);
+      return;
+    }
       console.log("Fetching for Vendor:", vendorId);
 
       const data = await sp.web.lists
@@ -212,13 +212,6 @@ const handleDeleteAttachment = async (fileName: string) => {
     }
   };
 
-  // =========================
-  // UPLOAD FILES
-  // =========================
-
-  // =========================
-  // VALIDATION
-  // =========================
   const validateForm = () => {
     const errors: string[] = [];
 
@@ -260,7 +253,7 @@ const handleDeleteAttachment = async (fileName: string) => {
       );
     }
 
-    // 🔥 NEW VALIDATION
+    
     if (
       advanceAmount &&
       paidAmount &&
@@ -270,7 +263,7 @@ const handleDeleteAttachment = async (fileName: string) => {
     }
 
 
-    // 🔥 NEW VALIDATION
+    
    
     
       if (expectedDate) {
@@ -327,7 +320,7 @@ const handleDeleteAttachment = async (fileName: string) => {
       const safe = formData.CapexID.replace(/\//g, "_");
       const folderPath = `/sites/SonaFinance/CapexAdvanceDocs/${safe}`;
 
-      // ✅ Ensure folder exists
+      
       await ensureFolder(folderPath);
 
       for (const file of selectedFiles) {
@@ -355,30 +348,30 @@ const handleDeleteAttachment = async (fileName: string) => {
 
       const folderPath = `${webUrl}/${libraryName}/${safeCapexId}`;
 
-      // ✅ Ensure folder
+     
       await sp.web.folders.addUsingPath(`${libraryName}/${safeCapexId}`);
 
-      // ✅ Upload files properly
+     
       for (const file of selectedFiles) {
         await sp.web
           .getFolderByServerRelativePath(folderPath)
           .files.addUsingPath(file.name, file, { Overwrite: true });
       }
 
-      console.log("✅ Files uploaded successfully");
+      console.log("Files uploaded successfully");
     } catch (error) {
-      console.error("❌ Upload error:", error);
+      console.error("Upload error:", error);
     }
   };
 const handleDraft = async () => {
     try {
-      //if (isSubmitting) return;
-      //setIsSubmitting(true);
-      //const capexId = await generateCapexId();
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+     // const capexId = await generateCapexId();
 
       let ensuredUserId: number | null = null;
 
-      // ✅ Only process if user selected
+     
       if (selectedUser && selectedUser.length > 0) {
         const userEmail = selectedUser[0]?.secondaryText;
 
@@ -388,15 +381,7 @@ const handleDraft = async () => {
         }
       }
 
-      // ✅ Ensure User (FIX ERROR)
-      //  const ensuredUser = await sp.web.ensureUser(userEmail);
-
-      //const flow = await buildApprovalFlow();
-
-      // 🔥 Set first approver as current
-      // if (flow.length > 0) {
-      //   flow[0].Status = "In Progress";
-      // }
+     
 
      // const currentApprover = flow.length > 0 ? flow[0].Id : null;
       const currentUser = context.pageContext?.user?.displayName || "User";
@@ -413,7 +398,7 @@ const handleDraft = async () => {
         Title: formData.CapexID,
         CapexID: formData.CapexID,
 
-        // Employee
+        
         EmployeeCode: employee.EmployeeCode,
         EmployeeName: employee.EmployeeName,
         Division: employee.Division,
@@ -441,7 +426,7 @@ const handleDraft = async () => {
         // Advance
         ExpectedDateofSettlement: expectedDate ? new Date(expectedDate) : null,
 
-        // ✅ PIC (OPTIONAL)
+       
         ...(ensuredUserId && { PICNameId: ensuredUserId }),
 
         // Other
@@ -475,21 +460,30 @@ const handleDraft = async () => {
  const handledraft = async () => {
     try {
       debugger;
-
+  let ensuredUserId: number | null = null;
       if (isSubmitting) return;
       setIsSubmitting(true);
      // const flow = await buildApprovalFlow();
      // const currentApprover = flow.length > 0 ? flow[0].Id : null;
       
-     const loginName =
-         selectedUser[0]?.secondaryText;
+   //  const loginName =
+       //  selectedUser[0]?.secondaryText;
 ////const ensuredUser = await sp.web.ensureUser(loginName);
 
       //const ensuredUserId = ensuredUser.Id;
+        
+    
+ const loginName = selectedUser[0]?.secondaryText;
+      if (loginName != null || loginName != undefined) {
         const ensuredUser = await sp.web.ensureUser(
         selectedUser[0]?.secondaryText,
       );
-    
+
+        ensuredUserId = ensuredUser.Id;
+      } else {
+        ensuredUserId = null;
+      }
+
       const existingFlow = formData.ApprovalMatrix
         ? JSON.parse(formData.ApprovalMatrix)
         : [];
@@ -530,14 +524,14 @@ const handleDraft = async () => {
             ? new Date(expectedDate)
             : null,
 
-          PICNameId: ensuredUser.Id,
+          PICNameId: ensuredUserId,
 
           GL: glCode,
           CostCenter: costCenter,
           Remarks: remarks,
           ProjectDescription: projectDesc,
 
-          Status: "Draft", // ✅ important change
+          Status: "Draft", 
           //ApprovalMatrix: JSON.stringify(flow),
 
          // CurrentApproverId: currentApprover, // 🔥 not started
@@ -690,14 +684,14 @@ const handleDraft = async () => {
     setExpectedDate(formData.ExpectedDateofSettlement?.split("T")[0] || "");
 
     setVendorName(formData.VendorName || "");
-    setSelectedVendorId(formData.VendorCodeId || null); // ✅ ADD THIS
+    setSelectedVendorId(formData.VendorCodeId || null); 
 
      if (formData.VendorCodeId) {
       void getPreviousAdvances(formData.VendorCodeId);
     }
     //void getPreviousAdvances(formData.VendorCodeId || null);
 
-    setSelectedVendorName(formData.VendorName || ""); // ✅ ADD THIS
+    setSelectedVendorName(formData.VendorName || ""); 
 
     setGlCode(formData.GL || "");
     setCostCenter(formData.CostCenter || "");
@@ -710,7 +704,7 @@ const handleDraft = async () => {
     setUTRDate(formData.UTRDate?.split("T")[0] || "");
     setUTRNumber(formData.UTRNumber || "");
 
-    // ✅ PIC FIX
+   
     if (formData?.PICName?.Title) {
       setSelectedUser([
         {
@@ -719,7 +713,7 @@ const handleDraft = async () => {
         },
       ]);
     }
-    // ✅ Approval Matrix
+   
     if (formData?.ApprovalMatrix) {
       try {
         const parsed =
@@ -734,7 +728,7 @@ const handleDraft = async () => {
       }
     }
 
-    // ✅ Workflow History
+    
     if (formData?.WorkFlowHistory) {
       try {
         const parsed =
@@ -775,7 +769,7 @@ const handleDraft = async () => {
         <div className="row">
           <div className="col-md-12">
             <div className="Main-Boxpoup">
-              {/* 🔹 Header */}
+           
               <div className="bordered">
                 <img src={logo} />
                 <h1>Capex Edit Advance Payment </h1>
@@ -805,273 +799,7 @@ const handleDraft = async () => {
                   </ul>
                 </div>
               )}
-              {/* <div className='borderedbox'>
-                <div className="heading1">
-                  <label>Requestor Information</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeCode}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeName}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeEmail}</label>
-                    </div>
-                  </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.ContactNo}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeStatus}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.Division}</label>
-                    </div>
-                  </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.Location}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.ReportingManager?.Title}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.HOD?.Title}</label>
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Capex Details</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className="row mb-20">
-                    <div className="col-md-4">
-                      <label className="font">Vendor Code</label>
-                      <select value={selectedVendorId || ""}
-                        onChange={(e) => {
-                          const id = Number(e.target.value);
-                          const vendor = vendors.find((v) => v.Id === id);
-                          setSelectedVendorId(id);
-                          setSelectedVendorName(vendor?.VendorName || "");
-                        }}
-                        className="formtext-control"
-                      >
-                        <option value="">Select Vendor</option>
-                        {vendors.map((v) => (
-                          <option key={v.Id} value={v.Id}>
-                            {v.VendorCode}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font">Vendor Name</label>
-                      <input value={selectedVendorName || vendorName} className="form-control readonly" />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font">PO Number</label>
-                      <input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="form-control" />
-                    </div>
-                  </div>
-                  <div className="row mb-20">
-                    <div className="col-md-4">
-                      <label className="font">PO Date</label>
-                      <input type="date" value={poDate} onChange={(e) => setPoDate(e.target.value)} className="form-control" />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font">PO Advance Terms</label>
-                      <input value={poTerms} onChange={(e) => setPoTerms(e.target.value)} className="form-control" />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font">PO Amount (GST)</label>
-                      <input value={poAmount} onChange={(e) => handleNumberChange(e.target.value, setPoAmount)} className="form-control" />
-                    </div>
-                  </div>
-                  <div className="row mb-20">
-                    <div className="col-md-4">
-                      <label className="font">Request Advance Amount</label>
-                      <input value={advanceAmount} onChange={(e) => handleNumberChange(e.target.value, setAdvanceAmount)} className="form-control" />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font" style={{ color: "red" }}>Paid Amount</label>
-                      <input value={paidAmount} onChange={(e) => handleNumberChange(e.target.value, setPaidAmount)} className="form-control" />
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Advance Details</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label className="font">Expected Settlement Date</label>
-                      <input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} className="form-control" />
-                    </div>
-                    <div className='col-md-4'>
-                      <label className="font">PIC Name</label>
-                      <PeoplePicker
-                        context={peoplePickerContext}
-                        personSelectionLimit={1}
-                        ensureUser={true}
-                        principalTypes={[PrincipalType.User]}
-                        defaultSelectedUsers={
-                          selectedUser.length > 0
-                            ? [selectedUser[0].secondaryText]  // ✅ use email
-                            : []
-                        }
-                        onChange={(items) => setSelectedUser(items)}
-                      />
-                    </div>
-                    <div className='col-md-4'>
-                      <label className="font">GL Code</label>
-                      <input value={glCode} onChange={(e) => setExpectedDate(e.target.value)} className="form-control" />
-                    </div>
-                  </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label className="font">Cost Center</label>
-                      <input value={employee.CostCenter || ""} className="font-control readoly" />
-                    </div>
-                    <div className='col-md-4'>
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Remarks</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label className="font">Remarks</label>
-                      <textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} className="form-control" />
-                    </div>
-                    <div className='col-md-4'>
-                      <label className="font">Purpose</label>
-                      <textarea value={projectDesc} onChange={(e) => setProjectDesc(e.target.value)} className="form-control" />
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Previous Advances</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className="col-md-12">
-                      <div style={{ overflowX: "auto" }}>
-                        <div className="table-vert-scroll">
-                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                            <thead className="text-white" style={{ backgroundColor: "rgb(60, 62, 69)" }}>
-                              <tr>
-                                <th className="px-4 py-2">PO Number</th>
-                                <th className="px-4 py-2">Previous Advance</th>
-                                <th className="px-4 py-2">Requested Date</th>
-                                <th className="px-4 py-2">Paid Date</th>
-                                <th className="px-4 py-2">MRN No</th>
-                                <th className="px-4 py-2">Settled Amount</th>
-                                <th className="px-4 py-2">Pending Advance</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td colSpan={7} style={{ textAlign: "center" }}>
-                                  No Data
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Workflow History</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-12'>
-                      {workflowHistory.length === 0 ? (
-                        <p>No history available</p>
-                      ) : (
-                        <div className="workflow-history">
-                          {workflowHistory.map((h, index) => (
-                            <div key={index} className="history-item">
-                              <div>
-                                {h.ActionTaken === "Approved" && "✅ "}
-                                {h.ActionTaken === "Rejected" && "❌ "}
-                                {h.ActionTaken === "Send Back" && "↩ "}
-                                {h.ActionTaken}
-                              </div>
-
-                              <div><b>{h.CurrentApprover}</b></div>
-                              <div>{h.Comment}</div>
-                              <div className="date">
-                                {new Date(h.Date).toLocaleString()}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Upload Document</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label className="font">Attachments</label>
-                      {attachments.length > 0 && (
-                        <ul>
-                          {attachments.map((file: any, index: number) => (
-                            <li key={index}>
-                              <a
-                                href={file.ServerRelativeUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {file.Name}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <input
-                        type="file"
-                        multiple className="form-control"
-                        onChange={(e) => {
-                          if (e.target.files) {
-                            setSelectedFiles(Array.from(e.target.files));
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "center", gap: "10px", margin: "10px" }}>
-                  <a className="submit-btn" onClick={handleSubmit}>
-                    Submit
-                  </a>
-                  <a className="reset-btn" onClick={handleExit}>
-                    Exit
-                  </a>
-                </div>
-              </div> */}
+              
               <div className="borderedbox">
                 <div className="heading1">
                   <label>Requestor Information</label>
@@ -1231,10 +959,11 @@ const handleDraft = async () => {
                       <span className="required" style={{ color: "red" }}>
                         *
                       </span>
-                      <input
+                      <textarea
                         value={poTerms}
                         onChange={(e) => setPoTerms(e.target.value)}
                         className="form-control"
+                        rows={3}
                       />
                     </div>
                     <div className="col-md-4">
@@ -1307,7 +1036,7 @@ const handleDraft = async () => {
                         principalTypes={[PrincipalType.User]}
                         defaultSelectedUsers={
                           selectedUser.length > 0
-                            ? [selectedUser[0].secondaryText] // ✅ use email
+                            ? [selectedUser[0].secondaryText] 
                             : []
                         }
                         onChange={(items) => setSelectedUser(items)}
@@ -1414,7 +1143,13 @@ const handleDraft = async () => {
                               marginBottom: "5px",
                             }}
                           >
-                            <span>{file.name}</span>
+                            <a
+                            href={URL.createObjectURL(file)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {file.name}
+                            </a>
 
                             {/* Remove Selected File */}
                             <button
@@ -1447,44 +1182,137 @@ const handleDraft = async () => {
                     />
                   </div>
                   </div>
-                  <div className="row mb-20">
-                    <div className="col-md-12">
-                      <div style={{ overflowX: "auto" }}>
-                        <div className="table-vert-scroll">
-                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                            <thead
-                              className="text-white"
-                              style={{ backgroundColor: "rgb(60, 62, 69)" }}
-                            >
-                              <tr>
-                                <th className="px-4 py-2">PO Number</th>
-                                <th className="px-4 py-2">Previous Advance</th>
-                                <th className="px-4 py-2">Requested Date</th>
-                                <th className="px-4 py-2">Paid Date</th>
-                                <th className="px-4 py-2">MRN No</th>
-                                <th className="px-4 py-2">Settled Amount</th>
-                                <th className="px-4 py-2">Pending Advance</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td colSpan={7} style={{ textAlign: "center" }}>
-                                  No previous advances available
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                  <div className="heading1" style={{ marginTop: "10px" }}>
+              <label>Previous Advances</label>
+            </div>
+            <div className="main-formcontainer">
+              <div className="row mb-20">
+                <div className="col-md-12">
+                  <div style={{ overflowX: "auto" }}>
+                    <div className="table-vert-scroll">
+                      <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                        <thead
+                          className="text-white"
+                          style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                        >
+                          <tr>
+                            <th className="px-4 py-2">PO Number</th>
+                            <th className="px-4 py-2">Previous Advance</th>
+                            <th className="px-4 py-2">Requested Date</th>
+                            <th className="px-4 py-2">Paid Date</th>
+                            <th className="px-4 py-2">MRN No</th>
+                            <th className="px-4 py-2">Settled Amount</th>
+                            <th className="px-4 py-2">Pending Advance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previousAdvances.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} style={{ textAlign: "center" }}>
+                                No previous advances available
+                              </td>
+                            </tr>
+                          ) : (
+                            previousAdvances.map((item: any, index: number) => {
+                              const pending = Math.max(
+                                0,
+                                Number(item.RequestAdvanceAmount || 0) -
+                                  Number(item.PaidAmount || 0),
+                              );
+                              return (
+                                <tr key={index}>
+                                  <td>{item.PONumber}</td>
+                                  <td>{item.RequestAdvanceAmount}</td>
+
+                                  <td>
+                                    {item.Created
+                                      ? new Date(
+                                          item.Created,
+                                        ).toLocaleDateString("en-GB")
+                                      : ""}
+                                  </td>
+
+                                  <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                                item.VoucherDate,
+                                              ).toLocaleDateString('en-GB')
+                                            : ""}
+                                        </td>
+
+                                  <td>{item.VoucherNumber}</td>
+                                  <td>{item.PaidAmount}</td>
+                                  <td>{pending}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
                   <div className="row mb-20">
                     <div className="col-md-12">
                       {workflowHistory.length === 0 ? (
                         <p>No history available</p>
                       ) : (
                         <div className="workflow-history">
-                          {workflowHistory.map((h, index) => (
+                          <table
+                          className="workflow-table"
+                          style={{ width: "100%" }}
+                        >
+                          <thead>
+                            <tr>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Action By
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Action Taken
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Date
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Comment
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {workflowHistory
+                              .filter(
+                                (h: any) =>
+                                  h.ActionTaken &&
+                                  h.ActionTaken !== "Draft Saved" && h.ActionTaken !== "Edited",
+                              )
+                              .map((h: any, idx: number) => (
+                                <tr key={idx}>
+                                  <td style={{ padding: "8px" }}>
+                                    {h.CurrentApprover || ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.ActionTaken || ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.Date
+                                      ? new Date(h.Date).toLocaleDateString(
+                                          "en-GB",
+                                        )
+                                      : ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.Comment || ""}
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                          {/* {workflowHistory.map((h, index) => (
                             <div key={index} className="history-item">
                               <div>
                                 {h.ActionTaken === "Approved" && "✅ "}
@@ -1501,7 +1329,7 @@ const handleDraft = async () => {
                                 {new Date(h.Date).toLocaleString()}
                               </div>
                             </div>
-                          ))}
+                          ))} */}
                         </div>
                       )}
                     </div>

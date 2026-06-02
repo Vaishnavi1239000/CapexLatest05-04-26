@@ -11,7 +11,7 @@ import "../assets/bootstrap/css/bootstrap.css";
 import ApproverAdvanceForm from "./ApproverAdvanceForm";
 import { spfi } from "@pnp/sp";
 import { SPFx } from "@pnp/sp/presets/all";
-
+import View from "../assets/Eye.png";
 import logo from "../assets/SonaPNGLogo.png";
 import Edit from "../assets/Pencil.png";
 import User from "../assets/Userlogo.png";
@@ -24,7 +24,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   const sp = spfi().using(SPFx(context));
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  //const [formType, setFormType] = useState<"new" | "view" | null>(null);
+  
   const [formType, setFormType] = useState<"new" | "view" | "approve" | null>(
     null,
   );
@@ -37,7 +37,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   const [currentUserName, setCurrentUserName] = React.useState("");
   const [selectedItem, setSelectedItem] = React.useState<any>(null);
   const [CurrentUserId, setCurrentUserId] = React.useState<any>(null);
-  // ✅ GET CURRENT USER
+
   const getLoggedInUser = async () => {
     try {
       const user = await sp.web.currentUser();
@@ -56,27 +56,27 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
         .expand("PICName")();
 
       setSelectedItem(fullItem);
-      setFormType("approve"); // 👈 important
+      setFormType("approve"); 
       setShowForm(true);
     } catch (error) {
       console.error("Approve error:", error);
     }
   };
 
-  // ✅ GET LIST DATA
+
   const getCapexData = async () => {
     const currentUser = await sp.web.currentUser();
 
     try {
       let filterQuery = "";
 
-      // ✅ Dynamic filter based on menu
+     
       if (activeMenu === "Paid") {
         filterQuery = `Status eq 'Paid'`;
       } else if (activeMenu === "Rejected") {
         filterQuery = `Status eq 'Rejected'`;
       } else {
-        // Default Approver Pending
+        
         filterQuery = `Status eq 'Pending for Approver'`;
       }
 
@@ -118,64 +118,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     }
   };
 
-  //   const getCapexData = async () => {
-  //   try {
-  //     debugger;
-  //     const user = await sp.web.currentUser();
-  //     const userId = user.Id;
-
-  //     let filterQuery = "";
-
-  //     // 🔥 Dynamic filter based on menu
-  //     if (activeMenu === "Paid") {
-  //       filterQuery = `Status eq 'Paid' and CurrentApproverId eq '${userId}'`;
-  //     } else if (activeMenu === "Rejected") {
-  //       filterQuery = `Status eq 'Rejected' and CurrentApproverId eq '${userId}'`;
-  //     } else {
-  //       filterQuery = `Status eq 'Pending for Approver' and CurrentApproverId eq '${userId}'`;
-  //     }
-
-  //     const items = await sp.web.lists
-  //       .getByTitle("CapexAdvance")
-  //       .items.select(
-  //         "ID",
-  //         "Title",
-  //         "Created",
-  //         "EmployeeName",
-  //         "VendorName",
-  //         "VendorCode/Id",
-  //         "VendorCode/VendorCode",
-  //         "PONumber",
-  //         "RequestAdvanceAmount",
-  //         "Status"
-  //       )
-  //       .expand("VendorCode")
-  //       .filter(filterQuery)
-  //       .orderBy("ID", false)();
-
-  //     const formatted = items.map((item: any) => ({
-  //       ID: item.ID,
-  //       id: item.Title,
-  //       date: item.Created
-  //         ? new Date(item.Created).toLocaleDateString("en-GB")
-  //         : "",
-  //       EmployeeName: item.EmployeeName,
-
-  //       vendor: item.VendorName || "",
-  //       vendorCode: item.VendorCode?.VendorCode || "",
-
-  //       po: item.PONumber || "",
-  //       amount: item.RequestAdvanceAmount || 0,
-  //       status: item.Status || "",
-  //     }));
-
-  //     setData(formatted);
-
-  //   } catch (error) {
-  //     console.error("Data error:", error);
-  //   }
-  // };
-  // ✅ VIEW CLICK
+  
   const handleViewClick = async (item: any) => {
     try {
       const fullItem = await sp.web.lists
@@ -192,7 +135,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     }
   };
 
-  // ✅ FILTER
+  
   const filteredData = data.filter((item) => {
     const text = searchText.toLowerCase();
     const status = statusFilter.toLowerCase();
@@ -225,21 +168,34 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     setCurrentPage(1);
   }, [searchText, statusFilter, activeMenu]);
 
-  // ✅ LOAD DATA
+
   React.useEffect(() => {
     if (!context) return;
 
     void getLoggedInUser();
     void getCapexData();
   }, [context, activeMenu]);
-  // ✅ OPEN VIEW PAGE
+ 
   if (showForm) {
     if (formType === "approve") {
       return (
         <ApproverAdvanceForm
           context={context}
           itemId={selectedItem?.ID}
-          // ✅ FIX
+          
+        />
+      );
+    }
+     if (formType === "view") {
+      return (
+        <ViewAdvanceForm
+          context={context}
+          formData={selectedItem}
+          onClose={() => {
+            setShowForm(false);
+            setFormType(null);
+            void getCapexData();
+          }}
         />
       );
     }
@@ -379,13 +335,29 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                           <td className="px-4 py-2">₹ {item.amount}</td>
                           <td className="px-4 py-2">Approver</td>
                           <td className="px-4 py-2">{item.status}</td>
-                          <td className="px-4 py-2">
-                            <span
-                              onClick={() => handleApproveClick(item)}
-                              style={{ cursor: "pointer" }}
-                            >
-                              <img src={Edit} width={15} alt="View" />
-                            </span>
+                         <td className="px-4 py-2">
+                            {(activeMenu === "Paid" ||
+                              activeMenu === "Rejected") && (
+                              <span
+                                onClick={() => handleViewClick(item)}
+                                style={{
+                                  cursor: "pointer",
+                                  marginRight: "10px",
+                                }}
+                              >
+                                <img src={View} width={15} alt="View" />
+                              </span>
+                            )}
+
+                            {activeMenu === "My Request" &&
+                              
+                                <span
+                                  onClick={() => handleApproveClick(item)}
+                                  style={{ cursor: "pointer" }}
+                                >
+                                  <img src={Edit} width={15} alt="Edit" />
+                                </span>
+                              }
                           </td>
                         </tr>
                       ))

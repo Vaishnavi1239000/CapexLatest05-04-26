@@ -21,7 +21,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
   const [employee, setEmployee] = useState<any>({});
   const actionLock = React.useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // 🔹 Employee
+
   const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedUser, setSelectedUser] = useState<any[]>([]);
@@ -32,7 +32,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
   const [employeeName, setEmployeeName] = useState("");
   const [employeeEmail, setEmployeeEmail] = useState("");
   const [VendorCode, setVendorCode] = useState<number | null>(null);
-  // 🔹 Form fields
+  
   const [poNumber, setPoNumber] = useState("");
   const [poDate, setPoDate] = useState("");
   const [poTerms, setPoTerms] = useState("");
@@ -46,7 +46,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
   const [remarks, setRemarks] = useState("");
   const [projectDesc, setProjectDesc] = useState("");
 
-  // 🔹 Extra fields
+ 
   const [approverRemarks, setApproverRemarks] = useState("");
   const [voucherDate, setVoucherDate] = useState("");
   const [VouchingNumber, setVouchingNumber] = useState("");
@@ -67,13 +67,13 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
 
       const folderPath = `/sites/SonaFinance/CapexAdvanceDocs/${safeCapexId}`;
 
-      console.log("Folder Path:", folderPath); // ✅ DEBUG
+      console.log("Folder Path:", folderPath);
 
       const files = await sp.web
         .getFolderByServerRelativePath(folderPath)
         .files();
 
-      console.log("Files:", files); // ✅ DEBUG
+      console.log("Files:", files); 
 
       setAttachments(files || []);
     } catch (error) {
@@ -128,7 +128,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
     void getAttachments(formData.CapexID);
   };
 
-  // ✅ Fetch Item by ID
+  
   const getVendors = async () => {
     const data = await sp.web.lists
       .getByTitle("VendorMaster")
@@ -136,7 +136,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
     void setVendors(data);
   };
 
-  // ✅ Bind SharePoint Data
+ 
   useEffect(() => {
     debugger;
     if (!formData) return;
@@ -150,12 +150,12 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
     setExpectedDate(formData.ExpectedDateofSettlement?.split("T")[0] || "");
 
     setVendorName(formData.VendorName || "");
-    setSelectedVendorId(formData.VendorCodeId || null); // ✅ ADD THIS
+    setSelectedVendorId(formData.VendorCodeId || null); 
 
      if (formData.VendorCodeId) {
       void getPreviousAdvances(formData.VendorCodeId);
     }
-    setSelectedVendorName(formData.VendorName || ""); // ✅ ADD THIS
+    setSelectedVendorName(formData.VendorName || ""); 
 
     setGlCode(formData.GL || "");
     setCostCenter(formData.CostCenter || "");
@@ -168,7 +168,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
     setUTRDate(formData.UTRDate?.split("T")[0] || "");
     setUTRNumber(formData.UTRNumber || "");
 
-    // ✅ PIC FIX
+   
     if (formData?.PICName?.Title) {
       setSelectedUser([
         {
@@ -181,7 +181,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
     if (formData.CapexID) {
       void getAttachments(formData.CapexID);
     }
-    // ✅ Approval Matrix (SAFE)
+    
     if (formData?.ApprovalMatrix) {
       try {
         const parsed =
@@ -198,7 +198,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
       setApprovalMatrix([]);
     }
 
-    // ✅ Workflow History (SAFE)
+     
     if (formData?.WorkFlowHistory) {
       try {
         const parsed =
@@ -251,8 +251,40 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
       console.log("Error fetching user:", error);
     }
   };
+  const getEmployeeDetails = async () => {
+    try {
+      debugger;
+
+      if (!formData?.Email) return;
+
+      const user = await sp.web.lists
+        .getByTitle("EmployeeMaster")
+        .items.select(
+          "EmployeeCode",
+          "EmployeeName",
+          "Division",
+          "Location",
+          "EmployeeEmail",
+          "ReportingManager/Title",
+          "HOD/Title",
+          "ContactNo",
+          "EmployeeStatus",
+          "CostCenter",
+        )
+        .expand("ReportingManager", "HOD")
+        .filter(`EmployeeEmail eq '${formData.Email}'`)
+        .top(1)();
+
+      if (user.length > 0) {
+        setEmployee(user[0]);
+      }
+    } catch (error) {
+      console.log("Error fetching employee:", error);
+    }
+  };
   useEffect(() => {
-    void getLoggedInUser();
+   // void getLoggedInUser();
+    void getEmployeeDetails();
     void getVendors();
      if (selectedVendorId) {
       void getPreviousAdvances(selectedVendorId);
@@ -265,7 +297,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
         <div className='row'>
           <div className='col-md-12'>
             <div className='Main-Boxpoup'>
-              {/* 🔹 Header */}
+            
               <div className="bordered">
                 <img src={logo} />
                 <h1> Capex Advance Payment (View) </h1>
@@ -648,7 +680,13 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                     </div>
                     <div className='col-md-4'>
                       <label className="font">PO Terms</label>
-                      <input className="form-control readonly" value={poTerms} />
+                      <textarea
+    value={poTerms || ""}
+    className="form-control readonly"
+    rows={3}
+    readOnly
+  />
+                      {/* <input className="form-control readonly" value={poTerms} /> */}
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Amount</label>
@@ -743,44 +781,138 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                       )}
                     </div>
                   </div>
-                    <div className="row mb-20">
-                    <div className="col-md-12">
-                      <div style={{ overflowX: "auto" }}>
-                        <div className="table-vert-scroll">
-                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                            <thead
-                              className="text-white"
-                              style={{ backgroundColor: "rgb(60, 62, 69)" }}
-                            >
-                              <tr>
-                                <th className="px-4 py-2">PO Number</th>
-                                <th className="px-4 py-2">Previous Advance</th>
-                                <th className="px-4 py-2">Requested Date</th>
-                                <th className="px-4 py-2">Paid Date</th>
-                                <th className="px-4 py-2">MRN No</th>
-                                <th className="px-4 py-2">Settled Amount</th>
-                                <th className="px-4 py-2">Pending Advance</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td colSpan={7} style={{ textAlign: "center" }}>
+                  
+                  <div className="heading1" style={{ marginTop: "10px" }}>
+              <label>Previous Advances</label>
+            </div>
+            <div className="main-formcontainer">
+              <div className="row mb-20">
+                <div className="col-md-12">
+                  <div style={{ overflowX: "auto" }}>
+                    <div className="table-vert-scroll">
+                      <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                        <thead
+                          className="text-white"
+                          style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                        >
+                          <tr>
+                            <th className="px-4 py-2">PO Number</th>
+                            <th className="px-4 py-2">Previous Advance</th>
+                            <th className="px-4 py-2">Requested Date</th>
+                            <th className="px-4 py-2">Paid Date</th>
+                            <th className="px-4 py-2">MRN No</th>
+                            <th className="px-4 py-2">Settled Amount</th>
+                            <th className="px-4 py-2">Pending Advance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previousAdvances.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} style={{ textAlign: "center" }}>
                                 No previous advances available
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                              </td>
+                            </tr>
+                          ) : (
+                            previousAdvances.map((item: any, index: number) => {
+                              const pending = Math.max(
+                                0,
+                                Number(item.RequestAdvanceAmount || 0) -
+                                  Number(item.PaidAmount || 0),
+                              );
+                              return (
+                                <tr key={index}>
+                                  <td>{item.PONumber}</td>
+                                  <td>{item.RequestAdvanceAmount}</td>
+
+                                  <td>
+                                    {item.Created
+                                      ? new Date(
+                                          item.Created,
+                                        ).toLocaleDateString("en-GB")
+                                      : ""}
+                                  </td>
+
+                                  <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                                item.VoucherDate,
+                                              ).toLocaleDateString('en-GB')
+                                            : ""}
+                                        </td>
+
+                                  <td>{item.VoucherNumber}</td>
+                                  <td>{item.PaidAmount}</td>
+                                  <td>{pending}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
                   <div className='row mb-20'>
                     <div className='col-md-12'>
                       {workflowHistory.length === 0 ? (
                         <p>No history available</p>
                       ) : (
                         <div className="workflow-history">
-                          {workflowHistory.map((h, index) => (
+                          <table
+                          className="workflow-table"
+                          style={{ width: "100%" }}
+                        >
+                          <thead>
+                            <tr>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Action By
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Action Taken
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Date
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Comment
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {workflowHistory
+                              .filter(
+                                (h: any) =>
+                                  h.ActionTaken &&
+                                  h.ActionTaken !== "Draft Saved" && h.ActionTaken !== "Edited",
+                              )
+                              .map((h: any, idx: number) => (
+                                <tr key={idx}>
+                                  <td style={{ padding: "8px" }}>
+                                    {h.CurrentApprover || ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.ActionTaken || ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.Date
+                                      ? new Date(h.Date).toLocaleDateString(
+                                          "en-GB",
+                                        )
+                                      : ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.Comment || ""}
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                          {/* {workflowHistory.map((h, index) => (
                             <div key={index} className="history-item">
                               <div>
                                 {h.ActionTaken === "Submitted" && "📩 "}
@@ -798,7 +930,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                                 {new Date(h.Date).toLocaleString()}
                               </div>
                             </div>
-                          ))}
+                          ))} */}
                         </div>
                       )}
                     </div>

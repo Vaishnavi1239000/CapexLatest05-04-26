@@ -11,7 +11,7 @@ import {
 import logo from "../assets/sona-comstarlogo.png";
 interface IProps {
   context: any;
-  itemId: number; // 👈 IMPORTANT
+  itemId: number; 
 }
 
 interface IVendor {
@@ -74,7 +74,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
 
       const safeCapexId = capexId.replace(/\//g, "_");
 
-      // ✅ FIXED PATH (MOST IMPORTANT)
+      
       const folderPath = `CapexAdvanceDocs/${safeCapexId}`;
 
       console.log("Folder Path:", folderPath);
@@ -96,7 +96,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
     try {
       if (attachments.length === 0) return;
 
-      const safeCapexId = capexId.replace(/\//g, "_"); // ✅ move here
+      const safeCapexId = capexId.replace(/\//g, "_");
 
       const folderPath = `CapexAdvanceDocs/${safeCapexId}`;
 
@@ -144,22 +144,22 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
 
       setItemData(item);
 
-      // ✅ Vendor Id
+     
       const vendorId = item?.VendorCode?.Id || null;
 
       console.log("Vendor Id:", vendorId);
 
       setSelectedVendorId(vendorId);
 
-      // ✅ Vendor Name
+      
       setSelectedVendorName(item?.VendorName || "");
 
-      // ✅ Attachments
+     
       if (item.CapexID) {
         await getAttachments(item.CapexID);
       }
 
-      // ✅ Approval Matrix
+     
       if (item.ApprovalMatrix) {
         try {
           const parsed =
@@ -176,7 +176,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         setApprovalMatrix([]);
       }
 
-      // ✅ Workflow History
+      
       if (item.WorkFlowHistory) {
         try {
           const parsed =
@@ -196,7 +196,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
       console.error("Fetch error:", error);
     }
   };
-  // ✅ Fetch Item by ID
+  
   const getItemById1 = async () => {
     try {
       const item = await sp.web.lists
@@ -212,17 +212,17 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
           "Author/EMail",
         )
         .expand("PICName", "VendorCode", "Author")();
-      // 👈 ADD
+      
 
       setItemData(item);
       //setApproverRemarks(item.ApproverRemarks || "");
 
-      // ✅ FIX: Set VendorId + Name
+     
       setSelectedVendorId(item.VendorCode?.Id || null);
-      // 🔥 IMPORTANT
-      setSelectedVendorName(item.VendorName); // optional
+      
+      setSelectedVendorName(item.VendorName); 
 
-      // ✅ FETCH ATTACHMENTS
+      
       if (item.CapexID) {
         await getAttachments(item.CapexID);
       }
@@ -269,10 +269,10 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
 
       //await getLoggedInUser();
 
-      // ✅ Vendors
+    
       await getVendors();
 
-      // ✅ Item Details
+      
       await getItemById();
     };
 
@@ -289,26 +289,20 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
 
 
  
-  // ✅ Approve
+ 
   const buildApprovalFlow = async () => {
     try {
-      // =========================
-      // 🔹 EXISTING FLOW (SOURCE OF TRUTH)
-      // =========================
+      
       const existingFlow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
         : [];
 
-      // =========================
-      // 🔹 KEEP RM + HOD FROM OLD FLOW
-      // =========================
+      
       const baseApprovers = existingFlow.filter(
         (a: any) => a.Role === "RM" || a.Role === "HOD",
       );
 
-      // =========================
-      // 🔥 GET LATEST MATRIX APPROVERS
-      // =========================
+      
       const matrixData = await sp.web.lists
         .getByTitle("CapexApprovalMatrix")
         .items.select("Role/RoleName,Approver/Id,Approver/Title,Level/Level")
@@ -324,14 +318,10 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         Status: "Pending",
       }));
 
-      // =========================
-      // 🔹 MERGE FLOW
-      // =========================
+      
       const fullFlow = [...baseApprovers, ...matrixApprovers];
 
-      // =========================
-      // 🔹 REMOVE DUPLICATES
-      // =========================
+      
       const uniqueFlow = fullFlow.filter(
         (v, i, self) => self.findIndex((x) => x.Id === v.Id) === i,
       );
@@ -356,21 +346,15 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
     if (isProcessing) return;
 
       setIsProcessing(true);
-      // =========================
-      // 🔹 EXISTING FLOW
-      // =========================
+      
       let existingFlow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
         : [];
 
-      // =========================
-      // 🔥 REBUILD FLOW (LATEST FROM MATRIX LIST)
-      // =========================
+     
       const latestFlow = await buildApprovalFlow();
 
-      // =========================
-      // 🔥 CHECK IF MATRIX CHANGED
-      // =========================
+      
       let isChanged = false;
 
       if (latestFlow.length !== existingFlow.length) {
@@ -384,9 +368,6 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         }
       }
 
-      // =========================
-      // 🔥 IF CHANGED → RESET FLOW
-      // =========================
       if (isChanged) {
         existingFlow = latestFlow;
 
@@ -398,9 +379,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         }
       }
 
-      // =========================
-      // 🔹 FIND CURRENT APPROVER
-      // =========================
+     
       const userEmail = context.pageContext.user.email;
 
       //const ensuredUser = await sp.web.ensureUser(userEmail);
@@ -415,14 +394,10 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         return;
       }
 
-      // =========================
-      // 🔹 UPDATE CURRENT APPROVER
-      // =========================
+     
       existingFlow[currentIndex].Status = "Approved";
 
-      // =========================
-      // 🔹 MOVE NEXT
-      // =========================
+      
       let nextApproverId = null;
 
       if (existingFlow[currentIndex + 1]) {
@@ -430,9 +405,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         nextApproverId = existingFlow[currentIndex + 1].Id;
       }
 
-      // =========================
-      // 🔥 STATUS LOGIC
-      // =========================
+      
       let finalStatus = itemData.Status;
 
       const currentRole = existingFlow[currentIndex]?.Role;
@@ -445,9 +418,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         finalStatus = nextApproverId ? "Pending" : "Approved";
       }
 
-      // =========================
-      // 🔥 WORKFLOW HISTORY
-      // =========================
+      
       const history = itemData.WorkFlowHistory
         ? JSON.parse(itemData.WorkFlowHistory)
         : [];
@@ -469,16 +440,13 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
         ApproverStatus = nextApproverId ? "Pending" : "Approved";
       }
 
-      // =========================
-      // 🔥 UPDATE SHAREPOINT
-      // =========================
       await sp.web.lists
         .getByTitle("CapexAdvance")
         .items.getById(itemId)
         .update({
           ApproverRemarks: approverRemarks,
 
-          Status: finalStatus, // ✅ FIXED
+          Status: finalStatus, 
 
           ApprovalMatrix: JSON.stringify(existingFlow),
 
@@ -488,14 +456,14 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
           ApproverStatus: ApproverStatus,
         });
 
-      alert("Approved successfully ✅");
+      alert("Approved successfully ");
 
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver";
     } catch (error) {
       console.error("Approve error:", error);
    
-      alert("Error ❌");
+      alert("Error occurred while approving the request.");
     }
     finally {
     //actionLock.current = false;
@@ -503,7 +471,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
   }
   };
 
-  // ✅ Sent Back
+ 
   const handleSendBack = async () => {
     if (actionLock.current) return;
    // actionLock.current = true;
@@ -565,7 +533,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
   }
   };
 
-  // ✅ Reject
+  
   const handleReject = async () => {
     if (actionLock.current) return;
    // actionLock.current = true;
@@ -631,7 +599,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
     window.location.href = `https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Approver`;
   };
 
-  // ⛔ Wait until data loads
+  
   if (!itemData) return <div>Loading...</div>;
 
   return (
@@ -641,7 +609,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
           <div className="Main-Boxpoup">
             <div className="bordered">
               <img src={logo} />
-              <h1> Approval Matrix </h1>
+              <h1> Capex Advance Approval Form </h1>
             </div>
             {approvalMatrix.length === 0 ? (
               <p>No approval data</p>
@@ -1039,10 +1007,16 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                   </div>
                   <div className="col-md-4">
                     <label className="font">PO Terms</label>
-                    <input
+                    <textarea
+    value={itemData.POAdvanceTerms || ""}
+    className="form-control readonly"
+    rows={3}
+    readOnly
+  />
+                    {/* <input
                       value={itemData.POAdvanceTerms || ""}
                       className="font-control readonly"
-                    />
+                    /> */}
                   </div>
                   <div className="col-md-4">
                     <label className="font">PO Amount</label>
@@ -1173,6 +1147,158 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                     )}
                   </div>
                 </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+              <label>Previous Advances</label>
+            </div>
+            <div className="main-formcontainer">
+              <div className="row mb-20">
+                <div className="col-md-12">
+                  <div style={{ overflowX: "auto" }}>
+                    <div className="table-vert-scroll">
+                      <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                        <thead
+                          className="text-white"
+                          style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                        >
+                          <tr>
+                            <th className="px-4 py-2">PO Number</th>
+                            <th className="px-4 py-2">Previous Advance</th>
+                            <th className="px-4 py-2">Requested Date</th>
+                            <th className="px-4 py-2">Paid Date</th>
+                            <th className="px-4 py-2">MRN No</th>
+                            <th className="px-4 py-2">Settled Amount</th>
+                            <th className="px-4 py-2">Pending Advance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previousAdvances.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} style={{ textAlign: "center" }}>
+                                No previous advances available
+                              </td>
+                            </tr>
+                          ) : (
+                            previousAdvances.map((item: any, index: number) => {
+                              const pending = Math.max(
+                                0,
+                                Number(item.RequestAdvanceAmount || 0) -
+                                  Number(item.PaidAmount || 0),
+                              );
+                              return (
+                                <tr key={index}>
+                                  <td>{item.PONumber}</td>
+                                  <td>{item.RequestAdvanceAmount}</td>
+
+                                  <td>
+                                    {item.Created
+                                      ? new Date(
+                                          item.Created,
+                                        ).toLocaleDateString("en-GB")
+                                      : ""}
+                                  </td>
+
+                                  <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                                item.VoucherDate,
+                                              ).toLocaleDateString('en-GB')
+                                            : ""}
+                                        </td>
+
+                                  <td>{item.VoucherNumber}</td>
+                                  <td>{item.PaidAmount}</td>
+                                  <td>{pending}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+                <div className="row mb-20">
+                    <div className="col-md-12">
+                      {workflowHistory.length === 0 ? (
+                        <p>No history available</p>
+                      ) : (
+                        <div className="workflow-history">
+                          <table
+                          className="workflow-table"
+                          style={{ width: "100%" }}
+                        >
+                          <thead>
+                            <tr>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Action By
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Action Taken
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Date
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Comment
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {workflowHistory
+                              .filter(
+                                (h: any) =>
+                                  h.ActionTaken &&
+                                  h.ActionTaken !== "Draft Saved" && h.ActionTaken !== "Edited",
+                              )
+                              .map((h: any, idx: number) => (
+                                <tr key={idx}>
+                                  <td style={{ padding: "8px" }}>
+                                    {h.CurrentApprover || ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.ActionTaken || ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.Date
+                                      ? new Date(h.Date).toLocaleDateString(
+                                          "en-GB",
+                                        )
+                                      : ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.Comment || ""}
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                          {/* {workflowHistory.map((h, index) => (
+                            <div key={index} className="history-item">
+                              <div>
+                                {h.ActionTaken === "Approved" && "✅ "}
+                                {h.ActionTaken === "Rejected" && "❌ "}
+                                {h.ActionTaken === "Send Back" && "↩ "}
+                                {h.ActionTaken}
+                              </div>
+
+                              <div>
+                                <b>{h.CurrentApprover}</b>
+                              </div>
+                              <div>{h.Comment}</div>
+                              <div className="date">
+                                {new Date(h.Date).toLocaleString()}
+                              </div>
+                            </div>
+                          ))} */}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                
                 <div
                   style={{

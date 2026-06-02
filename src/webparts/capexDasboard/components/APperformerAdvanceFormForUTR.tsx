@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { IPeoplePickerContext } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 interface IProps {
   context: any;
-  itemId: number; // 👈 IMPORTANT
+  itemId: number; 
 }
 interface IVendor {
   Id: number;
@@ -46,7 +46,7 @@ const localDate: string = new Date(
   const [UTRRemarks, setUTRRemarks] = useState("");
   const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
   const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
-  // ✅ Fetch Item by ID
+  
   const peoplePickerContext: IPeoplePickerContext = {
     absoluteUrl: context.pageContext.web.absoluteUrl,
     msGraphClientFactory: context.msGraphClientFactory,
@@ -126,22 +126,22 @@ const getPreviousAdvances = async (vendorId: number) => {
 
       setItemData(item);
 
-      // ✅ Vendor Id
+     
       const vendorId = item?.VendorCode?.Id || null;
 
       console.log("Vendor Id:", vendorId);
 
       setSelectedVendorId(vendorId);
 
-      // ✅ Vendor Name
+      
       setSelectedVendorName(item?.VendorName || "");
 
-      // ✅ Attachments
+     
       if (item.CapexID) {
         await getAttachments(item.CapexID);
       }
 
-      // ✅ Approval Matrix
+     
       if (item.ApprovalMatrix) {
         try {
           const parsed =
@@ -158,7 +158,7 @@ const getPreviousAdvances = async (vendorId: number) => {
         setApprovalMatrix([]);
       }
 
-      // ✅ Workflow History
+      
       if (item.WorkFlowHistory) {
         try {
           const parsed =
@@ -178,7 +178,7 @@ const getPreviousAdvances = async (vendorId: number) => {
       console.error("Fetch error:", error);
     }
   };
-  // ✅ Fetch Item by ID
+  
   const getItemByI1d = async () => {
     try {
 
@@ -188,23 +188,23 @@ const getPreviousAdvances = async (vendorId: number) => {
         .items.getById(itemId)
         .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode","Author/Id","Author/Title","Author/EMail")
         .expand("PICName", "VendorCode", "Author")
-        // 👈 ADD
+        
         ();
 
 
       setItemData(item);
       //setApproverRemarks(item.ApproverRemarks || "");
 
-      // ✅ FIX: Set VendorId + Name
+      
       setSelectedVendorId(item.VendorCode?.Id || null);
-      // 🔥 IMPORTANT
+     
       setSelectedVendorName(item.VendorName); // optional
 
-      // ✅ FETCH ATTACHMENTS
+      
       if (item.CapexID) {
         await getAttachments(item.CapexID);
       }
-      // ✅ Approval Matrix
+     
       if (item.ApprovalMatrix) {
         try {
           const parsed =
@@ -221,7 +221,7 @@ const getPreviousAdvances = async (vendorId: number) => {
         setApprovalMatrix([]);
       }
 
-      // ✅ Workflow History
+      
       if (item.WorkFlowHistory) {
         try {
           const parsed =
@@ -249,28 +249,17 @@ const getPreviousAdvances = async (vendorId: number) => {
 
       //await getLoggedInUser();
 
-      // ✅ Vendors
+    
       await getVendors();
 
-      // ✅ Item Details
+      
       await getItemById();
     };
 
     void loadData();
   }, [context, itemId]);
 
-  // useEffect(() => {
-  //   if (!context || !itemId) return;
-
-  //   const loadData = async () => {
-  //     await getItemById();    // 👈 FIRST load item to get VendorCode
-  //     await getVendors();     // 👈 FIRST load vendors
-  //    // await getItemById();    // 👈 THEN item
-     
-  //   };
-
-  //   void loadData();
-  // }, [context, itemId]);
+  
  useEffect(() => {
     if (selectedVendorId) {
       console.log("Calling Previous Advances:", selectedVendorId);
@@ -279,7 +268,7 @@ const getPreviousAdvances = async (vendorId: number) => {
     }
   }, [selectedVendorId]);
 
-  // ✅ Approve
+ 
   const handleApprove = async () => {
       if (actionLock.current) return;
 
@@ -371,7 +360,7 @@ const getPreviousAdvances = async (vendorId: number) => {
       setIsSubmitting(false);
   }
   };
-  // ✅ Sent Back
+ 
   const handleSendBack = async () => {
       if (actionLock.current) return;
    // actionLock.current = true;
@@ -437,7 +426,7 @@ const getPreviousAdvances = async (vendorId: number) => {
       setIsSubmitting(false);
   }
   };
-  // ✅ Reject
+  
   const handleReject = async () => {
       if (actionLock.current) return;
    // actionLock.current = true;
@@ -509,7 +498,7 @@ const getPreviousAdvances = async (vendorId: number) => {
     window.location.href = `https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer`;
   };
 
-  // ⛔ Wait until data loads
+  
   if (!itemData) return <div>Loading...</div>;
 
   return (
@@ -916,7 +905,13 @@ const getPreviousAdvances = async (vendorId: number) => {
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Terms</label>
-                      <input value={itemData.POAdvanceTerms || ""} className="form-control readonly" />
+                      <textarea
+    value={itemData.POAdvanceTerms || ""}
+    className="form-control readonly"
+    rows={3}
+    readOnly
+  />
+                      {/* <input value={itemData.POAdvanceTerms || ""} className="form-control readonly" /> */}
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Amount</label>
@@ -1124,6 +1119,86 @@ const getPreviousAdvances = async (vendorId: number) => {
                   </div>
                 </div>
               </div>
+              <div className="row mb-20">
+                    <div className="col-md-12">
+                      {workflowHistory.length === 0 ? (
+                        <p>No history available</p>
+                      ) : (
+                        <div className="workflow-history">
+                          <table
+                          className="workflow-table"
+                          style={{ width: "100%" }}
+                        >
+                          <thead>
+                            <tr>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Action By
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Action Taken
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Date
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Comment
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {workflowHistory
+                              .filter(
+                                (h: any) =>
+                                  h.ActionTaken &&
+                                  h.ActionTaken !== "Draft Saved" && h.ActionTaken !== "Edited",
+                              )
+                              .map((h: any, idx: number) => (
+                                <tr key={idx}>
+                                  <td style={{ padding: "8px" }}>
+                                    {h.CurrentApprover || ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.ActionTaken || ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.Date
+                                      ? new Date(h.Date).toLocaleDateString(
+                                          "en-GB",
+                                        )
+                                      : ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.Comment || ""}
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                          {/* {workflowHistory.map((h, index) => (
+                            <div key={index} className="history-item">
+                              <div>
+                                {h.ActionTaken === "Approved" && "✅ "}
+                                {h.ActionTaken === "Rejected" && "❌ "}
+                                {h.ActionTaken === "Send Back" && "↩ "}
+                                {h.ActionTaken}
+                              </div>
+
+                              <div>
+                                <b>{h.CurrentApprover}</b>
+                              </div>
+                              <div>{h.Comment}</div>
+                              <div className="date">
+                                {new Date(h.Date).toLocaleString()}
+                              </div>
+                            </div>
+                          ))} */}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div className='row my-3'>
                     <div className='col-md-12'>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>

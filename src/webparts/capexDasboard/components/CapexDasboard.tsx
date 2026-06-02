@@ -14,14 +14,14 @@ export default function CapexDasboard(props: ICapexDasboardProps) {
 
   const [page, setPage] = React.useState<string>("home");
 
-  // ✅ Navigation function (updates URL + state)
+ 
   const navigate = (pageName: string) => {
     const url = `${props.context.pageContext.web.absoluteUrl}/SitePages/CapexForm.aspx?page=${pageName}`;
     window.history.pushState({}, "", url);
     setPage(pageName);
   };
 
-  // ✅ On page load → read URL
+ 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const pageParam = params.get("page");
@@ -31,7 +31,7 @@ export default function CapexDasboard(props: ICapexDasboardProps) {
     }
   }, []);
 
-  // ✅ Handle browser back/forward
+ 
   React.useEffect(() => {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
