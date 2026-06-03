@@ -912,25 +912,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                               ))}
                           </tbody>
                         </table>
-                          {/* {workflowHistory.map((h, index) => (
-                            <div key={index} className="history-item">
-                              <div>
-                                {h.ActionTaken === "Submitted" && "📩 "}
-                                {h.ActionTaken === "Approved" && "✅ "}
-                                {h.ActionTaken === "Rejected" && "❌ "}
-                                {h.ActionTaken === "Send Back" && "↩ "}
-                                {h.ActionTaken === "Vouched" && "💰 "}
-                                {h.ActionTaken === "Paid" && "💸 "}
-                                {h.ActionTaken}
-                              </div>
-
-                              <div><b>{h.CurrentApprover}</b></div>
-                              <div>{h.Comment}</div>
-                              <div className="date">
-                                {new Date(h.Date).toLocaleString()}
-                              </div>
-                            </div>
-                          ))} */}
+                          
                         </div>
                       )}
                     </div>

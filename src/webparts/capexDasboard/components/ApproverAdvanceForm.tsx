@@ -1277,24 +1277,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                               ))}
                           </tbody>
                         </table>
-                          {/* {workflowHistory.map((h, index) => (
-                            <div key={index} className="history-item">
-                              <div>
-                                {h.ActionTaken === "Approved" && "✅ "}
-                                {h.ActionTaken === "Rejected" && "❌ "}
-                                {h.ActionTaken === "Send Back" && "↩ "}
-                                {h.ActionTaken}
-                              </div>
-
-                              <div>
-                                <b>{h.CurrentApprover}</b>
-                              </div>
-                              <div>{h.Comment}</div>
-                              <div className="date">
-                                {new Date(h.Date).toLocaleString()}
-                              </div>
-                            </div>
-                          ))} */}
+                        
                         </div>
                       )}
                     </div>

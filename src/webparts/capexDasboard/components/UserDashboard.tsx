@@ -500,12 +500,14 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                                 alignItems: "center",
                               }}
                             >
+                               {item.status !== "Draft" && (
                               <span
                                 onClick={() => handleViewClick(item)}
                                 style={{ cursor: "pointer" }}
                               >
                                 <img src={View} width={15} alt="View" />
                               </span>
+                            )}
                               {(item.status === "Draft" ||
                                 item.status === "Send Back") && (
                                 <span

@@ -215,15 +215,15 @@ const handleDeleteAttachment = async (fileName: string) => {
   const validateForm = () => {
     const errors: string[] = [];
 
-    if (!selectedVendorId) {
+    if (!selectedVendorId || selectedVendorId === 0) {
       errors.push("Please select the Vendor code");
     }
 
-    if (!poNumber) {
+    if (!poNumber || poNumber.trim() === "") {
       errors.push("Please update PO Number");
     }
 
-    if (!poDate) {
+    if (!poDate || poDate.trim() === "") {
       errors.push("Please update PO date");
     }
     if (poDate > localDate) {
@@ -231,11 +231,11 @@ const handleDeleteAttachment = async (fileName: string) => {
       // return;
     }
 
-    if (!poTerms) {
+    if (!poTerms || poTerms.trim() === "") {
       errors.push("Please update PO Terms");
     }
 
-    if (!poAmount) {
+    if (!poAmount || Number(poAmount) <= 0) {
       errors.push("Please update PO Amount");
     }
 
@@ -279,7 +279,7 @@ const handleDeleteAttachment = async (fileName: string) => {
       errors.push("Please select PIC Name");
     }
 
-    if (!projectDesc) {
+    if (!projectDesc || projectDesc.trim() === "") {
       errors.push("Please enter Project Description");
     }
 
@@ -907,6 +907,12 @@ const handleDraft = async () => {
                           const vendor = vendors.find((v) => v.Id === id);
                           setSelectedVendorId(id);
                           setSelectedVendorName(vendor?.VendorName || "");
+                           if (id > 0) {
+                            void getPreviousAdvances(id);
+                          } else {
+                            // Clear table data
+                            setPreviousAdvances([]);
+                          }
                         }}
                         className="formtext-control"
                       >
@@ -1312,24 +1318,7 @@ const handleDraft = async () => {
                               ))}
                           </tbody>
                         </table>
-                          {/* {workflowHistory.map((h, index) => (
-                            <div key={index} className="history-item">
-                              <div>
-                                {h.ActionTaken === "Approved" && "✅ "}
-                                {h.ActionTaken === "Rejected" && "❌ "}
-                                {h.ActionTaken === "Send Back" && "↩ "}
-                                {h.ActionTaken}
-                              </div>
-
-                              <div>
-                                <b>{h.CurrentApprover}</b>
-                              </div>
-                              <div>{h.Comment}</div>
-                              <div className="date">
-                                {new Date(h.Date).toLocaleString()}
-                              </div>
-                            </div>
-                          ))} */}
+                         
                         </div>
                       )}
                     </div>

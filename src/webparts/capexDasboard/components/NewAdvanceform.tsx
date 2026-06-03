@@ -324,17 +324,17 @@ const NewAdvanceform = ({ context }: any) => {
   const validateForm = () => {
     const errors: string[] = [];
 
-    if (!selectedVendorId) {
+    if (!selectedVendorId || selectedVendorId === 0) {
       errors.push("Please select the Vendor code");
       setIsSubmitting(false);
     }
 
-    if (!poNumber) {
+    if (!poNumber || poNumber.trim() === "") {
       errors.push("Please update PO Number");
       setIsSubmitting(false);
     }
 
-    if (!poDate) {
+    if (!poDate || poDate.trim() === "") {
       errors.push("Please update PO date");
       setIsSubmitting(false);
     }
@@ -343,12 +343,12 @@ const NewAdvanceform = ({ context }: any) => {
       // return;
     }
 
-    if (!poTerms) {
+    if (!poTerms || poTerms.trim() === "") {
       errors.push("Please update PO Terms");
       setIsSubmitting(false);
     }
 
-    if (!poAmount) {
+    if (!poAmount || Number(poAmount) <= 0) {
       errors.push("Please update PO Amount");
       setIsSubmitting(false);
     }
@@ -385,7 +385,7 @@ const NewAdvanceform = ({ context }: any) => {
       }
     }
 
-    if (!expectedDate) {
+    if (!expectedDate || expectedDate.trim() === "") {
       errors.push("Please update Settlement Date");
       setIsSubmitting(false);
     }
@@ -395,7 +395,7 @@ const NewAdvanceform = ({ context }: any) => {
       setIsSubmitting(false);
     }
 
-    if (!projectDesc) {
+    if (!projectDesc || projectDesc.trim() === "") {
       errors.push("Please enter Project Description");
       setIsSubmitting(false);
     }
