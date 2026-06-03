@@ -1032,33 +1032,7 @@ const getLoggedInUser = async () => {
                       <input value={itemData.CostCenter || ""} className="form-control readonly" />
                     </div>
                   </div>
-                  <div className="row mb-20">
-                    <div className="col-md-12">
-                      {workflowHistory.length === 0 ? (
-                        <p>No history available</p>
-                      ) : (
-                        <div className="workflow-history">
-                          {workflowHistory.map((h, index) => (
-                            <div key={index} className="history-item">
-                              <div>
-                                {h.ActionTaken === "Approved" && "✅ "}
-                                {h.ActionTaken === "Rejected" && "❌ "}
-                                {h.ActionTaken === "Send Back" && "↩ "}
-                                {h.ActionTaken === "Vouched" && "💰 "}
-                                {h.ActionTaken}
-                              </div>
-
-                              <div><b>{h.CurrentApprover}</b></div>
-                              <div>{h.Comment}</div>
-                              <div className="date">
-                                {new Date(h.Date).toLocaleString()}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                 
                   <div className="row mb-20">
                     <div className="col-md-4">
                       <label className="font" style={{ display: "block" }}>User Remarks</label>
@@ -1113,6 +1087,95 @@ const getLoggedInUser = async () => {
                       />
                     </div>
 
+                  </div>
+                   <div className="row mb-20">
+                    <div className="col-md-12">
+                      {workflowHistory.length === 0 ? (
+                        <p>No history available</p>
+                      ) : (
+                        <div className="workflow-history">
+                          <table
+                            className="workflow-table"
+                            style={{ width: "100%" }}
+                          >
+                            <thead>
+                              <tr>
+                                <th
+                                  style={{ padding: "8px", textAlign: "left" }}
+                                >
+                                  Action By
+                                </th>
+                                <th
+                                  style={{ padding: "8px", textAlign: "left" }}
+                                >
+                                  Action Taken
+                                </th>
+                                <th
+                                  style={{ padding: "8px", textAlign: "left" }}
+                                >
+                                  Date
+                                </th>
+                                <th
+                                  style={{ padding: "8px", textAlign: "left" }}
+                                >
+                                  Comment
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {workflowHistory
+                                .filter(
+                                  (h: any) =>
+                                    h.ActionTaken &&
+                                    h.ActionTaken !== "Draft Saved" &&
+                                    h.ActionTaken !== "Edited",
+                                )
+                                .map((h: any, idx: number) => (
+                                  <tr key={idx}>
+                                    <td style={{ padding: "8px" }}>
+                                      {h.CurrentApprover || ""}
+                                    </td>
+
+                                    <td style={{ padding: "8px" }}>
+                                      {h.ActionTaken || ""}
+                                    </td>
+
+                                    <td style={{ padding: "8px" }}>
+                                      {h.Date
+                                        ? new Date(h.Date).toLocaleDateString(
+                                            "en-GB",
+                                          )
+                                        : ""}
+                                    </td>
+
+                                    <td style={{ padding: "8px" }}>
+                                      {h.Comment || ""}
+                                    </td>
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                          {/* {workflowHistory.map((h, index) => (
+                            <div key={index} className="history-item">
+                              <div>
+                                {h.ActionTaken === "Approved" && "✅ "}
+                                {h.ActionTaken === "Rejected" && "❌ "}
+                                {h.ActionTaken === "Send Back" && "↩ "}
+                                {h.ActionTaken}
+                              </div>
+
+                              <div>
+                                <b>{h.CurrentApprover}</b>
+                              </div>
+                              <div>{h.Comment}</div>
+                              <div className="date">
+                                {new Date(h.Date).toLocaleString()}
+                              </div>
+                            </div>
+                          ))} */}
+                        </div>
+                      )}
+                    </div>
                   </div>
                    <div className="heading1" style={{ marginTop: "10px" }}>
                 <label>Previous Advances</label>

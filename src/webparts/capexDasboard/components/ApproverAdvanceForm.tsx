@@ -609,7 +609,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
           <div className="Main-Boxpoup">
             <div className="bordered">
               <img src={logo} />
-              <h1> Capex Advance Approval Form </h1>
+              <h1>  Approval Form </h1>
             </div>
             {approvalMatrix.length === 0 ? (
               <p>No approval data</p>
@@ -1083,28 +1083,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                     />
                   </div>
                 </div>
-                <div className="row mb-20">
-                  <div className="col-md-12">
-                    {workflowHistory.length === 0 ? (
-                      <p>No history available</p>
-                    ) : (
-                      <div className="workflow-history">
-                        {workflowHistory.map((h, index) => (
-                          <div key={index} className="history-item">
-                            <div>
-                              <b>{h.ActionTaken}</b>
-                            </div>
-                            <div>{h.CurrentApprover}</div>
-                            <div>{h.Comment}</div>
-                            <div className="date">
-                              {new Date(h.Date).toLocaleString()}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+               
                 <div className="row mb-20">
                   <div className="col-md-4">
                     <label className="font">User Remarks</label>

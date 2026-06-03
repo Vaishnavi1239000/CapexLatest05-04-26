@@ -563,7 +563,7 @@ const NewAdvanceform = ({ context }: any) => {
       const wfHistory = [
         {
           CurrentApprover: currentUser,
-          ActionTaken: "Submitted",
+          ActionTaken: "Save as Draft",
           Comment: remarks || "",
           Date: new Date().toISOString(),
         },
