@@ -1,5 +1,5 @@
 import * as React from "react";
-//declare module "*.scss";
+
 import "./userDashboardsc.scss";
 import NewAdvanceform from "./NewAdvanceform";
 import ViewAdvanceForm from "./ViewAdvanceForm";
@@ -13,7 +13,7 @@ import "../assets/bootstrap/css/bootstrap.css";
 import ApproverAdvanceForm from "./ApproverAdvanceForm";
 import { spfi } from "@pnp/sp";
 import { SPFx } from "@pnp/sp/presets/all";
-
+import View from "../assets/Eye.png";
 import logo from "../assets/SonaPNGLogo.png";
 import Edit from "../assets/Pencil.png";
 import User from "../assets/Userlogo.png";
@@ -24,8 +24,9 @@ interface UserDashboardProps {
 
 const APperformerDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   const sp = spfi().using(SPFx(context));
-  //const [formType, setFormType] = useState<"new" | "view" | null>(null);
-  //const [formType, setFormType] = useState<"new" | "view" | "approve" | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+  
   const [formType, setFormType] = useState<
     "approve" | "approveUTR" | "view" | null
   >(null);
@@ -40,7 +41,7 @@ const APperformerDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   const [CurrentUserId, setCurrentUserId] = React.useState<any>(null);
 
 
-  // ✅ GET CURRENT USER
+
   const getLoggedInUser = async () => {
     try {
       const user = await sp.web.currentUser();
@@ -60,7 +61,7 @@ const APperformerDashboard: React.FC<UserDashboardProps> = ({ context }) => {
 
       setSelectedItem(fullItem);
 
-      // 🔥 CONDITION BASED ROUTING
+      
       if (item.status === "Pending for PF Approver") {
         setFormType("approve");
       } else if (item.status === "Pending for PF Approver UTR") {
@@ -73,138 +74,68 @@ const APperformerDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     }
   };
 
-  // const getCapexData = async () => {
-  //   try {
-  //     const user = await sp.web.currentUser();
-  //     const userId = user.Id;
+  
+   const getCapexData = async () => {
+    const currentUser = await sp.web.currentUser();
 
-  //     const items = await sp.web.lists
-  //       .getByTitle("CapexAdvance")
-  //       .items.select(
-  //         "ID",
-  //         "Title",
-  //         "Created",
-  //         "EmployeeName",
-  //         "VendorName",
-  //         "VendorCode/Id",
-  //         "VendorCode/VendorCode",
-  //         "PONumber",
-  //         "RequestAdvanceAmount",
-  //         "Status",
-  //       )
-  //       .expand("VendorCode")
+    try {
+      let filterQuery = "";
 
-  //       .filter(
-  //         `(Status eq 'Pending for PF Approver' 
-  //  or Status eq 'Pending for PF Approver UTR'
-  //  or Status eq 'Paid') and CurrentApproverId eq '${userId}'
-  //  `,
-  //       )
-
-  //       .orderBy("ID", false)();
-
-  //     const formatted = items.map((item: any) => ({
-  //       ID: item.ID,
-  //       id: item.Title,
-  //       date: item.Created
-  //         ? new Date(item.Created).toLocaleDateString("en-GB")
-  //         : "",
-  //       EmployeeName: item.EmployeeName,
-
-  //       vendor: item.VendorName || "",
-  //       vendorCode: item.VendorCode?.VendorCode || "", // 👈 FIX
-
-  //       po: item.PONumber || "",
-  //       amount: item.RequestAdvanceAmount || 0,
-  //       status: item.Status || "",
-  //     }));
-
-  //     setData(formatted);
-  //   } catch (error) {
-  //     console.error("Data error:", error);
-  //   }
-  // };
-  // ✅ GET LIST DATA
-const getCapexData = async () => {
-  try {
-    const user = await sp.web.currentUser();
-    const userId = user.Id;
-
-    let filterQuery = "";
-
-    // 🔥 Dynamic menu-wise filter
-    if (activeMenu === "Paid") {
-
-      filterQuery = `
-        Status eq 'Paid' 
-        and CurrentApproverId eq '${userId}'
-      `;
-
-    } else if (activeMenu === "Rejected") {
-
-      filterQuery = `
-        Status eq 'Rejected'
-        and CurrentApproverId eq '${userId}'
-      `;
-
-    } else {
-
-      // My Request
-      filterQuery = `
-        (
-          Status eq 'Pending for PF Approver' 
-          or Status eq 'Pending for PF Approver UTR'
-        )
-        and CurrentApproverId eq '${userId}'
-      `;
-    }
-
-    const items = await sp.web.lists
-      .getByTitle("CapexAdvance")
-      .items.select(
-        "ID",
-        "Title",
-        "Created",
-        "EmployeeName",
-        "VendorName",
-        "VendorCode/Id",
-        "VendorCode/VendorCode",
-        "PONumber",
-        "RequestAdvanceAmount",
-        "Status"
+      if (activeMenu === "My Request") {
+        filterQuery = `
+      (
+        Status eq 'Pending for PF Approver'
+        or Status eq 'Pending for PF Approver UTR'
       )
-      .expand("VendorCode")
-      .filter(filterQuery)
-      .orderBy("ID", false)();
+      and CurrentApprover/Id eq ${currentUser.Id}
+      `;
+      } else if (activeMenu === "Paid") {
+        filterQuery = `Status eq 'Paid'`;
+      } else if (activeMenu === "Rejected") {
+        filterQuery = `Status eq 'Rejected'`;
+      }
 
-    const formatted = items.map((item: any) => ({
-      ID: item.ID,
-      id: item.Title,
+      const items = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.select(
+          "ID",
+          "Title",
+          "Created",
+          "EmployeeName",
+          "VendorName",
+          "VendorCode/Id",
+          "VendorCode/VendorCode",
+          "PONumber",
+          "RequestAdvanceAmount",
+          "Status",
+          "CurrentApprover/Id",
+        )
+        .expand("VendorCode", "CurrentApprover")
+        .filter(filterQuery)
+        .orderBy("ID", false)();
 
-      date: item.Created
-        ? new Date(item.Created).toLocaleDateString("en-GB")
-        : "",
+      const formatted = items.map((item: any) => ({
+        ID: item.ID,
+        id: item.Title,
+        date: item.Created
+          ? new Date(item.Created).toLocaleDateString("en-GB")
+          : "",
+        EmployeeName: item.EmployeeName,
 
-      EmployeeName: item.EmployeeName,
+        vendor: item.VendorName || "",
+        vendorCode: item.VendorCode?.VendorCode || "",
 
-      vendor: item.VendorName || "",
+        po: item.PONumber || "",
+        amount: item.RequestAdvanceAmount || 0,
+        status: item.Status || "",
+      }));
 
-      vendorCode: item.VendorCode?.VendorCode || "",
-
-      po: item.PONumber || "",
-
-      amount: item.RequestAdvanceAmount || 0,
-
-      status: item.Status || "",
-    }));
-
-    setData(formatted);
-
-  } catch (error) {
-    console.error("Data error:", error);
-  }
-};
-  // ✅ VIEW CLICK
+      setData(formatted);
+    } catch (error) {
+      console.error("Data error:", error);
+    }
+  };
+ 
   const handleViewClick = async (item: any) => {
     try {
       const fullItem = await sp.web.lists
@@ -243,7 +174,16 @@ const getCapexData = async () => {
       (!status || item.status?.toLowerCase().includes(status))
     );
   });
-  // ✅ LOAD DATA
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+  
+    const paginatedData = filteredData.slice(startIndex, endIndex);
+    React.useEffect(() => {
+      setCurrentPage(1);
+    }, [searchText, statusFilter, activeMenu]);
+
   React.useEffect(() => {
   if (!context) return;
 
@@ -263,6 +203,19 @@ const getCapexData = async () => {
         <APperformerAdvanceFormForUTR
           context={context}
           itemId={selectedItem?.ID}
+        />
+      );
+    }
+     if (formType === "view") {
+      return (
+        <ViewAdvanceForm
+          context={context}
+          formData={selectedItem}
+          onClose={() => {
+            setShowForm(false);
+            setFormType(null);
+            void getCapexData();
+          }}
         />
       );
     }
@@ -353,7 +306,7 @@ const getCapexData = async () => {
                         </td>
                       </tr>
                     ) : (
-                      filteredData.map((item, i) => (
+                       paginatedData.map((item, i) => (
                         <tr key={i}>
                           <td className="px-4 py-2">{item.id}</td>
                           <td className="px-4 py-2">{item.date}</td>
@@ -365,20 +318,63 @@ const getCapexData = async () => {
                           <td className="px-4 py-2">₹ {item.amount}</td>
                           <td className="px-4 py-2">Approver</td>
                           <td className="px-4 py-2">{item.status}</td>
-                          <td className="px-4 py-2">
-                            {(item.status === "Pending for PF Approver" ||
-                              item.status === "Pending for PF Approver UTR") && (
-                                <span onClick={() => handleApproveClick(item)} style={{ cursor: "pointer" }}>
-                                  <img src={Edit} width={15} alt="View" />
-                                </span>
-                              )}
-                          </td>
+                           <td className="px-4 py-2">
+                          {(activeMenu === "Paid" ||
+                            activeMenu === "Rejected") && (
+                            <span
+                              onClick={() => handleViewClick(item)}
+                              style={{ cursor: "pointer", marginRight: "10px" }}
+                            >
+                              <img src={View} width={15} alt="View" />
+                            </span>
+                          )}
+
+                          {activeMenu === "My Request" &&
+                            (item.status === "Pending for PF Approver" ||
+                              item.status ===
+                                "Pending for PF Approver UTR") && (
+                              <span
+                                onClick={() => handleApproveClick(item)}
+                                style={{ cursor: "pointer" }}
+                              >
+                                <img src={Edit} width={15} alt="Edit" />
+                              </span>
+                            )}
+                        </td>
+                       
                         </tr>
                       ))
                     )}
                   </tbody>
 
                 </table>
+                  <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginTop: "15px",
+                }}
+              >
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Previous
+                </button>
+
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next
+                </button>
+              </div>
               </div>
             </div>
           </main>

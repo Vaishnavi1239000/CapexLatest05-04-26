@@ -12,7 +12,7 @@ import logo from "../assets/sona-comstarlogo.png";
 import { IPeoplePickerContext } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 interface IProps {
   context: any;
-  itemId: number; // 👈 IMPORTANT
+  itemId: number; 
 }
 interface IVendor {
   Id: number;
@@ -21,7 +21,18 @@ interface IVendor {
 }
 const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
   const sp = spfi().using(SPFx(context));
+  const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const [attachments, setAttachments] = useState<any[]>([]);
+  const today = new Date();
+  const [employee, setEmployee] = useState<any>({});
+
+const localDate: string = new Date(
+  today.getTime() - today.getTimezoneOffset() * 60000
+)
+  .toISOString()
+  .split("T")[0];
+  const actionLock = React.useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [itemData, setItemData] = useState<any>(null);
   const [approverRemarks, setApproverRemarks] = useState("");
   const [voucherDate, setVoucherDate] = useState("");
@@ -47,6 +58,35 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
       console.error("Vendor fetch error:", error);
     }
   };
+  const getPreviousAdvances = async (vendorId: number) => {
+    try {
+      debugger;
+      console.log("Fetching for Vendor:", vendorId);
+
+      const data = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.select(
+          "PONumber",
+          "RequestAdvanceAmount",
+          "Created",
+          "VoucherDate",
+
+          "PaidAmount",
+          "Status",
+          "VendorCode/Id",
+        )
+        .expand("VendorCode")
+        .filter(`VendorCode/Id eq ${vendorId} and Status eq 'Paid'`)
+        .orderBy("Created", false)();
+
+      console.log("DATA:", data);
+
+      void setPreviousAdvances(data);
+    } catch (error) {
+      console.error("Error fetching previous advances:", error);
+      void setPreviousAdvances([]);
+    }
+  };
   const getAttachments = async (capexId: string) => {
     try {
       const safe = capexId.replace(/\//g, "_");
@@ -59,25 +99,25 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
       void setAttachments([]);
     }
   };
-  // ✅ Fetch Item by ID
-  const getItemById = async () => {
+  
+  const getItemById1 = async () => {
     try {
       const item = await sp.web.lists
         .getByTitle("CapexAdvance")
         .items.getById(itemId)
         .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode", "Author/Id","Author/Title","Author/EMail")
         .expand("PICName", "VendorCode", "Author")();
-      // 👈 ADD
+      
 
       setItemData(item);
       //  setApproverRemarks(item.ApproverRemarks || "");
 
-      // ✅ FIX: Set VendorId + Name
+      
       setSelectedVendorId(item.VendorCode?.Id || null);
-      // 🔥 IMPORTANT
+     
       setSelectedVendorName(item.VendorName); // optional
 
-      // ✅ FETCH ATTACHMENTS
+      
       if (item.CapexID) {
         await getAttachments(item.CapexID);
       }
@@ -115,19 +155,153 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
       console.error("Fetch error:", error);
     }
   };
+const getLoggedInUser = async () => {
+    try {
+      const currentUser = await sp.web.currentUser();
+      const email = currentUser.Email;
 
-  useEffect(() => {
+      const user = await sp.web.lists
+        .getByTitle("EmployeeMaster")
+        .items.select(
+          "EmployeeCode",
+          "EmployeeName",
+          "Division",
+          "Location",
+          "EmployeeEmail",
+          "ReportingManager/Title",
+          "HOD/Title",
+          "ContactNo",
+          "EmployeeStatus",
+          "CostCenter",
+        )
+        .expand("ReportingManager", "HOD")
+        .filter(`EmployeeEmail eq '${email}'`)
+        .top(1)();
+
+      if (user.length > 0) {
+        setEmployee(user[0]);
+      }
+    } catch (error) {
+      console.log("Error fetching user:", error);
+    }
+  };
+ 
+   useEffect(() => {
+    if (selectedVendorId) {
+      console.log("Calling Previous Advances:", selectedVendorId);
+
+      void getPreviousAdvances(selectedVendorId);
+    }
+  }, [selectedVendorId]);
+
+  
+  const getItemById = async () => {
+    try {
+      debugger;
+
+      const item = await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.getById(itemId)
+        .select(
+          "*",
+          "PICName/Title",
+          "VendorCode/Id",
+          "VendorCode/VendorCode",
+          "Author/Id",
+          "Author/Title",
+          "Author/EMail",
+        )
+        .expand("PICName", "VendorCode", "Author")();
+
+      console.log("ITEM DATA:", item);
+
+      setItemData(item);
+
+      
+      const vendorId = item?.VendorCode?.Id || null;
+
+      console.log("Vendor Id:", vendorId);
+
+      setSelectedVendorId(vendorId);
+
+      
+      setSelectedVendorName(item?.VendorName || "");
+
+      
+      if (item.CapexID) {
+        await getAttachments(item.CapexID);
+      }
+
+      
+      if (item.ApprovalMatrix) {
+        try {
+          const parsed =
+            typeof item.ApprovalMatrix === "string"
+              ? JSON.parse(item.ApprovalMatrix)
+              : item.ApprovalMatrix;
+
+          setApprovalMatrix(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error("ApprovalMatrix parse error", e);
+          setApprovalMatrix([]);
+        }
+      } else {
+        setApprovalMatrix([]);
+      }
+
+      
+      if (item.WorkFlowHistory) {
+        try {
+          const parsed =
+            typeof item.WorkFlowHistory === "string"
+              ? JSON.parse(item.WorkFlowHistory)
+              : item.WorkFlowHistory;
+
+          setWorkflowHistory(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error("WorkFlowHistory parse error", e);
+          setWorkflowHistory([]);
+        }
+      } else {
+        setWorkflowHistory([]);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+
+  
+   useEffect(() => {
     if (!context || !itemId) return;
-
+    debugger;
     const loadData = async () => {
-      await getItemById(); // 👈 FIRST load item to get VendorCode
-      await getVendors(); // 👈 FIRST load vendors
-      await getItemById(); // 👈 THEN item
+      debugger;
+
+      await getLoggedInUser();
+
+      
+      await getVendors();
+
+     
+      await getItemById();
     };
 
     void loadData();
   }, [context, itemId]);
 
+
+  useEffect(() => {
+    if (!context || !itemId) return;
+
+    const loadData = async () => {
+      void getLoggedInUser();
+      await getItemById(); 
+      await getVendors(); 
+     
+    };
+
+    void loadData();
+  }, [context, itemId]);
   const buildApprovalFlow = async () => {
 
     const existingFlow = itemData.ApprovalMatrix
@@ -168,42 +342,51 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
       };
     });
   };
-  // ✅ Approve
+ 
   const handleApprove = async () => {
+    if (actionLock.current) return;
+
+ // actionLock.current = true;
+    if (isSubmitting) return;
     try {
-      if (!voucherDate) {
-        alert("Please select Voucher Date");
+      setIsSubmitting(true);
+      if (!voucherDate || voucherDate.trim() === "") {
+      alert("Please enter Voucher Date");
+      //actionLock.current = false;
+      setIsSubmitting(false);
+      return;
+    }
+      if (voucherDate > localDate) {
+      alert("VoucherDate cannot be a future date");
+      // return;
+       //actionLock.current = false;
+        setIsSubmitting(false);
         return;
-      }
-      if (!voucherNumber) {
-        alert("Please enter Voucher Number");
-        return;
-      }
+    }
+    if (!voucherNumber || voucherNumber.trim() === "") {
+      alert("Please enter Voucher Number");
+      //actionLock.current = false;
+        setIsSubmitting(false);
+      return;
+    }
      if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
+      //actionLock.current = false;
+        setIsSubmitting(false);
       return;
     }
 
-      // =========================
-      // 🔹 OLD FLOW
-      // =========================
       const oldFlow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
         : [];
 
-      // =========================
-      // 🔥 REBUILD NEW FLOW
-      // =========================
+     
       const latestFlow = await buildApprovalFlow();
 
-      // =========================
-      // 🔥 PRESERVE STATUS
-      // =========================
+      
       const finalFlow = mergeFlowWithStatus(oldFlow, latestFlow);
 
-      // =========================
-      // 🔥 CURRENT USER
-      // =========================
+      
       const currentUserId = context.pageContext.legacyPageContext.userId;
 
       const currentIndex = finalFlow.findIndex(
@@ -249,27 +432,38 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
 
           ApprovalMatrix: JSON.stringify(finalFlow),
 
-          // 🔥 IMPORTANT
+         
           CurrentApproverId: nextApproverId,
           ApproverStatus: "Pending for PF Approver UTR"
         });
 
       alert("Approved successfully ✅");
-
+      
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
 
     } catch (error) {
       console.error("Approve error:", error);
       alert("Error ❌");
+      
     }
+     finally {
+    //actionLock.current = false;
+      setIsSubmitting(false);
+  }
   };
 
-  // ✅ Sent Back
+ 
   const handleSendBack = async () => {
+    if (actionLock.current) return;
+   // actionLock.current = true;
+    setIsSubmitting(true);
+
     try {
      if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
+      //actionLock.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -312,18 +506,30 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         });
 
       alert("Send Back ✅");
+     
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
     } catch (error) {
       console.error(error);
+      
     }
+     finally {
+    //actionLock.current = false;
+      setIsSubmitting(false);
+  }
   };
 
-  // ✅ Reject
+  
   const handleReject = async () => {
+    if (actionLock.current) return;
+   // actionLock.current = true;
+    setIsSubmitting(true);
+
     try {
       if (!approverRemarks || approverRemarks.trim() === "") {
       alert("Please enter Remarks");
+      //actionLock.current = false;
+      setIsSubmitting(false);
       return;
     }
      
@@ -367,19 +573,25 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         });
 
       alert("Rejected ❌");
+   
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
 
     } catch (error) {
       console.error(error);
+     
     }
+    finally {
+    //actionLock.current = false;
+      setIsSubmitting(false);
+  }
   };
 
   const handleExit = () => {
     window.location.href = `https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer`;
   };
 
-  // ⛔ Wait until data loads
+  
   if (!itemData) return <div>Loading...</div>;
 
   return (
@@ -391,7 +603,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
             <div className='Main-Boxpoup'>
               <div className="bordered">
                 <img src={logo} />
-                <h1> Advance Payment (Approver) </h1>
+                <h1>Capex Advance Payment (Approver) </h1>
               </div>
               {approvalMatrix.length === 0 ? (
                 <p>No approval data</p>
@@ -770,7 +982,13 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Terms</label>
-                      <input value={itemData.POAdvanceTerms || ""} className="form-control readonly" />
+                      <textarea
+    value={itemData.POAdvanceTerms || ""}
+    className="form-control readonly"
+    rows={3}
+    readOnly
+  />
+                      {/* <input value={itemData.POAdvanceTerms || ""} className="form-control readonly" /> */}
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Amount</label>
@@ -814,33 +1032,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                       <input value={itemData.CostCenter || ""} className="form-control readonly" />
                     </div>
                   </div>
-                  <div className="row mb-20">
-                    <div className="col-md-12">
-                      {workflowHistory.length === 0 ? (
-                        <p>No history available</p>
-                      ) : (
-                        <div className="workflow-history">
-                          {workflowHistory.map((h, index) => (
-                            <div key={index} className="history-item">
-                              <div>
-                                {h.ActionTaken === "Approved" && "✅ "}
-                                {h.ActionTaken === "Rejected" && "❌ "}
-                                {h.ActionTaken === "Send Back" && "↩ "}
-                                {h.ActionTaken === "Vouched" && "💰 "}
-                                {h.ActionTaken}
-                              </div>
-
-                              <div><b>{h.CurrentApprover}</b></div>
-                              <div>{h.Comment}</div>
-                              <div className="date">
-                                {new Date(h.Date).toLocaleString()}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                 
                   <div className="row mb-20">
                     <div className="col-md-4">
                       <label className="font" style={{ display: "block" }}>User Remarks</label>
@@ -876,7 +1068,8 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                       <input
                         type="date"
                         value={voucherDate}
-                        onChange={(e) => setVoucherDate(e.target.value)} className='form-control'
+                        onChange={(e) => setVoucherDate(e.target.value)}
+                        max={new Date().toISOString().split("T")[0]}  className='form-control'
                       />
                     </div>
                     <div className="col-md-4">
@@ -895,16 +1088,193 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                     </div>
 
                   </div>
+                   <div className="row mb-20">
+                    <div className="col-md-12">
+                      {workflowHistory.length === 0 ? (
+                        <p>No history available</p>
+                      ) : (
+                        <div className="workflow-history">
+                          <table
+                            className="workflow-table"
+                            style={{ width: "100%" }}
+                          >
+                            <thead>
+                              <tr>
+                                <th
+                                  style={{ padding: "8px", textAlign: "left" }}
+                                >
+                                  Action By
+                                </th>
+                                <th
+                                  style={{ padding: "8px", textAlign: "left" }}
+                                >
+                                  Action Taken
+                                </th>
+                                <th
+                                  style={{ padding: "8px", textAlign: "left" }}
+                                >
+                                  Date
+                                </th>
+                                <th
+                                  style={{ padding: "8px", textAlign: "left" }}
+                                >
+                                  Comment
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {workflowHistory
+                                .filter(
+                                  (h: any) =>
+                                    h.ActionTaken &&
+                                    h.ActionTaken !== "Save as Draft" &&
+                                    h.ActionTaken !== "Edited",
+                                )
+                                
+                                .map((h: any, idx: number) => (
+                                  <tr key={idx}>
+                                    <td style={{ padding: "8px" }}>
+                                      {h.CurrentApprover || ""}
+                                    </td>
+
+                                    <td style={{ padding: "8px" }}>
+                                      {h.ActionTaken || ""}
+                                    </td>
+
+                                    <td style={{ padding: "8px" }}>
+                                      {h.Date
+                                        ? new Date(h.Date).toLocaleDateString(
+                                            "en-GB",
+                                          )
+                                        : ""}
+                                    </td>
+
+                                    <td style={{ padding: "8px" }}>
+                                      {h.Comment || ""}
+                                    </td>
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                          {/* {workflowHistory.map((h, index) => (
+                            <div key={index} className="history-item">
+                              <div>
+                                {h.ActionTaken === "Approved" && "✅ "}
+                                {h.ActionTaken === "Rejected" && "❌ "}
+                                {h.ActionTaken === "Send Back" && "↩ "}
+                                {h.ActionTaken}
+                              </div>
+
+                              <div>
+                                <b>{h.CurrentApprover}</b>
+                              </div>
+                              <div>{h.Comment}</div>
+                              <div className="date">
+                                {new Date(h.Date).toLocaleString()}
+                              </div>
+                            </div>
+                          ))} */}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                   <div className="heading1" style={{ marginTop: "10px" }}>
+                <label>Previous Advances</label>
+              </div>
+              <div className="main-formcontainer">
+                <div className="row mb-20">
+                  <div className="col-md-12">
+                    <div style={{ overflowX: "auto" }}>
+                      <div className="table-vert-scroll">
+                        <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                          <thead
+                            className="text-white"
+                            style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                          >
+                            <tr>
+                              <th className="px-4 py-2">PO Number</th>
+                              <th className="px-4 py-2">Previous Advance</th>
+                              <th className="px-4 py-2">Requested Date</th>
+                              <th className="px-4 py-2">Paid Date</th>
+                              <th className="px-4 py-2">MRN No</th>
+                              <th className="px-4 py-2">Settled Amount</th>
+                              <th className="px-4 py-2">Pending Advance</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {previousAdvances.length === 0 ? (
+                              <tr>
+                                <td colSpan={7} style={{ textAlign: "center" }}>
+                                  No previous advances available
+                                </td>
+                              </tr>
+                            ) : (
+                              previousAdvances.map(
+                                (item: any, index: number) => {
+                                  const pending = Math.max(
+                                    0,
+                                    Number(item.RequestAdvanceAmount || 0) -
+                                      Number(item.PaidAmount || 0),
+                                  );
+                                  return (
+                                    <tr key={index}>
+                                      <td>{item.PONumber}</td>
+                                      <td>{item.RequestAdvanceAmount}</td>
+
+                                      <td>
+                                        {item.Created
+                                          ? new Date(
+                                              item.Created,
+                                            ).toLocaleDateString("en-GB")
+                                          : ""}
+                                      </td>
+
+                                      <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                                item.VoucherDate,
+                                              ).toLocaleDateString('en-GB')
+                                            : ""}
+                                        </td>
+
+                                      <td>{item.VoucherNumber}</td>
+                                      <td>{item.PaidAmount}</td>
+                                      <td>{pending}</td>
+                                    </tr>
+                                  );
+                                },
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                         
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
                   <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
-                    <a onClick={handleApprove} className="submit-btn">
-                      Vouch
+                  <a
+                      className={`submit-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                      onClick={!isSubmitting ? handleApprove : undefined}
+                    >
+                      {isSubmitting ? "Processing..." : "Submit"}
                     </a>
-                    <a onClick={handleSendBack} className="Rework-btn">
-                      Send Back
+
+                    <a
+                      className={`Rework-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                      onClick={!isSubmitting ? handleSendBack : undefined}
+                    >
+                      {isSubmitting ? "Processing..." : "Send Back"}
                     </a>
-                    <a onClick={handleReject} className="Reject-btn">
-                      Reject
+
+                    <a
+                      className={`Reject-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                      onClick={!isSubmitting ? handleReject : undefined}
+                    >
+                      {isSubmitting ? "Processing..." : "Reject"}
                     </a>
+
                     <a href="#" onClick={handleExit} className="reset-btn">
                       Exit
                     </a>

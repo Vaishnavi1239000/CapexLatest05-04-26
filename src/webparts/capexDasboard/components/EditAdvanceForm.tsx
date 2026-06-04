@@ -2,7 +2,7 @@ import * as React from "react";
 import "./advanced.scss";
 import { spfi } from "@pnp/sp";
 import { SPFx } from "@pnp/sp/presets/all";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   PeoplePicker,
   PrincipalType,
@@ -24,15 +24,16 @@ const localDate: string = new Date(
 )
   .toISOString()
   .split("T")[0];
-  // =========================
-  // STATES
-  // =========================
+ 
+  const [isDraftSaving, setIsDraftSaving] = useState(false);
+  const submitRef = useRef(false);
+  const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const [vendors, setVendors] = useState<IVendor[]>([]);
   const [employee, setEmployee] = useState<any>({});
   const [attachments, setAttachments] = useState<any[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedUser, setSelectedUser] = useState<any[]>([]);
-
+const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [selectedVendorName, setSelectedVendorName] = useState("");
 
@@ -56,16 +57,14 @@ const localDate: string = new Date(
   const [UTRNumber, setUTRNumber] = useState("");
   const [approvalMatrix, setApprovalMatrix] = useState<any[]>([]);
   const [workflowHistory, setWorkflowHistory] = useState<any[]>([]);
-  const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
+  //const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const peoplePickerContext: IPeoplePickerContext = {
     absoluteUrl: context.pageContext.web.absoluteUrl,
     msGraphClientFactory: context.msGraphClientFactory,
     spHttpClient: context.spHttpClient,
   };
 
-  // =========================
-  // LOAD DATA
-  // =========================
+  
 
   const handleDeleteExistingFile = async (file: any) => {
     try {
@@ -83,7 +82,32 @@ const localDate: string = new Date(
       console.error("Delete error:", error);
     }
   };
+const handleDeleteAttachment = async (fileName: string) => {
+    try {
+      if (!formData?.CapexID) return;
 
+      const safeCapexId = formData.CapexID.replace(/\//g, "_");
+
+      const folderPath = `/sites/SonaFinance/CapexAdvanceDocs/${safeCapexId}`;
+
+      await sp.web
+        .getFolderByServerRelativePath(folderPath)
+        .files.getByUrl(fileName)
+        .recycle();
+
+      // Update UI after delete
+      const updatedFiles = attachments.filter(
+        (file: any) => file.Name !== fileName,
+      );
+
+      setAttachments(updatedFiles);
+
+      alert("Attachment deleted successfully ✅");
+    } catch (error) {
+      console.error("Delete attachment error:", error);
+      alert("Error deleting attachment ❌");
+    }
+  };
   const handleRemoveFile = (index: number) => {
     const updatedFiles = [...selectedFiles];
     updatedFiles.splice(index, 1);
@@ -100,6 +124,10 @@ const localDate: string = new Date(
   const getPreviousAdvances = async (vendorId: number) => {
     try {
       debugger;
+       if (!vendorId) {
+      setPreviousAdvances([]);
+      return;
+    }
       console.log("Fetching for Vendor:", vendorId);
 
       const data = await sp.web.lists
@@ -127,11 +155,18 @@ const localDate: string = new Date(
     }
   };
   const getVendors = async () => {
+  try {
     const data = await sp.web.lists
       .getByTitle("VendorMaster")
-      .items.select("Id", "VendorCode", "VendorName")();
-    void setVendors(data);
-  };
+      .items.select("Id", "VendorCode", "VendorName", "Status")
+      .filter("Status eq 'Active'")()
+;
+
+    setVendors(data);
+  } catch (error) {
+    console.error("Vendor fetch error:", error);
+  }
+};
 
   const getLoggedInUser = async () => {
     try {
@@ -177,33 +212,30 @@ const localDate: string = new Date(
     }
   };
 
-  // =========================
-  // UPLOAD FILES
-  // =========================
-
-  // =========================
-  // VALIDATION
-  // =========================
   const validateForm = () => {
     const errors: string[] = [];
 
-    if (!selectedVendorId) {
+    if (!selectedVendorId || selectedVendorId === 0) {
       errors.push("Please select the Vendor code");
     }
 
-    if (!poNumber) {
+    if (!poNumber || poNumber.trim() === "") {
       errors.push("Please update PO Number");
     }
 
-    if (!poDate) {
+    if (!poDate || poDate.trim() === "") {
       errors.push("Please update PO date");
     }
+    if (poDate > localDate) {
+      errors.push("PO Date cannot be a future date");
+      // return;
+    }
 
-    if (!poTerms) {
+    if (!poTerms || poTerms.trim() === "") {
       errors.push("Please update PO Terms");
     }
 
-    if (!poAmount) {
+    if (!poAmount || Number(poAmount) <= 0) {
       errors.push("Please update PO Amount");
     }
 
@@ -215,14 +247,13 @@ const localDate: string = new Date(
       errors.push("Please update Paid Amount");
     }
 
-    // 🔥 NEW VALIDATION
-    if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
+   if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
       errors.push(
         "The requested advance amount cannot be greater than the PO Amount (Including GST)",
       );
     }
 
-    // 🔥 Paid Amount should not exceed Advance Amount
+    
     if (
       advanceAmount &&
       paidAmount &&
@@ -231,15 +262,24 @@ const localDate: string = new Date(
       errors.push("Paid Amount cannot be greater than Advance Amount");
     }
 
-    if (!expectedDate) {
-      errors.push("Please update Settlement Date");
-    }
 
+    
+   
+    
+      if (expectedDate) {
+      const today = new Date().setHours(0, 0, 0, 0);
+      const selected = new Date(expectedDate).setHours(0, 0, 0, 0);
+
+      if (selected < today) {
+        errors.push("Settlement date cannot be a past date");
+      }
+    }
+ 
     if (!selectedUser || selectedUser.length === 0) {
       errors.push("Please select PIC Name");
     }
 
-    if (!projectDesc) {
+    if (!projectDesc || projectDesc.trim() === "") {
       errors.push("Please enter Project Description");
     }
 
@@ -280,7 +320,7 @@ const localDate: string = new Date(
       const safe = formData.CapexID.replace(/\//g, "_");
       const folderPath = `/sites/SonaFinance/CapexAdvanceDocs/${safe}`;
 
-      // ✅ Ensure folder exists
+      
       await ensureFolder(folderPath);
 
       for (const file of selectedFiles) {
@@ -308,30 +348,30 @@ const localDate: string = new Date(
 
       const folderPath = `${webUrl}/${libraryName}/${safeCapexId}`;
 
-      // ✅ Ensure folder
+     
       await sp.web.folders.addUsingPath(`${libraryName}/${safeCapexId}`);
 
-      // ✅ Upload files properly
+     
       for (const file of selectedFiles) {
         await sp.web
           .getFolderByServerRelativePath(folderPath)
           .files.addUsingPath(file.name, file, { Overwrite: true });
       }
 
-      console.log("✅ Files uploaded successfully");
+      console.log("Files uploaded successfully");
     } catch (error) {
-      console.error("❌ Upload error:", error);
+      console.error("Upload error:", error);
     }
   };
 const handleDraft = async () => {
     try {
-      //if (isSubmitting) return;
-      //setIsSubmitting(true);
-      //const capexId = await generateCapexId();
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+     // const capexId = await generateCapexId();
 
       let ensuredUserId: number | null = null;
 
-      // ✅ Only process if user selected
+     
       if (selectedUser && selectedUser.length > 0) {
         const userEmail = selectedUser[0]?.secondaryText;
 
@@ -341,15 +381,7 @@ const handleDraft = async () => {
         }
       }
 
-      // ✅ Ensure User (FIX ERROR)
-      //  const ensuredUser = await sp.web.ensureUser(userEmail);
-
-      //const flow = await buildApprovalFlow();
-
-      // 🔥 Set first approver as current
-      // if (flow.length > 0) {
-      //   flow[0].Status = "In Progress";
-      // }
+     
 
      // const currentApprover = flow.length > 0 ? flow[0].Id : null;
       const currentUser = context.pageContext?.user?.displayName || "User";
@@ -366,7 +398,7 @@ const handleDraft = async () => {
         Title: formData.CapexID,
         CapexID: formData.CapexID,
 
-        // Employee
+        
         EmployeeCode: employee.EmployeeCode,
         EmployeeName: employee.EmployeeName,
         Division: employee.Division,
@@ -394,7 +426,7 @@ const handleDraft = async () => {
         // Advance
         ExpectedDateofSettlement: expectedDate ? new Date(expectedDate) : null,
 
-        // ✅ PIC (OPTIONAL)
+       
         ...(ensuredUserId && { PICNameId: ensuredUserId }),
 
         // Other
@@ -425,16 +457,121 @@ const handleDraft = async () => {
      // setIsSubmitting(false);
     }
   };
+ const handledraft = async () => {
+    try {
+      debugger;
+  let ensuredUserId: number | null = null;
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+     // const flow = await buildApprovalFlow();
+     // const currentApprover = flow.length > 0 ? flow[0].Id : null;
+      
+   //  const loginName =
+       //  selectedUser[0]?.secondaryText;
+////const ensuredUser = await sp.web.ensureUser(loginName);
 
+      //const ensuredUserId = ensuredUser.Id;
+        
+    
+ const loginName = selectedUser[0]?.secondaryText;
+      if (loginName != null || loginName != undefined) {
+        const ensuredUser = await sp.web.ensureUser(
+        selectedUser[0]?.secondaryText,
+      );
+
+        ensuredUserId = ensuredUser.Id;
+      } else {
+        ensuredUserId = null;
+      }
+
+      const existingFlow = formData.ApprovalMatrix
+        ? JSON.parse(formData.ApprovalMatrix)
+        : [];
+
+      // 🔥 preserve history
+      const history = formData.WorkFlowHistory
+        ? JSON.parse(formData.WorkFlowHistory)
+        : [];
+
+      history.push({
+        CurrentApprover: employee.EmployeeName,
+        ActionTaken: "Edited",
+        Comment: remarks,
+        Date: new Date().toISOString(),
+      });
+
+      await sp.web.lists
+        .getByTitle("CapexAdvance")
+        .items.getById(formData.ID)
+        .update({
+          Title: formData.CapexID,
+          CapexID: formData.CapexID,
+
+          EmployeeCode: employee.EmployeeCode,
+          EmployeeName: employee.EmployeeName,
+
+          VendorCodeId: selectedVendorId,
+          VendorName: selectedVendorName,
+
+          PONumber: poNumber,
+          PODate: poDate ? new Date(poDate) : null,
+
+          POAmtGST: poAmount,
+          RequestAdvanceAmount: advanceAmount,
+          PaidAmount: paidAmount,
+
+          ExpectedDateofSettlement: expectedDate
+            ? new Date(expectedDate)
+            : null,
+
+          PICNameId: ensuredUserId,
+
+          GL: glCode,
+          CostCenter: costCenter,
+          Remarks: remarks,
+          ProjectDescription: projectDesc,
+
+          Status: "Draft", 
+          //ApprovalMatrix: JSON.stringify(flow),
+
+         // CurrentApproverId: currentApprover, // 🔥 not started
+
+          WorkFlowHistory: JSON.stringify(history),
+        });
+
+      if (selectedFiles.length > 0) {
+        await uploadFiles();
+      }
+
+      alert("Draft saved successfully ✅");
+      window.location.href =
+        "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
+      void handleExit();
+      // window.location.reload();
+    } catch (error) {
+      console.error("ERROR:", error);
+      alert(error);
+    }
+    finally {
+   // submitRef.current = false;
+    setIsSubmitting(false);
+  }
+  };
   
   // =========================
   // UPDATE
   // =========================
   const handleSubmit = async () => {
+      if (submitRef.current) return;
+
+  //submitRef.current = true;
+  setIsSubmitting(true);
     try {
       const errors = validateForm();
       if (errors.length > 0) {
         alert(errors.join("\n"));
+        submitRef.current = false;
+      setIsSubmitting(false);
         return;
       }
 
@@ -515,19 +652,27 @@ const handleDraft = async () => {
       }
 
       alert("Updated successfully ✅");
+      
+    
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
       void handleExit();
     } catch (e) {
       console.error(e);
+       
       alert("Error ❌");
     }
+    finally {
+    //submitRef.current = false;
+    setIsSubmitting(false);
+  }
   };
 
   // =========================
   // BIND DATA
   // =========================
   useEffect(() => {
+    debugger;
     if (!formData) return;
 
     setPoNumber(formData.PONumber || "");
@@ -539,10 +684,14 @@ const handleDraft = async () => {
     setExpectedDate(formData.ExpectedDateofSettlement?.split("T")[0] || "");
 
     setVendorName(formData.VendorName || "");
-    setSelectedVendorId(formData.VendorCodeId || null); // ✅ ADD THIS
-    void getPreviousAdvances(formData.VendorCodeId || null);
+    setSelectedVendorId(formData.VendorCodeId || null); 
 
-    setSelectedVendorName(formData.VendorName || ""); // ✅ ADD THIS
+     if (formData.VendorCodeId) {
+      void getPreviousAdvances(formData.VendorCodeId);
+    }
+    //void getPreviousAdvances(formData.VendorCodeId || null);
+
+    setSelectedVendorName(formData.VendorName || ""); 
 
     setGlCode(formData.GL || "");
     setCostCenter(formData.CostCenter || "");
@@ -555,7 +704,7 @@ const handleDraft = async () => {
     setUTRDate(formData.UTRDate?.split("T")[0] || "");
     setUTRNumber(formData.UTRNumber || "");
 
-    // ✅ PIC FIX
+   
     if (formData?.PICName?.Title) {
       setSelectedUser([
         {
@@ -564,7 +713,7 @@ const handleDraft = async () => {
         },
       ]);
     }
-    // ✅ Approval Matrix
+   
     if (formData?.ApprovalMatrix) {
       try {
         const parsed =
@@ -579,7 +728,7 @@ const handleDraft = async () => {
       }
     }
 
-    // ✅ Workflow History
+    
     if (formData?.WorkFlowHistory) {
       try {
         const parsed =
@@ -599,10 +748,17 @@ const handleDraft = async () => {
     }
   }, [formData]);
 
-  useEffect(() => {
+  useEffect(() => 
+    {
+      debugger;
     void getLoggedInUser();
     void getVendors();
+    if (selectedVendorId) {
+      void getPreviousAdvances(selectedVendorId);
+    }
   }, []);
+
+  
 
   // =========================
   // UI
@@ -613,10 +769,10 @@ const handleDraft = async () => {
         <div className="row">
           <div className="col-md-12">
             <div className="Main-Boxpoup">
-              {/* 🔹 Header */}
+           
               <div className="bordered">
                 <img src={logo} />
-                <h1>Edit Advance Payment </h1>
+                <h1>Capex Edit Advance Payment </h1>
               </div>
               {approvalMatrix.length === 0 ? (
                 <p>No approval data</p>
@@ -643,273 +799,7 @@ const handleDraft = async () => {
                   </ul>
                 </div>
               )}
-              {/* <div className='borderedbox'>
-                <div className="heading1">
-                  <label>Requestor Information</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeCode}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeName}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeEmail}</label>
-                    </div>
-                  </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.ContactNo}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.EmployeeStatus}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.Division}</label>
-                    </div>
-                  </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.Location}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.ReportingManager?.Title}</label>
-                    </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {employee.HOD?.Title}</label>
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Capex Details</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className="row mb-20">
-                    <div className="col-md-4">
-                      <label className="font">Vendor Code</label>
-                      <select value={selectedVendorId || ""}
-                        onChange={(e) => {
-                          const id = Number(e.target.value);
-                          const vendor = vendors.find((v) => v.Id === id);
-                          setSelectedVendorId(id);
-                          setSelectedVendorName(vendor?.VendorName || "");
-                        }}
-                        className="formtext-control"
-                      >
-                        <option value="">Select Vendor</option>
-                        {vendors.map((v) => (
-                          <option key={v.Id} value={v.Id}>
-                            {v.VendorCode}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font">Vendor Name</label>
-                      <input value={selectedVendorName || vendorName} className="form-control readonly" />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font">PO Number</label>
-                      <input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="form-control" />
-                    </div>
-                  </div>
-                  <div className="row mb-20">
-                    <div className="col-md-4">
-                      <label className="font">PO Date</label>
-                      <input type="date" value={poDate} onChange={(e) => setPoDate(e.target.value)} className="form-control" />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font">PO Advance Terms</label>
-                      <input value={poTerms} onChange={(e) => setPoTerms(e.target.value)} className="form-control" />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font">PO Amount (GST)</label>
-                      <input value={poAmount} onChange={(e) => handleNumberChange(e.target.value, setPoAmount)} className="form-control" />
-                    </div>
-                  </div>
-                  <div className="row mb-20">
-                    <div className="col-md-4">
-                      <label className="font">Request Advance Amount</label>
-                      <input value={advanceAmount} onChange={(e) => handleNumberChange(e.target.value, setAdvanceAmount)} className="form-control" />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font" style={{ color: "red" }}>Paid Amount</label>
-                      <input value={paidAmount} onChange={(e) => handleNumberChange(e.target.value, setPaidAmount)} className="form-control" />
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Advance Details</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label className="font">Expected Settlement Date</label>
-                      <input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} className="form-control" />
-                    </div>
-                    <div className='col-md-4'>
-                      <label className="font">PIC Name</label>
-                      <PeoplePicker
-                        context={peoplePickerContext}
-                        personSelectionLimit={1}
-                        ensureUser={true}
-                        principalTypes={[PrincipalType.User]}
-                        defaultSelectedUsers={
-                          selectedUser.length > 0
-                            ? [selectedUser[0].secondaryText]  // ✅ use email
-                            : []
-                        }
-                        onChange={(items) => setSelectedUser(items)}
-                      />
-                    </div>
-                    <div className='col-md-4'>
-                      <label className="font">GL Code</label>
-                      <input value={glCode} onChange={(e) => setExpectedDate(e.target.value)} className="form-control" />
-                    </div>
-                  </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label className="font">Cost Center</label>
-                      <input value={employee.CostCenter || ""} className="font-control readoly" />
-                    </div>
-                    <div className='col-md-4'>
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Remarks</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label className="font">Remarks</label>
-                      <textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} className="form-control" />
-                    </div>
-                    <div className='col-md-4'>
-                      <label className="font">Purpose</label>
-                      <textarea value={projectDesc} onChange={(e) => setProjectDesc(e.target.value)} className="form-control" />
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Previous Advances</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className="col-md-12">
-                      <div style={{ overflowX: "auto" }}>
-                        <div className="table-vert-scroll">
-                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                            <thead className="text-white" style={{ backgroundColor: "rgb(60, 62, 69)" }}>
-                              <tr>
-                                <th className="px-4 py-2">PO Number</th>
-                                <th className="px-4 py-2">Previous Advance</th>
-                                <th className="px-4 py-2">Requested Date</th>
-                                <th className="px-4 py-2">Paid Date</th>
-                                <th className="px-4 py-2">MRN No</th>
-                                <th className="px-4 py-2">Settled Amount</th>
-                                <th className="px-4 py-2">Pending Advance</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td colSpan={7} style={{ textAlign: "center" }}>
-                                  No Data
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Workflow History</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-12'>
-                      {workflowHistory.length === 0 ? (
-                        <p>No history available</p>
-                      ) : (
-                        <div className="workflow-history">
-                          {workflowHistory.map((h, index) => (
-                            <div key={index} className="history-item">
-                              <div>
-                                {h.ActionTaken === "Approved" && "✅ "}
-                                {h.ActionTaken === "Rejected" && "❌ "}
-                                {h.ActionTaken === "Send Back" && "↩ "}
-                                {h.ActionTaken}
-                              </div>
-
-                              <div><b>{h.CurrentApprover}</b></div>
-                              <div>{h.Comment}</div>
-                              <div className="date">
-                                {new Date(h.Date).toLocaleString()}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="heading1" style={{ marginTop: "10px" }}>
-                  <label>Upload Document</label>
-                </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label className="font">Attachments</label>
-                      {attachments.length > 0 && (
-                        <ul>
-                          {attachments.map((file: any, index: number) => (
-                            <li key={index}>
-                              <a
-                                href={file.ServerRelativeUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {file.Name}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <input
-                        type="file"
-                        multiple className="form-control"
-                        onChange={(e) => {
-                          if (e.target.files) {
-                            setSelectedFiles(Array.from(e.target.files));
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "center", gap: "10px", margin: "10px" }}>
-                  <a className="submit-btn" onClick={handleSubmit}>
-                    Submit
-                  </a>
-                  <a className="reset-btn" onClick={handleExit}>
-                    Exit
-                  </a>
-                </div>
-              </div> */}
+              
               <div className="borderedbox">
                 <div className="heading1">
                   <label>Requestor Information</label>
@@ -1017,6 +907,12 @@ const handleDraft = async () => {
                           const vendor = vendors.find((v) => v.Id === id);
                           setSelectedVendorId(id);
                           setSelectedVendorName(vendor?.VendorName || "");
+                           if (id > 0) {
+                            void getPreviousAdvances(id);
+                          } else {
+                            // Clear table data
+                            setPreviousAdvances([]);
+                          }
                         }}
                         className="formtext-control"
                       >
@@ -1059,6 +955,7 @@ const handleDraft = async () => {
                       <input
                         type="date"
                         value={poDate}
+                        max={new Date().toISOString().split("T")[0]} 
                         onChange={(e) => setPoDate(e.target.value)}
                         className="form-control"
                       />
@@ -1068,10 +965,11 @@ const handleDraft = async () => {
                       <span className="required" style={{ color: "red" }}>
                         *
                       </span>
-                      <input
+                      <textarea
                         value={poTerms}
                         onChange={(e) => setPoTerms(e.target.value)}
                         className="form-control"
+                        rows={3}
                       />
                     </div>
                     <div className="col-md-4">
@@ -1144,7 +1042,7 @@ const handleDraft = async () => {
                         principalTypes={[PrincipalType.User]}
                         defaultSelectedUsers={
                           selectedUser.length > 0
-                            ? [selectedUser[0].secondaryText] // ✅ use email
+                            ? [selectedUser[0].secondaryText] 
                             : []
                         }
                         onChange={(items) => setSelectedUser(items)}
@@ -1157,8 +1055,9 @@ const handleDraft = async () => {
                       </span>
                       <input
                         value={glCode}
-                        onChange={(e) => setExpectedDate(e.target.value)}
+                        // onChange={(e) => setExpectedDate(e.target.value)}
                         className="form-control"
+                        readOnly
                       />
                     </div>
                     <div className="col-md-4">
@@ -1194,162 +1093,232 @@ const handleDraft = async () => {
                       />
                     </div>
 
-                    <div className="col-md-4">
-                      <label className="font">
-                        Attachments
-                        <span className="required" style={{ color: "red" }}>
-                          *
-                        </span>
-                      </label>
+                   <div className="col-md-4">
+                    <label className="font">
+                      Attachments
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                    </label>
 
-                      {/* Existing Attachments */}
-                      {attachments.length > 0 && (
-                        <ul className="mt-2">
-                          {attachments.map((file: any, index: number) => (
-                            <li
-                              key={index}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                marginBottom: "5px",
-                              }}
+                    {/* Existing Attachments */}
+                    {/* Existing Attachments */}
+                    {attachments.length > 0 && (
+                      <ul className="mt-2">
+                        {attachments.map((file: any, index: number) => (
+                          <li
+                            key={index}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              marginBottom: "5px",
+                            }}
+                          >
+                            <a
+                              href={file.ServerRelativeUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
                             >
-                              <a
-                                href={file.ServerRelativeUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {file.Name}
-                              </a>
+                              {file.Name}
+                            </a>
 
-                              {/* Remove Existing Attachment */}
-                              {selectedFiles.length > 0 && (
-                        <ul style={{ marginTop: "10px" }}>
-                          {selectedFiles.map((file, index) => (
-                            <li key={index}>
+                            {/* Delete Existing File */}
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleDeleteAttachment(file.Name)}
+                            >
+                              Delete
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {/* Newly Selected Files */}
+                    {selectedFiles.length > 0 && (
+                      <ul className="mt-2">
+                        {selectedFiles.map((file: File, index: number) => (
+                          <li
+                            key={index}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              marginBottom: "5px",
+                            }}
+                          >
+                            <a
+                            href={URL.createObjectURL(file)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
                               {file.name}
-                              <button
-                                type="button"
-                                style={{
-                                  marginLeft: "10px",
-                                  color: "red",
-                                  cursor: "pointer",
-                                }}
-                                onClick={() => handleRemoveFile(index)}
-                              >
-                                Remove
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                            </a>
 
-                      {/* Newly Selected Files */}
-                      {selectedFiles.length > 0 && (
-                        <ul className="mt-2">
-                          {selectedFiles.map((file: File, index: number) => (
-                            <li
-                              key={index}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                marginBottom: "5px",
+                            {/* Remove Selected File */}
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={() => {
+                                const updatedFiles = selectedFiles.filter(
+                                  (_: File, i: number) => i !== index,
+                                );
+
+                                setSelectedFiles(updatedFiles);
                               }}
                             >
-                              <span>{file.name}</span>
+                              Remove
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
 
-                              {/* Remove Selected File */}
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-danger"
-                                onClick={() => {
-                                  const updatedFiles = selectedFiles.filter(
-                                    (_: File, i: number) => i !== index,
-                                  );
+                    <input
+                      type="file"
+                      multiple
+                      className="form-control"
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          setSelectedFiles(Array.from(e.target.files));
+                        }
+                      }}
+                    />
+                  </div>
+                  </div>
+                  <div className="heading1" style={{ marginTop: "10px" }}>
+              <label>Previous Advances</label>
+            </div>
+            <div className="main-formcontainer">
+              <div className="row mb-20">
+                <div className="col-md-12">
+                  <div style={{ overflowX: "auto" }}>
+                    <div className="table-vert-scroll">
+                      <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                        <thead
+                          className="text-white"
+                          style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                        >
+                          <tr>
+                            <th className="px-4 py-2">PO Number</th>
+                            <th className="px-4 py-2">Previous Advance</th>
+                            <th className="px-4 py-2">Requested Date</th>
+                            <th className="px-4 py-2">Paid Date</th>
+                            <th className="px-4 py-2">MRN No</th>
+                            <th className="px-4 py-2">Settled Amount</th>
+                            <th className="px-4 py-2">Pending Advance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previousAdvances.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} style={{ textAlign: "center" }}>
+                                No previous advances available
+                              </td>
+                            </tr>
+                          ) : (
+                            previousAdvances.map((item: any, index: number) => {
+                              const pending = Math.max(
+                                0,
+                                Number(item.RequestAdvanceAmount || 0) -
+                                  Number(item.PaidAmount || 0),
+                              );
+                              return (
+                                <tr key={index}>
+                                  <td>{item.PONumber}</td>
+                                  <td>{item.RequestAdvanceAmount}</td>
 
-                                  setSelectedFiles(updatedFiles);
-                                }}
-                              >
-                                Remove
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                                  <td>
+                                    {item.Created
+                                      ? new Date(
+                                          item.Created,
+                                        ).toLocaleDateString("en-GB")
+                                      : ""}
+                                  </td>
 
-                      <input
-                        type="file"
-                        multiple
-                        className="form-control"
-                        onChange={(e) => {
-                          if (e.target.files) {
-                            setSelectedFiles(Array.from(e.target.files));
-                          }
-                        }}
-                      />
+                                  <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                                item.VoucherDate,
+                                              ).toLocaleDateString('en-GB')
+                                            : ""}
+                                        </td>
+
+                                  <td>{item.VoucherNumber}</td>
+                                  <td>{item.PaidAmount}</td>
+                                  <td>{pending}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-                  <div className="row mb-20">
-                    <div className="col-md-12">
-                      <div style={{ overflowX: "auto" }}>
-                        <div className="table-vert-scroll">
-                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                            <thead
-                              className="text-white"
-                              style={{ backgroundColor: "rgb(60, 62, 69)" }}
-                            >
-                              <tr>
-                                <th className="px-4 py-2">PO Number</th>
-                                <th className="px-4 py-2">Previous Advance</th>
-                                <th className="px-4 py-2">Requested Date</th>
-                                <th className="px-4 py-2">Paid Date</th>
-                                <th className="px-4 py-2">MRN No</th>
-                                <th className="px-4 py-2">Settled Amount</th>
-                                <th className="px-4 py-2">Pending Advance</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td colSpan={7} style={{ textAlign: "center" }}>
-                                  No Data
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                </div>
+              </div>
+            </div>
                   <div className="row mb-20">
                     <div className="col-md-12">
                       {workflowHistory.length === 0 ? (
                         <p>No history available</p>
                       ) : (
                         <div className="workflow-history">
-                          {workflowHistory.map((h, index) => (
-                            <div key={index} className="history-item">
-                              <div>
-                                {h.ActionTaken === "Approved" && "✅ "}
-                                {h.ActionTaken === "Rejected" && "❌ "}
-                                {h.ActionTaken === "Send Back" && "↩ "}
-                                {h.ActionTaken}
-                              </div>
+                          <table
+                          className="workflow-table"
+                          style={{ width: "100%" }}
+                        >
+                          <thead>
+                            <tr>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Action By
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Action Taken
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Date
+                              </th>
+                              <th style={{ padding: "8px", textAlign: "left" }}>
+                                Comment
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {workflowHistory
+                              .filter(
+                                (h: any) =>
+                                  h.ActionTaken &&
+                                  h.ActionTaken !== "Save as Draft" && h.ActionTaken !== "Edited",
+                              )
+                              .map((h: any, idx: number) => (
+                                <tr key={idx}>
+                                  <td style={{ padding: "8px" }}>
+                                    {h.CurrentApprover || ""}
+                                  </td>
 
-                              <div>
-                                <b>{h.CurrentApprover}</b>
-                              </div>
-                              <div>{h.Comment}</div>
-                              <div className="date">
-                                {new Date(h.Date).toLocaleString()}
-                              </div>
-                            </div>
-                          ))}
+                                  <td style={{ padding: "8px" }}>
+                                    {h.ActionTaken || ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.Date
+                                      ? new Date(h.Date).toLocaleDateString(
+                                          "en-GB",
+                                        )
+                                      : ""}
+                                  </td>
+
+                                  <td style={{ padding: "8px" }}>
+                                    {h.Comment || ""}
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                         
                         </div>
                       )}
                     </div>
@@ -1362,12 +1331,33 @@ const handleDraft = async () => {
                       margin: "10px",
                     }}
                   >
-                    <a className="submit-btn" onClick={handleSubmit}>
-                      Submit
-                    </a>
-                    <a className="draft-btn" onClick={handleDraft}>
-                      Draft
-                    </a>
+                    <button
+                  type="button"
+                  onClick={!isSubmitting ? handleSubmit : undefined}
+                  disabled={isSubmitting}
+                  className="submit-btn"
+                  style={{
+                    pointerEvents: isSubmitting ? "none" : "auto",
+                    opacity: isSubmitting ? 0.6 : 1,
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit"}
+                </button>
+                <button
+                  type="button"
+                  onClick={!isDraftSaving ? handledraft : undefined}
+                  disabled={isDraftSaving}
+                  className="Rework-btn"
+                  style={{
+                    pointerEvents: isDraftSaving ? "none" : "auto",
+                    opacity: isDraftSaving ? 0.6 : 1,
+                    cursor: isDraftSaving ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isDraftSaving ? "Saving..." : "Save as Draft"}
+                </button>
+
                     <a className="reset-btn" onClick={handleExit}>
                       Exit
                     </a>

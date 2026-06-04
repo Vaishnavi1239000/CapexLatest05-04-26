@@ -20,7 +20,7 @@ interface UserDashboardProps {
 const APperformerdashboardforutr: React.FC<UserDashboardProps> = ({ context }) => {
 
     const sp = spfi().using(SPFx(context));
-    //const [formType, setFormType] = useState<"new" | "view" | null>(null);
+    
     const [formType, setFormType] = useState<"new" | "view" | "approve" | null>(null);
 
     const [activeMenu, setActiveMenu] = React.useState("My Request");
@@ -31,7 +31,7 @@ const APperformerdashboardforutr: React.FC<UserDashboardProps> = ({ context }) =
     const [currentUserName, setCurrentUserName] = React.useState("");
     const [selectedItem, setSelectedItem] = React.useState<any>(null);
     const [CurrentUserId, setCurrentUserId] = React.useState<any>(null);
-    // ✅ GET CURRENT USER
+  
     const getLoggedInUser = async () => {
         try {
             const user = await sp.web.currentUser();
@@ -51,7 +51,7 @@ const APperformerdashboardforutr: React.FC<UserDashboardProps> = ({ context }) =
                 .expand("PICName")();
 
             setSelectedItem(fullItem);
-            setFormType("approve"); // 👈 important
+            setFormType("approve"); 
             setShowForm(true);
 
         } catch (error) {
@@ -76,7 +76,7 @@ const APperformerdashboardforutr: React.FC<UserDashboardProps> = ({ context }) =
                     "PONumber",
                     "RequestAdvanceAmount",
                     "Status"
-                ).filter(`Status eq 'pending for PF Approver UTR'  and CurrentApproverId eq '${userId}'`) // ✅ FILTER HERE
+                ).filter(`Status eq 'pending for PF Approver UTR'  and CurrentApproverId eq '${userId}'`) 
 
                 .orderBy("ID", false)();
 
@@ -100,10 +100,10 @@ const APperformerdashboardforutr: React.FC<UserDashboardProps> = ({ context }) =
             console.error("Data error:", error);
         }
     };
-    // ✅ GET LIST DATA
+  
 
 
-    // ✅ VIEW CLICK
+   
     const handleViewClick = async (item: any) => {
         try {
             const fullItem = await sp.web.lists
@@ -147,7 +147,7 @@ const APperformerdashboardforutr: React.FC<UserDashboardProps> = ({ context }) =
     );
 });
 
-    // ✅ LOAD DATA
+  
     React.useEffect(() => {
         if (!context) return;
        void getLoggedInUser();
@@ -160,7 +160,7 @@ const APperformerdashboardforutr: React.FC<UserDashboardProps> = ({ context }) =
     return (
         <APperformerAdvanceFormForUTR
             context={context}
-            itemId={selectedItem?.ID}   // ✅ FIX
+            itemId={selectedItem?.ID}   
         />
     );
 }
