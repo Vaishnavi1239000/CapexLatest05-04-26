@@ -1127,9 +1127,10 @@ const getLoggedInUser = async () => {
                                 .filter(
                                   (h: any) =>
                                     h.ActionTaken &&
-                                    h.ActionTaken !== "Draft Saved" &&
+                                    h.ActionTaken !== "Save as Draft" &&
                                     h.ActionTaken !== "Edited",
                                 )
+                                
                                 .map((h: any, idx: number) => (
                                   <tr key={idx}>
                                     <td style={{ padding: "8px" }}>

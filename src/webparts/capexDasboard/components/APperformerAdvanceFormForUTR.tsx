@@ -1221,7 +1221,7 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                                 .filter(
                                   (h: any) =>
                                     h.ActionTaken &&
-                                    h.ActionTaken !== "Draft Saved" &&
+                                    h.ActionTaken !== "Save as Draft" &&
                                     h.ActionTaken !== "Edited",
                                 )
                                 .map((h: any, idx: number) => (

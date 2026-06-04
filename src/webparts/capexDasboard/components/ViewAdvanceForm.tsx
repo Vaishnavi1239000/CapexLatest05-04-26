@@ -885,7 +885,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                               .filter(
                                 (h: any) =>
                                   h.ActionTaken &&
-                                  h.ActionTaken !== "Draft Saved" && h.ActionTaken !== "Edited",
+                                  h.ActionTaken !== "Save as Draft" && h.ActionTaken !== "Edited",
                               )
                               .map((h: any, idx: number) => (
                                 <tr key={idx}>

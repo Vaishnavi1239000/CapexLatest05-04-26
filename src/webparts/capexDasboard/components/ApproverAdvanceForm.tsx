@@ -609,7 +609,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
           <div className="Main-Boxpoup">
             <div className="bordered">
               <img src={logo} />
-              <h1>  Approval Form </h1>
+              <h1> Capex Approval Form </h1>
             </div>
             {approvalMatrix.length === 0 ? (
               <p>No approval data</p>
@@ -1229,7 +1229,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                               .filter(
                                 (h: any) =>
                                   h.ActionTaken &&
-                                  h.ActionTaken !== "Draft Saved" && h.ActionTaken !== "Edited",
+                                  h.ActionTaken !== "Save as Draft" && h.ActionTaken !== "Edited",
                               )
                               .map((h: any, idx: number) => (
                                 <tr key={idx}>
