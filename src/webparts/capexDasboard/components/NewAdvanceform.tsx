@@ -75,10 +75,10 @@ const NewAdvanceform = ({ context }: any) => {
   const getPreviousAdvances = async (vendorId: number) => {
     try {
       debugger;
-       if (!vendorId) {
-      setPreviousAdvances([]);
-      return;
-    }
+      if (!vendorId) {
+        setPreviousAdvances([]);
+        return;
+      }
       console.log("Fetching for Vendor:", vendorId);
 
       const data = await sp.web.lists
@@ -1205,14 +1205,6 @@ const NewAdvanceform = ({ context }: any) => {
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className="font">Remarks</label>
-                      <textarea
-                        value={remarks}
-                        className="font-control"
-                        onChange={(e) => setRemarks(e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-4">
                       <label className="font">Project Description</label>{" "}
                       <span className="required" style={{ color: "red" }}>
                         *
@@ -1232,6 +1224,7 @@ const NewAdvanceform = ({ context }: any) => {
                       <input
                         ref={fileInputRef}
                         type="file"
+                        style={{ height: "34px", padding: "3px" }}
                         multiple
                         onChange={(e) => {
                           const files = e.target.files;
@@ -1276,79 +1269,95 @@ const NewAdvanceform = ({ context }: any) => {
                   <div className="heading1" style={{ marginTop: "10px" }}>
                     <label>Previous Advances</label>
                   </div>
-                  <div className="row mb-20">
-                    <div className="col-md-12">
-                      <div style={{ overflowX: "auto" }}>
-                        <div className="table-vert-scroll">
-                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                            <thead
-                              className="text-white"
-                              style={{ backgroundColor: "rgb(60, 62, 69)" }}
-                            >
-                              <tr>
-                                <th className="px-4 py-2">PO Number</th>
-                                <th className="px-4 py-2">Previous Advance</th>
-                                <th className="px-4 py-2">Requested Date</th>
-                                <th className="px-4 py-2">Paid Date</th>
-                                <th className="px-4 py-2">MRN No</th>
-                                <th className="px-4 py-2">Settled Amount</th>
-                                <th className="px-4 py-2">Pending Advance</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {previousAdvances.length === 0 ? (
+                  <div className="main-formcontainer">
+                    <div className="row mb-20">
+                      <div className="col-md-12">
+                        <div style={{ overflowX: "auto" }}>
+                          <div className="table-vert-scroll">
+                            <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                              <thead
+                                className="text-white"
+                                style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                              >
                                 <tr>
-                                  <td
-                                    colSpan={7}
-                                    style={{ textAlign: "center" }}
-                                  >
-                                    No previous advances available
-                                  </td>
+                                  <th className="px-4 py-2">PO Number</th>
+                                  <th className="px-4 py-2">Previous Advance</th>
+                                  <th className="px-4 py-2">Requested Date</th>
+                                  <th className="px-4 py-2">Paid Date</th>
+                                  <th className="px-4 py-2">MRN No</th>
+                                  <th className="px-4 py-2">Settled Amount</th>
+                                  <th className="px-4 py-2">Pending Advance</th>
                                 </tr>
-                              ) : (
-                                previousAdvances.map(
-                                  (item: any, index: number) => {
-                                    const pending = Math.max(
-                                      0,
-                                      Number(item.RequestAdvanceAmount || 0) -
+                              </thead>
+                              <tbody>
+                                {previousAdvances.length === 0 ? (
+                                  <tr>
+                                    <td
+                                      colSpan={7}
+                                      style={{ textAlign: "center" }}
+                                    >
+                                      No previous advances available
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  previousAdvances.map(
+                                    (item: any, index: number) => {
+                                      const pending = Math.max(
+                                        0,
+                                        Number(item.RequestAdvanceAmount || 0) -
                                         Number(item.PaidAmount || 0),
-                                    );
-                                    return (
-                                      <tr key={index}>
-                                        <td>{item.PONumber}</td>
-                                        <td>{item.RequestAdvanceAmount}</td>
+                                      );
+                                      return (
+                                        <tr key={index}>
+                                          <td>{item.PONumber}</td>
+                                          <td>{item.RequestAdvanceAmount}</td>
 
-                                        <td>
-                                          {item.Created
-                                            ? new Date(
+                                          <td>
+                                            {item.Created
+                                              ? new Date(
                                                 item.Created,
                                               ).toLocaleDateString("en-GB")
-                                            : ""}
-                                        </td>
+                                              : ""}
+                                          </td>
 
-                                        <td>
-                                          {item.VoucherDate
-                                            ? new Date(
+                                          <td>
+                                            {item.VoucherDate
+                                              ? new Date(
                                                 item.VoucherDate,
                                               ).toLocaleDateString("en-GB")
-                                            : ""}
-                                        </td>
+                                              : ""}
+                                          </td>
 
-                                        <td>{item.VoucherNumber}</td>
-                                        <td>{item.PaidAmount}</td>
-                                        <td>{pending}</td>
-                                      </tr>
-                                    );
-                                  },
-                                )
-                              )}
-                            </tbody>
-                          </table>
+                                          <td>{item.VoucherNumber}</td>
+                                          <td>{item.PaidAmount}</td>
+                                          <td>{pending}</td>
+                                        </tr>
+                                      );
+                                    },
+                                  )
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-
+                  <div className="heading1" style={{ marginTop: "10px" }}>
+                    <label>Remarks</label>
+                  </div>
+                  <div className="main-formcontainer">
+                    <div className="row mb-20">
+                      <div className="col-md-12">
+                        <label className="font">Remarks</label>
+                        <textarea
+                          value={remarks}
+                          className="font-control"
+                          onChange={(e) => setRemarks(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
                   <div
                     style={{
                       display: "flex",

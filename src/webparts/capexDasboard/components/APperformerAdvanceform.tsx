@@ -12,7 +12,7 @@ import logo from "../assets/sona-comstarlogo.png";
 import { IPeoplePickerContext } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 interface IProps {
   context: any;
-  itemId: number; 
+  itemId: number;
 }
 interface IVendor {
   Id: number;
@@ -26,11 +26,11 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
   const today = new Date();
   const [employee, setEmployee] = useState<any>({});
 
-const localDate: string = new Date(
-  today.getTime() - today.getTimezoneOffset() * 60000
-)
-  .toISOString()
-  .split("T")[0];
+  const localDate: string = new Date(
+    today.getTime() - today.getTimezoneOffset() * 60000
+  )
+    .toISOString()
+    .split("T")[0];
   const actionLock = React.useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [itemData, setItemData] = useState<any>(null);
@@ -99,25 +99,25 @@ const localDate: string = new Date(
       void setAttachments([]);
     }
   };
-  
+
   const getItemById1 = async () => {
     try {
       const item = await sp.web.lists
         .getByTitle("CapexAdvance")
         .items.getById(itemId)
-        .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode", "Author/Id","Author/Title","Author/EMail")
+        .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode", "Author/Id", "Author/Title", "Author/EMail")
         .expand("PICName", "VendorCode", "Author")();
-      
+
 
       setItemData(item);
       //  setApproverRemarks(item.ApproverRemarks || "");
 
-      
+
       setSelectedVendorId(item.VendorCode?.Id || null);
-     
+
       setSelectedVendorName(item.VendorName); // optional
 
-      
+
       if (item.CapexID) {
         await getAttachments(item.CapexID);
       }
@@ -155,7 +155,7 @@ const localDate: string = new Date(
       console.error("Fetch error:", error);
     }
   };
-const getLoggedInUser = async () => {
+  const getLoggedInUser = async () => {
     try {
       const currentUser = await sp.web.currentUser();
       const email = currentUser.Email;
@@ -185,8 +185,8 @@ const getLoggedInUser = async () => {
       console.log("Error fetching user:", error);
     }
   };
- 
-   useEffect(() => {
+
+  useEffect(() => {
     if (selectedVendorId) {
       console.log("Calling Previous Advances:", selectedVendorId);
 
@@ -194,7 +194,7 @@ const getLoggedInUser = async () => {
     }
   }, [selectedVendorId]);
 
-  
+
   const getItemById = async () => {
     try {
       debugger;
@@ -217,22 +217,22 @@ const getLoggedInUser = async () => {
 
       setItemData(item);
 
-      
+
       const vendorId = item?.VendorCode?.Id || null;
 
       console.log("Vendor Id:", vendorId);
 
       setSelectedVendorId(vendorId);
 
-      
+
       setSelectedVendorName(item?.VendorName || "");
 
-      
+
       if (item.CapexID) {
         await getAttachments(item.CapexID);
       }
 
-      
+
       if (item.ApprovalMatrix) {
         try {
           const parsed =
@@ -249,7 +249,7 @@ const getLoggedInUser = async () => {
         setApprovalMatrix([]);
       }
 
-      
+
       if (item.WorkFlowHistory) {
         try {
           const parsed =
@@ -270,8 +270,8 @@ const getLoggedInUser = async () => {
     }
   };
 
-  
-   useEffect(() => {
+
+  useEffect(() => {
     if (!context || !itemId) return;
     debugger;
     const loadData = async () => {
@@ -279,10 +279,10 @@ const getLoggedInUser = async () => {
 
       await getLoggedInUser();
 
-      
+
       await getVendors();
 
-     
+
       await getItemById();
     };
 
@@ -295,9 +295,9 @@ const getLoggedInUser = async () => {
 
     const loadData = async () => {
       void getLoggedInUser();
-      await getItemById(); 
-      await getVendors(); 
-     
+      await getItemById();
+      await getVendors();
+
     };
 
     void loadData();
@@ -342,51 +342,51 @@ const getLoggedInUser = async () => {
       };
     });
   };
- 
+
   const handleApprove = async () => {
     if (actionLock.current) return;
 
- // actionLock.current = true;
+    // actionLock.current = true;
     if (isSubmitting) return;
     try {
       setIsSubmitting(true);
       if (!voucherDate || voucherDate.trim() === "") {
-      alert("Please enter Voucher Date");
-      //actionLock.current = false;
-      setIsSubmitting(false);
-      return;
-    }
-      if (voucherDate > localDate) {
-      alert("VoucherDate cannot be a future date");
-      // return;
-       //actionLock.current = false;
+        alert("Please enter Voucher Date");
+        //actionLock.current = false;
         setIsSubmitting(false);
         return;
-    }
-    if (!voucherNumber || voucherNumber.trim() === "") {
-      alert("Please enter Voucher Number");
-      //actionLock.current = false;
+      }
+      if (voucherDate > localDate) {
+        alert("VoucherDate cannot be a future date");
+        // return;
+        //actionLock.current = false;
         setIsSubmitting(false);
-      return;
-    }
-     if (!approverRemarks || approverRemarks.trim() === "") {
-      alert("Please enter Remarks");
-      //actionLock.current = false;
+        return;
+      }
+      if (!voucherNumber || voucherNumber.trim() === "") {
+        alert("Please enter Voucher Number");
+        //actionLock.current = false;
         setIsSubmitting(false);
-      return;
-    }
+        return;
+      }
+      if (!approverRemarks || approverRemarks.trim() === "") {
+        alert("Please enter Remarks");
+        //actionLock.current = false;
+        setIsSubmitting(false);
+        return;
+      }
 
       const oldFlow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
         : [];
 
-     
+
       const latestFlow = await buildApprovalFlow();
 
-      
+
       const finalFlow = mergeFlowWithStatus(oldFlow, latestFlow);
 
-      
+
       const currentUserId = context.pageContext.legacyPageContext.userId;
 
       const currentIndex = finalFlow.findIndex(
@@ -432,40 +432,40 @@ const getLoggedInUser = async () => {
 
           ApprovalMatrix: JSON.stringify(finalFlow),
 
-         
+
           CurrentApproverId: nextApproverId,
           ApproverStatus: "Pending for PF Approver UTR"
         });
 
       alert("Approved successfully ✅");
-      
+
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
 
     } catch (error) {
       console.error("Approve error:", error);
       alert("Error ❌");
-      
+
     }
-     finally {
-    //actionLock.current = false;
+    finally {
+      //actionLock.current = false;
       setIsSubmitting(false);
-  }
+    }
   };
 
- 
+
   const handleSendBack = async () => {
     if (actionLock.current) return;
-   // actionLock.current = true;
+    // actionLock.current = true;
     setIsSubmitting(true);
 
     try {
-     if (!approverRemarks || approverRemarks.trim() === "") {
-      alert("Please enter Remarks");
-      //actionLock.current = false;
-      setIsSubmitting(false);
-      return;
-    }
+      if (!approverRemarks || approverRemarks.trim() === "") {
+        alert("Please enter Remarks");
+        //actionLock.current = false;
+        setIsSubmitting(false);
+        return;
+      }
 
       const flow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
@@ -506,33 +506,33 @@ const getLoggedInUser = async () => {
         });
 
       alert("Send Back ✅");
-     
+
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
     } catch (error) {
       console.error(error);
-      
+
     }
-     finally {
-    //actionLock.current = false;
+    finally {
+      //actionLock.current = false;
       setIsSubmitting(false);
-  }
+    }
   };
 
-  
+
   const handleReject = async () => {
     if (actionLock.current) return;
-   // actionLock.current = true;
+    // actionLock.current = true;
     setIsSubmitting(true);
 
     try {
       if (!approverRemarks || approverRemarks.trim() === "") {
-      alert("Please enter Remarks");
-      //actionLock.current = false;
-      setIsSubmitting(false);
-      return;
-    }
-     
+        alert("Please enter Remarks");
+        //actionLock.current = false;
+        setIsSubmitting(false);
+        return;
+      }
+
 
       const flow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
@@ -573,25 +573,25 @@ const getLoggedInUser = async () => {
         });
 
       alert("Rejected ❌");
-   
+
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
 
     } catch (error) {
       console.error(error);
-     
+
     }
     finally {
-    //actionLock.current = false;
+      //actionLock.current = false;
       setIsSubmitting(false);
-  }
+    }
   };
 
   const handleExit = () => {
     window.location.href = `https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer`;
   };
 
-  
+
   if (!itemData) return <div>Loading...</div>;
 
   return (
@@ -610,10 +610,10 @@ const getLoggedInUser = async () => {
               ) : (
                 <div className="displayWF">
                   <ul className="approval-flow">
-                     <li className={`approval-step`}>
-                      
-                           {`Initiator`} - {itemData.Author.Title}
-                        
+                    <li className={`approval-step`}>
+
+                      {`Initiator`} - {itemData.Author.Title}
+
                     </li>
                     {approvalMatrix.map((a, index) => (
                       <li
@@ -946,68 +946,63 @@ const getLoggedInUser = async () => {
                 </div>
                 <div className='main-formcontainer'>
                   <div className='row mb-20'>
-                    <div className="col-md-4">
+                    <div className='col-md-4'>
                       <label className="font">Vendor Code</label>
-                      <select
-                        value={selectedVendorId ?? ""}
-                        disabled={true}
-                        onChange={(e) => {
-                          const id = Number(e.target.value);
-                          const vendor = vendors.find((v) => v.Id === id);
-                          setSelectedVendorId(id);
-                          setSelectedVendorName(vendor?.VendorName || "");
-                        }} className="formtext-control"
-                      >
-                        <option value="">Select Vendor</option>
-                        {vendors.map((v) => (
-                          <option key={v.Id} value={v.Id}>
-                            {v.VendorCode}
-                          </option>
-                        ))}
-                      </select>
+                      <label className="fonttext textviewbox readonly">
+                        {vendors.find(v => v.Id === selectedVendorId)?.VendorCode || ""}
+                      </label>
                     </div>
                     <div className="col-md-4">
-                      <label>Vendor Name</label>
-                      <input value={itemData.VendorName || ""} className="form-control readonly" />
+                      <label className="font">Vendor Name</label>
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.VendorName}
+                      </label>
                     </div>
                     <div className="col-md-4">
-                      <label>PO Number</label>
-                      <input value={itemData.PONumber || ""} className="form-control readonly" />
+                      <label className="font">PO Number</label>
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.PONumber}
+                      </label>
                     </div>
                   </div>
                   <div className='row mb-20'>
-                    <div className="col-md-4">
+                    <div className='col-md-4'>
                       <label className="font">PO Date</label>
-                      <input value={itemData.PODate ? new Date(itemData.PODate).toLocaleDateString("en-GB") : ""} className="form-control readonly" />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.PODate ? new Date(itemData.PODate).toLocaleDateString("en-GB",) : ""}
+                      </label>
                     </div>
-                    <div className="col-md-4">
+                    <div className='col-md-4'>
                       <label className="font">PO Terms</label>
-                      <textarea
-    value={itemData.POAdvanceTerms || ""}
-    className="form-control readonly"
-    rows={3}
-    readOnly
-  />
-                      {/* <input value={itemData.POAdvanceTerms || ""} className="form-control readonly" /> */}
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.POAdvanceTerms}
+                      </label>
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Amount</label>
-                      <input value={itemData.POAmtGST || ""} className="form-control readonly" />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.POAmtGST}
+                      </label>
                     </div>
                   </div>
                   <div className='row mb-20'>
-                    <div className='col-md-4'>
+                    <div className="col-md-4">
                       <label className="font">Advance Amount</label>
-                      <input value={itemData.RequestAdvanceAmount || ""} className="form-control readonly" />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.RequestAdvanceAmount}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
+                    <div className="col-md-4">
                       <label className="font">Paid Amount</label>
-                      <input value={itemData.PaidAmount || ""} className="form-control readonly" />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.PaidAmount}
+                      </label>
                     </div>
                     <div className="col-md-4">
                       <label className="font">Expected Settlement</label>
-                      <input value={itemData.ExpectedDateofSettlement ? new Date(itemData.ExpectedDateofSettlement,).toLocaleDateString("en-GB") : ""}
-                        className="form-control readonly" />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.ExpectedDateofSettlement ? new Date(itemData.ExpectedDateofSettlement).toLocaleDateString("en-GB") : ""}
+                      </label>
                     </div>
                   </div>
                   <div className="row mb-20">
@@ -1025,24 +1020,32 @@ const getLoggedInUser = async () => {
                     </div>
                     <div className="col-md-4">
                       <label className="font">GL Code</label>
-                      <input value={itemData.GL || ""} className="form-control readonly" />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.GL}
+                      </label>
                     </div>
                     <div className="col-md-4">
                       <label className="font">Cost Center</label>
-                      <input value={itemData.CostCenter || ""} className="form-control readonly" />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.CostCenter}
+                      </label>
                     </div>
                   </div>
-                 
                   <div className="row mb-20">
                     <div className="col-md-4">
                       <label className="font" style={{ display: "block" }}>User Remarks</label>
-                      <label className='fonttext textbox readonly'>{itemData.Remarks || ""}</label>
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.Remarks}
+                      </label>
                     </div>
                     <div className="col-md-4">
-                      <label className="font" style={{ display: "block" }}>Project Description</label>
-                      <label className='fonttext textbox readonly'>{itemData.ProjectDescription || ""}</label>
+                      <label className="font">Project Description</label>
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.ProjectDescription}
+                      </label>
                     </div>
                     <div className="col-md-4">
+                      <label className="font">Attachments</label>
                       {attachments.length === 0 ? (
                         <p>No attachments</p>
                       ) : (
@@ -1064,12 +1067,26 @@ const getLoggedInUser = async () => {
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
+                      <label className='font'>Approver Remarks</label>
+                      <textarea
+                        value={approverRemarks} className='form-control'
+                        onChange={(e) => setApproverRemarks(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Vouching Details</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
                       <label className='font'>Voucher Date</label>
                       <input
                         type="date"
                         value={voucherDate}
                         onChange={(e) => setVoucherDate(e.target.value)}
-                        max={new Date().toISOString().split("T")[0]}  className='form-control'
+                        max={new Date().toISOString().split("T")[0]} className='form-control'
                       />
                     </div>
                     <div className="col-md-4">
@@ -1079,23 +1096,92 @@ const getLoggedInUser = async () => {
                         onChange={(e) => setVoucherNumber(e.target.value)}
                       />
                     </div>
-                    <div className="col-md-4">
-                      <label className='font'>Approver Remarks</label>
-                      <textarea
-                        value={approverRemarks} className='form-control'
-                        onChange={(e) => setApproverRemarks(e.target.value)}
-                      />
-                    </div>
-
                   </div>
-                   <div className="row mb-20">
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Previous Advances</label>
+                </div>
+                <div className="main-formcontainer">
+                  <div className="row mb-20">
+                    <div className="col-md-12">
+                      <div style={{ overflowX: "auto" }}>
+                        <div className="table-vert-scroll">
+                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                            <thead
+                              className="text-white"
+                              style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                            >
+                              <tr>
+                                <th className="px-4 py-2">PO Number</th>
+                                <th className="px-4 py-2">Previous Advance</th>
+                                <th className="px-4 py-2">Requested Date</th>
+                                <th className="px-4 py-2">Paid Date</th>
+                                <th className="px-4 py-2">MRN No</th>
+                                <th className="px-4 py-2">Settled Amount</th>
+                                <th className="px-4 py-2">Pending Advance</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {previousAdvances.length === 0 ? (
+                                <tr>
+                                  <td colSpan={7} style={{ textAlign: "center" }}>
+                                    No previous advances available
+                                  </td>
+                                </tr>
+                              ) : (
+                                previousAdvances.map(
+                                  (item: any, index: number) => {
+                                    const pending = Math.max(
+                                      0,
+                                      Number(item.RequestAdvanceAmount || 0) -
+                                      Number(item.PaidAmount || 0),
+                                    );
+                                    return (
+                                      <tr key={index}>
+                                        <td>{item.PONumber}</td>
+                                        <td>{item.RequestAdvanceAmount}</td>
+
+                                        <td>
+                                          {item.Created
+                                            ? new Date(
+                                              item.Created,
+                                            ).toLocaleDateString("en-GB")
+                                            : ""}
+                                        </td>
+
+                                        <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                              item.VoucherDate,
+                                            ).toLocaleDateString('en-GB')
+                                            : ""}
+                                        </td>
+
+                                        <td>{item.VoucherNumber}</td>
+                                        <td>{item.PaidAmount}</td>
+                                        <td>{pending}</td>
+                                      </tr>
+                                    );
+                                  },
+                                )
+                              )}
+                            </tbody>
+                          </table>
+
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="main-formcontainer" style={{ marginTop: "10px" }}>
+                  <div className="row mb-20">
                     <div className="col-md-12">
                       {workflowHistory.length === 0 ? (
                         <p>No history available</p>
                       ) : (
-                        <div className="workflow-history">
+                        <div style={{ overflowX: "auto" }}>
                           <table
-                            className="workflow-table"
+                            className="custom-table"
                             style={{ width: "100%" }}
                           >
                             <thead>
@@ -1130,7 +1216,7 @@ const getLoggedInUser = async () => {
                                     h.ActionTaken !== "Save as Draft" &&
                                     h.ActionTaken !== "Edited",
                                 )
-                                
+
                                 .map((h: any, idx: number) => (
                                   <tr key={idx}>
                                     <td style={{ padding: "8px" }}>
@@ -1144,8 +1230,8 @@ const getLoggedInUser = async () => {
                                     <td style={{ padding: "8px" }}>
                                       {h.Date
                                         ? new Date(h.Date).toLocaleDateString(
-                                            "en-GB",
-                                          )
+                                          "en-GB",
+                                        )
                                         : ""}
                                     </td>
 
@@ -1178,107 +1264,32 @@ const getLoggedInUser = async () => {
                       )}
                     </div>
                   </div>
-                   <div className="heading1" style={{ marginTop: "10px" }}>
-                <label>Previous Advances</label>
-              </div>
-              <div className="main-formcontainer">
-                <div className="row mb-20">
-                  <div className="col-md-12">
-                    <div style={{ overflowX: "auto" }}>
-                      <div className="table-vert-scroll">
-                        <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                          <thead
-                            className="text-white"
-                            style={{ backgroundColor: "rgb(60, 62, 69)" }}
-                          >
-                            <tr>
-                              <th className="px-4 py-2">PO Number</th>
-                              <th className="px-4 py-2">Previous Advance</th>
-                              <th className="px-4 py-2">Requested Date</th>
-                              <th className="px-4 py-2">Paid Date</th>
-                              <th className="px-4 py-2">MRN No</th>
-                              <th className="px-4 py-2">Settled Amount</th>
-                              <th className="px-4 py-2">Pending Advance</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {previousAdvances.length === 0 ? (
-                              <tr>
-                                <td colSpan={7} style={{ textAlign: "center" }}>
-                                  No previous advances available
-                                </td>
-                              </tr>
-                            ) : (
-                              previousAdvances.map(
-                                (item: any, index: number) => {
-                                  const pending = Math.max(
-                                    0,
-                                    Number(item.RequestAdvanceAmount || 0) -
-                                      Number(item.PaidAmount || 0),
-                                  );
-                                  return (
-                                    <tr key={index}>
-                                      <td>{item.PONumber}</td>
-                                      <td>{item.RequestAdvanceAmount}</td>
-
-                                      <td>
-                                        {item.Created
-                                          ? new Date(
-                                              item.Created,
-                                            ).toLocaleDateString("en-GB")
-                                          : ""}
-                                      </td>
-
-                                      <td>
-                                          {item.VoucherDate
-                                            ? new Date(
-                                                item.VoucherDate,
-                                              ).toLocaleDateString('en-GB')
-                                            : ""}
-                                        </td>
-
-                                      <td>{item.VoucherNumber}</td>
-                                      <td>{item.PaidAmount}</td>
-                                      <td>{pending}</td>
-                                    </tr>
-                                  );
-                                },
-                              )
-                            )}
-                          </tbody>
-                        </table>
-                         
-                      </div>
-                    </div>
-                  </div>
                 </div>
-              </div>
-                  <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
+                <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
                   <a
-                      className={`submit-btn ${isSubmitting ? "disabled-btn" : ""}`}
-                      onClick={!isSubmitting ? handleApprove : undefined}
-                    >
-                      {isSubmitting ? "Processing..." : "Submit"}
-                    </a>
+                    className={`submit-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                    onClick={!isSubmitting ? handleApprove : undefined}
+                  >
+                    {isSubmitting ? "Processing..." : "Submit"}
+                  </a>
 
-                    <a
-                      className={`Rework-btn ${isSubmitting ? "disabled-btn" : ""}`}
-                      onClick={!isSubmitting ? handleSendBack : undefined}
-                    >
-                      {isSubmitting ? "Processing..." : "Send Back"}
-                    </a>
+                  <a
+                    className={`Rework-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                    onClick={!isSubmitting ? handleSendBack : undefined}
+                  >
+                    {isSubmitting ? "Processing..." : "Send Back"}
+                  </a>
 
-                    <a
-                      className={`Reject-btn ${isSubmitting ? "disabled-btn" : ""}`}
-                      onClick={!isSubmitting ? handleReject : undefined}
-                    >
-                      {isSubmitting ? "Processing..." : "Reject"}
-                    </a>
+                  <a
+                    className={`Reject-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                    onClick={!isSubmitting ? handleReject : undefined}
+                  >
+                    {isSubmitting ? "Processing..." : "Reject"}
+                  </a>
 
-                    <a href="#" onClick={handleExit} className="reset-btn">
-                      Exit
-                    </a>
-                  </div>
+                  <a href="#" onClick={handleExit} className="reset-btn">
+                    Exit
+                  </a>
                 </div>
               </div>
             </div>

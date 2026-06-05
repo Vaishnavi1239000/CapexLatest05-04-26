@@ -17,14 +17,14 @@ interface IVendor {
 
 const EditAdvanceForm = ({ context, formData, onClose }: any) => {
   const sp = spfi().using(SPFx(context));
-const today = new Date();
+  const today = new Date();
 
-const localDate: string = new Date(
-  today.getTime() - today.getTimezoneOffset() * 60000
-)
-  .toISOString()
-  .split("T")[0];
- 
+  const localDate: string = new Date(
+    today.getTime() - today.getTimezoneOffset() * 60000
+  )
+    .toISOString()
+    .split("T")[0];
+
   const [isDraftSaving, setIsDraftSaving] = useState(false);
   const submitRef = useRef(false);
   const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
@@ -33,7 +33,7 @@ const localDate: string = new Date(
   const [attachments, setAttachments] = useState<any[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedUser, setSelectedUser] = useState<any[]>([]);
-const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [selectedVendorName, setSelectedVendorName] = useState("");
 
@@ -64,7 +64,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
     spHttpClient: context.spHttpClient,
   };
 
-  
+
 
   const handleDeleteExistingFile = async (file: any) => {
     try {
@@ -82,7 +82,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
       console.error("Delete error:", error);
     }
   };
-const handleDeleteAttachment = async (fileName: string) => {
+  const handleDeleteAttachment = async (fileName: string) => {
     try {
       if (!formData?.CapexID) return;
 
@@ -124,10 +124,10 @@ const handleDeleteAttachment = async (fileName: string) => {
   const getPreviousAdvances = async (vendorId: number) => {
     try {
       debugger;
-       if (!vendorId) {
-      setPreviousAdvances([]);
-      return;
-    }
+      if (!vendorId) {
+        setPreviousAdvances([]);
+        return;
+      }
       console.log("Fetching for Vendor:", vendorId);
 
       const data = await sp.web.lists
@@ -155,18 +155,18 @@ const handleDeleteAttachment = async (fileName: string) => {
     }
   };
   const getVendors = async () => {
-  try {
-    const data = await sp.web.lists
-      .getByTitle("VendorMaster")
-      .items.select("Id", "VendorCode", "VendorName", "Status")
-      .filter("Status eq 'Active'")()
-;
+    try {
+      const data = await sp.web.lists
+        .getByTitle("VendorMaster")
+        .items.select("Id", "VendorCode", "VendorName", "Status")
+        .filter("Status eq 'Active'")()
+        ;
 
-    setVendors(data);
-  } catch (error) {
-    console.error("Vendor fetch error:", error);
-  }
-};
+      setVendors(data);
+    } catch (error) {
+      console.error("Vendor fetch error:", error);
+    }
+  };
 
   const getLoggedInUser = async () => {
     try {
@@ -247,13 +247,13 @@ const handleDeleteAttachment = async (fileName: string) => {
       errors.push("Please update Paid Amount");
     }
 
-   if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
+    if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
       errors.push(
         "The requested advance amount cannot be greater than the PO Amount (Including GST)",
       );
     }
 
-    
+
     if (
       advanceAmount &&
       paidAmount &&
@@ -263,10 +263,10 @@ const handleDeleteAttachment = async (fileName: string) => {
     }
 
 
-    
-   
-    
-      if (expectedDate) {
+
+
+
+    if (expectedDate) {
       const today = new Date().setHours(0, 0, 0, 0);
       const selected = new Date(expectedDate).setHours(0, 0, 0, 0);
 
@@ -274,7 +274,7 @@ const handleDeleteAttachment = async (fileName: string) => {
         errors.push("Settlement date cannot be a past date");
       }
     }
- 
+
     if (!selectedUser || selectedUser.length === 0) {
       errors.push("Please select PIC Name");
     }
@@ -320,7 +320,7 @@ const handleDeleteAttachment = async (fileName: string) => {
       const safe = formData.CapexID.replace(/\//g, "_");
       const folderPath = `/sites/SonaFinance/CapexAdvanceDocs/${safe}`;
 
-      
+
       await ensureFolder(folderPath);
 
       for (const file of selectedFiles) {
@@ -348,10 +348,10 @@ const handleDeleteAttachment = async (fileName: string) => {
 
       const folderPath = `${webUrl}/${libraryName}/${safeCapexId}`;
 
-     
+
       await sp.web.folders.addUsingPath(`${libraryName}/${safeCapexId}`);
 
-     
+
       for (const file of selectedFiles) {
         await sp.web
           .getFolderByServerRelativePath(folderPath)
@@ -363,15 +363,15 @@ const handleDeleteAttachment = async (fileName: string) => {
       console.error("Upload error:", error);
     }
   };
-const handleDraft = async () => {
+  const handleDraft = async () => {
     try {
       if (isSubmitting) return;
       setIsSubmitting(true);
-     // const capexId = await generateCapexId();
+      // const capexId = await generateCapexId();
 
       let ensuredUserId: number | null = null;
 
-     
+
       if (selectedUser && selectedUser.length > 0) {
         const userEmail = selectedUser[0]?.secondaryText;
 
@@ -381,9 +381,9 @@ const handleDraft = async () => {
         }
       }
 
-     
 
-     // const currentApprover = flow.length > 0 ? flow[0].Id : null;
+
+      // const currentApprover = flow.length > 0 ? flow[0].Id : null;
       const currentUser = context.pageContext?.user?.displayName || "User";
       const wfHistory = [
         {
@@ -398,7 +398,7 @@ const handleDraft = async () => {
         Title: formData.CapexID,
         CapexID: formData.CapexID,
 
-        
+
         EmployeeCode: employee.EmployeeCode,
         EmployeeName: employee.EmployeeName,
         Division: employee.Division,
@@ -426,7 +426,7 @@ const handleDraft = async () => {
         // Advance
         ExpectedDateofSettlement: expectedDate ? new Date(expectedDate) : null,
 
-       
+
         ...(ensuredUserId && { PICNameId: ensuredUserId }),
 
         // Other
@@ -437,9 +437,9 @@ const handleDraft = async () => {
 
         Status: "Draft",
 
-      //  ApprovalMatrix: JSON.stringify(flow),
+        //  ApprovalMatrix: JSON.stringify(flow),
 
-       // CurrentApproverId: currentApprover,
+        // CurrentApproverId: currentApprover,
 
         //WorkFlowHistory: JSON.stringify(wfHistory),
       });
@@ -454,30 +454,30 @@ const handleDraft = async () => {
     } catch (error) {
       console.error("ERROR:", error);
       alert("Error while saving ❌");
-     // setIsSubmitting(false);
+      // setIsSubmitting(false);
     }
   };
- const handledraft = async () => {
+  const handledraft = async () => {
     try {
       debugger;
-  let ensuredUserId: number | null = null;
+      let ensuredUserId: number | null = null;
       if (isSubmitting) return;
       setIsSubmitting(true);
-     // const flow = await buildApprovalFlow();
-     // const currentApprover = flow.length > 0 ? flow[0].Id : null;
-      
-   //  const loginName =
-       //  selectedUser[0]?.secondaryText;
-////const ensuredUser = await sp.web.ensureUser(loginName);
+      // const flow = await buildApprovalFlow();
+      // const currentApprover = flow.length > 0 ? flow[0].Id : null;
+
+      //  const loginName =
+      //  selectedUser[0]?.secondaryText;
+      ////const ensuredUser = await sp.web.ensureUser(loginName);
 
       //const ensuredUserId = ensuredUser.Id;
-        
-    
- const loginName = selectedUser[0]?.secondaryText;
+
+
+      const loginName = selectedUser[0]?.secondaryText;
       if (loginName != null || loginName != undefined) {
         const ensuredUser = await sp.web.ensureUser(
-        selectedUser[0]?.secondaryText,
-      );
+          selectedUser[0]?.secondaryText,
+        );
 
         ensuredUserId = ensuredUser.Id;
       } else {
@@ -531,10 +531,10 @@ const handleDraft = async () => {
           Remarks: remarks,
           ProjectDescription: projectDesc,
 
-          Status: "Draft", 
+          Status: "Draft",
           //ApprovalMatrix: JSON.stringify(flow),
 
-         // CurrentApproverId: currentApprover, // 🔥 not started
+          // CurrentApproverId: currentApprover, // 🔥 not started
 
           WorkFlowHistory: JSON.stringify(history),
         });
@@ -553,25 +553,25 @@ const handleDraft = async () => {
       alert(error);
     }
     finally {
-   // submitRef.current = false;
-    setIsSubmitting(false);
-  }
+      // submitRef.current = false;
+      setIsSubmitting(false);
+    }
   };
-  
+
   // =========================
   // UPDATE
   // =========================
   const handleSubmit = async () => {
-      if (submitRef.current) return;
+    if (submitRef.current) return;
 
-  //submitRef.current = true;
-  setIsSubmitting(true);
+    //submitRef.current = true;
+    setIsSubmitting(true);
     try {
       const errors = validateForm();
       if (errors.length > 0) {
         alert(errors.join("\n"));
         submitRef.current = false;
-      setIsSubmitting(false);
+        setIsSubmitting(false);
         return;
       }
 
@@ -652,20 +652,20 @@ const handleDraft = async () => {
       }
 
       alert("Updated successfully ✅");
-      
-    
+
+
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=User";
       void handleExit();
     } catch (e) {
       console.error(e);
-       
+
       alert("Error ❌");
     }
     finally {
-    //submitRef.current = false;
-    setIsSubmitting(false);
-  }
+      //submitRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   // =========================
@@ -684,14 +684,14 @@ const handleDraft = async () => {
     setExpectedDate(formData.ExpectedDateofSettlement?.split("T")[0] || "");
 
     setVendorName(formData.VendorName || "");
-    setSelectedVendorId(formData.VendorCodeId || null); 
+    setSelectedVendorId(formData.VendorCodeId || null);
 
-     if (formData.VendorCodeId) {
+    if (formData.VendorCodeId) {
       void getPreviousAdvances(formData.VendorCodeId);
     }
     //void getPreviousAdvances(formData.VendorCodeId || null);
 
-    setSelectedVendorName(formData.VendorName || ""); 
+    setSelectedVendorName(formData.VendorName || "");
 
     setGlCode(formData.GL || "");
     setCostCenter(formData.CostCenter || "");
@@ -704,7 +704,7 @@ const handleDraft = async () => {
     setUTRDate(formData.UTRDate?.split("T")[0] || "");
     setUTRNumber(formData.UTRNumber || "");
 
-   
+
     if (formData?.PICName?.Title) {
       setSelectedUser([
         {
@@ -713,7 +713,7 @@ const handleDraft = async () => {
         },
       ]);
     }
-   
+
     if (formData?.ApprovalMatrix) {
       try {
         const parsed =
@@ -728,7 +728,7 @@ const handleDraft = async () => {
       }
     }
 
-    
+
     if (formData?.WorkFlowHistory) {
       try {
         const parsed =
@@ -748,9 +748,8 @@ const handleDraft = async () => {
     }
   }, [formData]);
 
-  useEffect(() => 
-    {
-      debugger;
+  useEffect(() => {
+    debugger;
     void getLoggedInUser();
     void getVendors();
     if (selectedVendorId) {
@@ -758,7 +757,7 @@ const handleDraft = async () => {
     }
   }, []);
 
-  
+
 
   // =========================
   // UI
@@ -769,7 +768,7 @@ const handleDraft = async () => {
         <div className="row">
           <div className="col-md-12">
             <div className="Main-Boxpoup">
-           
+
               <div className="bordered">
                 <img src={logo} />
                 <h1>Capex Edit Advance Payment </h1>
@@ -785,13 +784,12 @@ const handleDraft = async () => {
                     {approvalMatrix.map((a, index) => (
                       <li
                         key={index}
-                        className={`approval-step ${
-                          a.Status === "In Progress"
-                            ? "active"
-                            : a.Status === "Approved"
-                              ? "approved"
-                              : ""
-                        }`}
+                        className={`approval-step ${a.Status === "In Progress"
+                          ? "active"
+                          : a.Status === "Approved"
+                            ? "approved"
+                            : ""
+                          }`}
                       >
                         {a.Role} - {a.Name}
                       </li>
@@ -799,7 +797,7 @@ const handleDraft = async () => {
                   </ul>
                 </div>
               )}
-              
+
               <div className="borderedbox">
                 <div className="heading1">
                   <label>Requestor Information</label>
@@ -907,7 +905,7 @@ const handleDraft = async () => {
                           const vendor = vendors.find((v) => v.Id === id);
                           setSelectedVendorId(id);
                           setSelectedVendorName(vendor?.VendorName || "");
-                           if (id > 0) {
+                          if (id > 0) {
                             void getPreviousAdvances(id);
                           } else {
                             // Clear table data
@@ -955,7 +953,7 @@ const handleDraft = async () => {
                       <input
                         type="date"
                         value={poDate}
-                        max={new Date().toISOString().split("T")[0]} 
+                        max={new Date().toISOString().split("T")[0]}
                         onChange={(e) => setPoDate(e.target.value)}
                         className="form-control"
                       />
@@ -1023,7 +1021,7 @@ const handleDraft = async () => {
                       <input
                         type="date"
                         value={expectedDate}
-                       min={localDate} 
+                        min={localDate}
                         onChange={(e) => setExpectedDate(e.target.value)}
                         className="form-control"
                       />
@@ -1042,7 +1040,7 @@ const handleDraft = async () => {
                         principalTypes={[PrincipalType.User]}
                         defaultSelectedUsers={
                           selectedUser.length > 0
-                            ? [selectedUser[0].secondaryText] 
+                            ? [selectedUser[0].secondaryText]
                             : []
                         }
                         onChange={(items) => setSelectedUser(items)}
@@ -1074,14 +1072,6 @@ const handleDraft = async () => {
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className="font">Remarks</label>
-                      <textarea
-                        value={remarks}
-                        onChange={(e) => setRemarks(e.target.value)}
-                        className="form-control"
-                      />
-                    </div>
-                    <div className="col-md-4">
                       <label className="font">Project Description</label>
                       <span className="required" style={{ color: "red" }}>
                         *
@@ -1093,234 +1083,247 @@ const handleDraft = async () => {
                       />
                     </div>
 
-                   <div className="col-md-4">
-                    <label className="font">
-                      Attachments
-                      <span className="required" style={{ color: "red" }}>
-                        *
-                      </span>
-                    </label>
+                    <div className="col-md-4">
+                      <label className="font">
+                        Attachments
+                        <span className="required" style={{ color: "red" }}>
+                          *
+                        </span>
+                      </label>
 
-                    {/* Existing Attachments */}
-                    {/* Existing Attachments */}
-                    {attachments.length > 0 && (
-                      <ul className="mt-2">
-                        {attachments.map((file: any, index: number) => (
-                          <li
-                            key={index}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              marginBottom: "5px",
-                            }}
-                          >
-                            <a
-                              href={file.ServerRelativeUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {file.Name}
-                            </a>
-
-                            {/* Delete Existing File */}
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-danger"
-                              onClick={() => handleDeleteAttachment(file.Name)}
-                            >
-                              Delete
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    {/* Newly Selected Files */}
-                    {selectedFiles.length > 0 && (
-                      <ul className="mt-2">
-                        {selectedFiles.map((file: File, index: number) => (
-                          <li
-                            key={index}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              marginBottom: "5px",
-                            }}
-                          >
-                            <a
-                            href={URL.createObjectURL(file)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {file.name}
-                            </a>
-
-                            {/* Remove Selected File */}
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-danger"
-                              onClick={() => {
-                                const updatedFiles = selectedFiles.filter(
-                                  (_: File, i: number) => i !== index,
-                                );
-
-                                setSelectedFiles(updatedFiles);
+                      {/* Existing Attachments */}
+                      {/* Existing Attachments */}
+                      {attachments.length > 0 && (
+                        <ul className="mt-2">
+                          {attachments.map((file: any, index: number) => (
+                            <li
+                              key={index}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                marginBottom: "5px",
                               }}
                             >
-                              Remove
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                              <a
+                                href={file.ServerRelativeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {file.Name}
+                              </a>
 
-                    <input
-                      type="file"
-                      multiple
-                      className="form-control"
-                      onChange={(e) => {
-                        if (e.target.files) {
-                          setSelectedFiles(Array.from(e.target.files));
-                        }
-                      }}
-                    />
-                  </div>
+                              {/* Delete Existing File */}
+                              <a onClick={() => handleDeleteAttachment(file.Name)}>
+                                X
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {/* Newly Selected Files */}
+                      {selectedFiles.length > 0 && (
+                        <ul className="mt-2">
+                          {selectedFiles.map((file: File, index: number) => (
+                            <li
+                              key={index}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                marginBottom: "5px",
+                              }}
+                            >
+                              <a
+                                href={URL.createObjectURL(file)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {file.name}
+                              </a>
+
+                              {/* Remove Selected File */}
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-danger"
+                                onClick={() => {
+                                  const updatedFiles = selectedFiles.filter(
+                                    (_: File, i: number) => i !== index,
+                                  );
+
+                                  setSelectedFiles(updatedFiles);
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      <input
+                        type="file"
+                        multiple style={{ height: "34px", padding: "3px" }}
+                        className="form-control"
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            setSelectedFiles(Array.from(e.target.files));
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                   <div className="heading1" style={{ marginTop: "10px" }}>
-              <label>Previous Advances</label>
-            </div>
-            <div className="main-formcontainer">
-              <div className="row mb-20">
-                <div className="col-md-12">
-                  <div style={{ overflowX: "auto" }}>
-                    <div className="table-vert-scroll">
-                      <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                        <thead
-                          className="text-white"
-                          style={{ backgroundColor: "rgb(60, 62, 69)" }}
-                        >
-                          <tr>
-                            <th className="px-4 py-2">PO Number</th>
-                            <th className="px-4 py-2">Previous Advance</th>
-                            <th className="px-4 py-2">Requested Date</th>
-                            <th className="px-4 py-2">Paid Date</th>
-                            <th className="px-4 py-2">MRN No</th>
-                            <th className="px-4 py-2">Settled Amount</th>
-                            <th className="px-4 py-2">Pending Advance</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {previousAdvances.length === 0 ? (
-                            <tr>
-                              <td colSpan={7} style={{ textAlign: "center" }}>
-                                No previous advances available
-                              </td>
-                            </tr>
-                          ) : (
-                            previousAdvances.map((item: any, index: number) => {
-                              const pending = Math.max(
-                                0,
-                                Number(item.RequestAdvanceAmount || 0) -
-                                  Number(item.PaidAmount || 0),
-                              );
-                              return (
-                                <tr key={index}>
-                                  <td>{item.PONumber}</td>
-                                  <td>{item.RequestAdvanceAmount}</td>
+                    <label>Previous Advances</label>
+                  </div>
+                  <div className="main-formcontainer">
+                    <div className="row mb-20">
+                      <div className="col-md-12">
+                        <div style={{ overflowX: "auto" }}>
+                          <div className="table-vert-scroll">
+                            <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                              <thead
+                                className="text-white"
+                                style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                              >
+                                <tr>
+                                  <th className="px-4 py-2">PO Number</th>
+                                  <th className="px-4 py-2">Previous Advance</th>
+                                  <th className="px-4 py-2">Requested Date</th>
+                                  <th className="px-4 py-2">Paid Date</th>
+                                  <th className="px-4 py-2">MRN No</th>
+                                  <th className="px-4 py-2">Settled Amount</th>
+                                  <th className="px-4 py-2">Pending Advance</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {previousAdvances.length === 0 ? (
+                                  <tr>
+                                    <td colSpan={7} style={{ textAlign: "center" }}>
+                                      No previous advances available
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  previousAdvances.map((item: any, index: number) => {
+                                    const pending = Math.max(
+                                      0,
+                                      Number(item.RequestAdvanceAmount || 0) -
+                                      Number(item.PaidAmount || 0),
+                                    );
+                                    return (
+                                      <tr key={index}>
+                                        <td>{item.PONumber}</td>
+                                        <td>{item.RequestAdvanceAmount}</td>
 
-                                  <td>
-                                    {item.Created
-                                      ? new Date(
-                                          item.Created,
-                                        ).toLocaleDateString("en-GB")
-                                      : ""}
-                                  </td>
-
-                                  <td>
-                                          {item.VoucherDate
+                                        <td>
+                                          {item.Created
                                             ? new Date(
-                                                item.VoucherDate,
-                                              ).toLocaleDateString('en-GB')
+                                              item.Created,
+                                            ).toLocaleDateString("en-GB")
                                             : ""}
                                         </td>
 
-                                  <td>{item.VoucherNumber}</td>
-                                  <td>{item.PaidAmount}</td>
-                                  <td>{pending}</td>
-                                </tr>
-                              );
-                            })
-                          )}
-                        </tbody>
-                      </table>
+                                        <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                              item.VoucherDate,
+                                            ).toLocaleDateString('en-GB')
+                                            : ""}
+                                        </td>
+
+                                        <td>{item.VoucherNumber}</td>
+                                        <td>{item.PaidAmount}</td>
+                                        <td>{pending}</td>
+                                      </tr>
+                                    );
+                                  })
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-                  <div className="row mb-20">
-                    <div className="col-md-12">
-                      {workflowHistory.length === 0 ? (
-                        <p>No history available</p>
-                      ) : (
-                        <div className="workflow-history">
-                          <table
-                          className="workflow-table"
-                          style={{ width: "100%" }}
-                        >
-                          <thead>
-                            <tr>
-                              <th style={{ padding: "8px", textAlign: "left" }}>
-                                Action By
-                              </th>
-                              <th style={{ padding: "8px", textAlign: "left" }}>
-                                Action Taken
-                              </th>
-                              <th style={{ padding: "8px", textAlign: "left" }}>
-                                Date
-                              </th>
-                              <th style={{ padding: "8px", textAlign: "left" }}>
-                                Comment
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {workflowHistory
-                              .filter(
-                                (h: any) =>
-                                  h.ActionTaken &&
-                                  h.ActionTaken !== "Save as Draft" && h.ActionTaken !== "Edited",
-                              )
-                              .map((h: any, idx: number) => (
-                                <tr key={idx}>
-                                  <td style={{ padding: "8px" }}>
-                                    {h.CurrentApprover || ""}
-                                  </td>
-
-                                  <td style={{ padding: "8px" }}>
-                                    {h.ActionTaken || ""}
-                                  </td>
-
-                                  <td style={{ padding: "8px" }}>
-                                    {h.Date
-                                      ? new Date(h.Date).toLocaleDateString(
-                                          "en-GB",
-                                        )
-                                      : ""}
-                                  </td>
-
-                                  <td style={{ padding: "8px" }}>
-                                    {h.Comment || ""}
-                                  </td>
+                  <div className="heading1" style={{ marginTop: "10px" }}>
+                    <label>Remarks</label>
+                  </div>
+                  <div className="main-formcontainer">
+                    <div className="row mb-20">
+                      <div className="col-md-12">
+                        <label className="font">Remarks</label>
+                        <textarea
+                          value={remarks}
+                          onChange={(e) => setRemarks(e.target.value)}
+                          className="form-control"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="main-formcontainer" style={{ marginTop: "10px" }}>
+                    <div className="row mb-20">
+                      <div className="col-md-12">
+                        {workflowHistory.length === 0 ? (
+                          <p>No history available</p>
+                        ) : (
+                          <div style={{overflowX : "auto"}}>
+                            <table
+                              className="custom-table"
+                              style={{ width: "100%" }}
+                            >
+                              <thead>
+                                <tr>
+                                  <th style={{ padding: "8px", textAlign: "left" }}>
+                                    Action By
+                                  </th>
+                                  <th style={{ padding: "8px", textAlign: "left" }}>
+                                    Action Taken
+                                  </th>
+                                  <th style={{ padding: "8px", textAlign: "left" }}>
+                                    Date
+                                  </th>
+                                  <th style={{ padding: "8px", textAlign: "left" }}>
+                                    Comment
+                                  </th>
                                 </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                         
-                        </div>
-                      )}
+                              </thead>
+                              <tbody>
+                                {workflowHistory
+                                  .filter(
+                                    (h: any) =>
+                                      h.ActionTaken &&
+                                      h.ActionTaken !== "Save as Draft" && h.ActionTaken !== "Edited",
+                                  )
+                                  .map((h: any, idx: number) => (
+                                    <tr key={idx}>
+                                      <td style={{ padding: "8px" }}>
+                                        {h.CurrentApprover || ""}
+                                      </td>
+
+                                      <td style={{ padding: "8px" }}>
+                                        {h.ActionTaken || ""}
+                                      </td>
+
+                                      <td style={{ padding: "8px" }}>
+                                        {h.Date
+                                          ? new Date(h.Date).toLocaleDateString(
+                                            "en-GB",
+                                          )
+                                          : ""}
+                                      </td>
+
+                                      <td style={{ padding: "8px" }}>
+                                        {h.Comment || ""}
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
+
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div
@@ -1332,31 +1335,31 @@ const handleDraft = async () => {
                     }}
                   >
                     <button
-                  type="button"
-                  onClick={!isSubmitting ? handleSubmit : undefined}
-                  disabled={isSubmitting}
-                  className="submit-btn"
-                  style={{
-                    pointerEvents: isSubmitting ? "none" : "auto",
-                    opacity: isSubmitting ? 0.6 : 1,
-                    cursor: isSubmitting ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {isSubmitting ? "Submitting..." : "Submit"}
-                </button>
-                <button
-                  type="button"
-                  onClick={!isDraftSaving ? handledraft : undefined}
-                  disabled={isDraftSaving}
-                  className="Rework-btn"
-                  style={{
-                    pointerEvents: isDraftSaving ? "none" : "auto",
-                    opacity: isDraftSaving ? 0.6 : 1,
-                    cursor: isDraftSaving ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {isDraftSaving ? "Saving..." : "Save as Draft"}
-                </button>
+                      type="button"
+                      onClick={!isSubmitting ? handleSubmit : undefined}
+                      disabled={isSubmitting}
+                      className="submit-btn"
+                      style={{
+                        pointerEvents: isSubmitting ? "none" : "auto",
+                        opacity: isSubmitting ? 0.6 : 1,
+                        cursor: isSubmitting ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {isSubmitting ? "Submitting..." : "Submit"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={!isDraftSaving ? handledraft : undefined}
+                      disabled={isDraftSaving}
+                      className="Rework-btn"
+                      style={{
+                        pointerEvents: isDraftSaving ? "none" : "auto",
+                        opacity: isDraftSaving ? 0.6 : 1,
+                        cursor: isDraftSaving ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {isDraftSaving ? "Saving..." : "Save as Draft"}
+                    </button>
 
                     <a className="reset-btn" onClick={handleExit}>
                       Exit

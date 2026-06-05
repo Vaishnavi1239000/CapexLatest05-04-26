@@ -459,6 +459,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                     style={{ backgroundColor: "rgb(60, 62, 69)" }}
                   >
                     <tr>
+                      <th className="px-4 py-2">Action</th>
                       <th className="px-4 py-2">Payment ID</th>
                       <th className="px-4 py-2">Requestor Date</th>
                       <th className="px-4 py-2">Requestor Name</th>
@@ -469,7 +470,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                       <th className="px-4 py-2">Advance Amount</th>
                       <th className="px-4 py-2">Pending With</th>
                       <th className="px-4 py-2">Status</th>
-                      <th className="px-4 py-2">Action</th>
+                      
                     </tr>
                   </thead>
                   <tbody>
@@ -482,16 +483,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                     ) : (
                       paginatedData.map((item, i) => (
                         <tr key={i}>
-                          <td className="px-4 py-2">{item.id}</td>
-                          <td className="px-4 py-2">{item.date}</td>
-                          <td className="px-4 py-2">{item.EmployeeName}</td>
-                          <td className="px-4 py-2">Capex Advance</td>
-                          <td className="px-4 py-2"> {item.vendorCode}</td>
-                          <td className="px-4 py-2">{item.vendor}</td>
-                          <td className="px-4 py-2">{item.po}</td>
-                          <td className="px-4 py-2">₹ {item.amount}</td>
-                          <td className="px-4 py-2">Approver</td>
-                          <td className="px-4 py-2">{item.status}</td>
                           <td className="px-4 py-2">
                             <div
                               style={{
@@ -519,6 +510,17 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                               )}
                             </div>
                           </td>
+                          <td className="px-4 py-2">{item.id}</td>
+                          <td className="px-4 py-2">{item.date}</td>
+                          <td className="px-4 py-2">{item.EmployeeName}</td>
+                          <td className="px-4 py-2">Capex Advance</td>
+                          <td className="px-4 py-2"> {item.vendorCode}</td>
+                          <td className="px-4 py-2">{item.vendor}</td>
+                          <td className="px-4 py-2">{item.po}</td>
+                          <td className="px-4 py-2">₹ {item.amount}</td>
+                          <td className="px-4 py-2">Approver</td>
+                          <td className="px-4 py-2">{item.status}</td>
+                          
                         </tr>
                       ))
                     )}

@@ -497,17 +497,16 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                     {approvalMatrix.map((a, index) => (
                       <li
                         key={index}
-                        className={`approval-step ${
-                          a.Status === "In Progress"
-                            ? "active"
-                            : a.Status === "Approved"
-                              ? "approved"
-                              : a.Status === "Rejected"
-                                ? "rejected"
-                                : a.Status === "Send Back"
-                                  ? "sendback"
-                                  : ""
-                        }`}
+                        className={`approval-step ${a.Status === "In Progress"
+                          ? "active"
+                          : a.Status === "Approved"
+                            ? "approved"
+                            : a.Status === "Rejected"
+                              ? "rejected"
+                              : a.Status === "Send Back"
+                                ? "sendback"
+                                : ""
+                          }`}
                       >
                         {a.Role} - {a.Name}
                       </li>
@@ -880,102 +879,64 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                   <label>Capex Details</label>
                 </div>
                 <div className="main-formcontainer">
-                  <div className="row mb-20">
-                    <div className="col-md-4">
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
                       <label className="font">Vendor Code</label>
-                      <select
-                        value={selectedVendorId ?? ""}
-                        disabled={true}
-                        onChange={(e) => {
-                          const id = Number(e.target.value);
-                          const vendor = vendors.find((v) => v.Id === id);
-                          setSelectedVendorId(id);
-                          setSelectedVendorName(vendor?.VendorName || "");
-                        }}
-                        className="formtext-control"
-                      >
-                        <option value="">Select Vendor</option>
-                        {vendors.map((v) => (
-                          <option key={v.Id} value={v.Id}>
-                            {v.VendorCode}
-                          </option>
-                        ))}
-                      </select>
+                      <label className="fonttext textviewbox readonly">
+                        {vendors.find(v => v.Id === selectedVendorId)?.VendorCode || ""}
+                      </label>
                     </div>
                     <div className="col-md-4">
-                      <label>Vendor Name</label>
-                      <input
-                        value={itemData.VendorName || ""}
-                        className="form-control readonly"
-                      />
+                      <label className="font">Vendor Name</label>
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.VendorName}
+                      </label>
                     </div>
                     <div className="col-md-4">
-                      <label>PO Number</label>
-                      <input
-                        value={itemData.PONumber || ""}
-                        className="form-control readonly"
-                      />
+                      <label className="font">PO Number</label>
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.PONumber}
+                      </label>
                     </div>
                   </div>
-                  <div className="row mb-20">
-                    <div className="col-md-4">
+                  <div className='row mb-20'>
+                    <div className='col-md-4'>
                       <label className="font">PO Date</label>
-                      <input
-                        value={
-                          itemData.PODate
-                            ? new Date(itemData.PODate).toLocaleDateString(
-                                "en-GB",
-                              )
-                            : ""
-                        }
-                        className="form-control readonly"
-                      />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.PODate ? new Date(itemData.PODate).toLocaleDateString("en-GB",) : ""}
+                      </label>
                     </div>
-                    <div className="col-md-4">
+                    <div className='col-md-4'>
                       <label className="font">PO Terms</label>
-                      <textarea
-                        value={itemData.POAdvanceTerms || ""}
-                        className="form-control readonly"
-                        rows={3}
-                        readOnly
-                      />
-                      {/* <input value={itemData.POAdvanceTerms || ""} className="form-control readonly" /> */}
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.POAdvanceTerms}
+                      </label>
                     </div>
                     <div className="col-md-4">
                       <label className="font">PO Amount</label>
-                      <input
-                        value={itemData.POAmtGST || ""}
-                        className="form-control readonly"
-                      />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.POAmtGST}
+                      </label>
                     </div>
                   </div>
-                  <div className="row mb-20">
+                  <div className='row mb-20'>
                     <div className="col-md-4">
                       <label className="font">Advance Amount</label>
-                      <input
-                        value={itemData.RequestAdvanceAmount || ""}
-                        className="form-control readonly"
-                      />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.RequestAdvanceAmount}
+                      </label>
                     </div>
                     <div className="col-md-4">
                       <label className="font">Paid Amount</label>
-                      <input
-                        value={itemData.PaidAmount || ""}
-                        className="form-control readonly"
-                      />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.PaidAmount}
+                      </label>
                     </div>
                     <div className="col-md-4">
                       <label className="font">Expected Settlement</label>
-                      <input
-                        value={
-                          itemData.ExpectedDateofSettlement
-                            ? new Date(
-                                itemData.ExpectedDateofSettlement,
-                              ).toLocaleDateString("en-GB")
-                            : ""
-                        }
-                        className="form-control readonly"
-                      />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.ExpectedDateofSettlement ? new Date(itemData.ExpectedDateofSettlement).toLocaleDateString("en-GB") : ""}
+                      </label>
                     </div>
                   </div>
                   <div className="row mb-20">
@@ -987,42 +948,34 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                         disabled={true}
                         principalTypes={[PrincipalType.User]}
                         defaultSelectedUsers={
-                          itemData?.PICName?.Title
-                            ? [itemData.PICName.Title]
-                            : []
+                          itemData?.PICName?.Title ? [itemData.PICName.Title] : []
                         }
                       />
                     </div>
                     <div className="col-md-4">
                       <label className="font">GL Code</label>
-                      <input
-                        value={itemData.GL || ""}
-                        className="form-control readonly"
-                      />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.GL}
+                      </label>
                     </div>
                     <div className="col-md-4">
                       <label className="font">Cost Center</label>
-                      <input
-                        value={itemData.CostCenter || ""}
-                        className="form-control readonly"
-                      />
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.CostCenter}
+                      </label>
                     </div>
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className="font" style={{ display: "block" }}>
-                        User Remarks
-                      </label>
-                      <label className="fonttext textbox readonly">
-                        {itemData.Remarks || ""}
+                      <label className="font" style={{ display: "block" }}>User Remarks</label>
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.Remarks}
                       </label>
                     </div>
                     <div className="col-md-4">
-                      <label className="font" style={{ display: "block" }}>
-                        Project Description
-                      </label>
-                      <label className="fonttext textbox readonly">
-                        {itemData.ProjectDescription || ""}
+                      <label className="font">Project Description</label>
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.ProjectDescription}
                       </label>
                     </div>
                     <div className="col-md-4">
@@ -1048,32 +1001,30 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className="font" style={{ display: "block" }}>
-                        Approver Remarks
-                      </label>
-                      <label className="fonttext textbox readonly">
-                        {itemData.approverRemarks || ""}
+                      <label className='font'>Approver Remarks</label>
+                      <textarea
+                        value={approverRemarks} className='form-control'
+                        onChange={(e) => setApproverRemarks(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Vouching Details</label>
+                </div>
+                <div className='main-formcontainer'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label className='font'>Voucher Date</label>
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.VoucherDate ? new Date(itemData.VoucherDate).toLocaleDateString("en-GB",) : ""}
                       </label>
                     </div>
                     <div className="col-md-4">
-                      <label className="font">Voucher Date</label>
-                      <input
-                        value={
-                          itemData.VoucherDate
-                            ? new Date(itemData.VoucherDate).toLocaleDateString(
-                                "en-GB",
-                              )
-                            : ""
-                        }
-                        className="form-control readonly"
-                      />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="font">Voucher Number</label>
-                      <input
-                        value={itemData.VouchingNumber || ""}
-                        className="form-control readonly"
-                      />
+                      <label className='font'>Voucher Number</label>
+                      <label className="fonttext textviewbox readonly">
+                        {itemData.VouchingNumber ? itemData.VouchingNumber : ""}
+                      </label>
                     </div>
                   </div>
                   <div className="row mb-20">
@@ -1103,93 +1054,95 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                       />
                     </div>
                   </div>
-                  <div className="heading1" style={{ marginTop: "10px" }}>
-                    <label>Previous Advances</label>
-                  </div>
-                  <div className="main-formcontainer">
-                    <div className="row mb-20">
-                      <div className="col-md-12">
-                        <div style={{ overflowX: "auto" }}>
-                          <div className="table-vert-scroll">
-                            <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
-                              <thead
-                                className="text-white"
-                                style={{ backgroundColor: "rgb(60, 62, 69)" }}
-                              >
+                </div>
+                <div className="heading1" style={{ marginTop: "10px" }}>
+                  <label>Previous Advances</label>
+                </div>
+                <div className="main-formcontainer">
+                  <div className="row mb-20">
+                    <div className="col-md-12">
+                      <div style={{ overflowX: "auto" }}>
+                        <div className="table-vert-scroll">
+                          <table className="custom-table min-w-full bg-white rounded-2xl shadow-md">
+                            <thead
+                              className="text-white"
+                              style={{ backgroundColor: "rgb(60, 62, 69)" }}
+                            >
+                              <tr>
+                                <th className="px-4 py-2">PO Number</th>
+                                <th className="px-4 py-2">
+                                  Previous Advance
+                                </th>
+                                <th className="px-4 py-2">Requested Date</th>
+                                <th className="px-4 py-2">Paid Date</th>
+                                <th className="px-4 py-2">MRN No</th>
+                                <th className="px-4 py-2">Settled Amount</th>
+                                <th className="px-4 py-2">Pending Advance</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {previousAdvances.length === 0 ? (
                                 <tr>
-                                  <th className="px-4 py-2">PO Number</th>
-                                  <th className="px-4 py-2">
-                                    Previous Advance
-                                  </th>
-                                  <th className="px-4 py-2">Requested Date</th>
-                                  <th className="px-4 py-2">Paid Date</th>
-                                  <th className="px-4 py-2">MRN No</th>
-                                  <th className="px-4 py-2">Settled Amount</th>
-                                  <th className="px-4 py-2">Pending Advance</th>
+                                  <td
+                                    colSpan={7}
+                                    style={{ textAlign: "center" }}
+                                  >
+                                    No previous advances available
+                                  </td>
                                 </tr>
-                              </thead>
-                              <tbody>
-                                {previousAdvances.length === 0 ? (
-                                  <tr>
-                                    <td
-                                      colSpan={7}
-                                      style={{ textAlign: "center" }}
-                                    >
-                                      No previous advances available
-                                    </td>
-                                  </tr>
-                                ) : (
-                                  previousAdvances.map(
-                                    (item: any, index: number) => {
-                                      const pending = Math.max(
-                                        0,
-                                        Number(item.RequestAdvanceAmount || 0) -
-                                          Number(item.PaidAmount || 0),
-                                      );
-                                      return (
-                                        <tr key={index}>
-                                          <td>{item.PONumber}</td>
-                                          <td>{item.RequestAdvanceAmount}</td>
+                              ) : (
+                                previousAdvances.map(
+                                  (item: any, index: number) => {
+                                    const pending = Math.max(
+                                      0,
+                                      Number(item.RequestAdvanceAmount || 0) -
+                                      Number(item.PaidAmount || 0),
+                                    );
+                                    return (
+                                      <tr key={index}>
+                                        <td>{item.PONumber}</td>
+                                        <td>{item.RequestAdvanceAmount}</td>
 
-                                          <td>
-                                            {item.Created
-                                              ? new Date(
-                                                  item.Created,
-                                                ).toLocaleDateString("en-GB")
-                                              : ""}
-                                          </td>
+                                        <td>
+                                          {item.Created
+                                            ? new Date(
+                                              item.Created,
+                                            ).toLocaleDateString("en-GB")
+                                            : ""}
+                                        </td>
 
-                                          <td>
-                                            {item.VoucherDate
-                                              ? new Date(
-                                                  item.VoucherDate,
-                                                ).toLocaleDateString("en-GB")
-                                              : ""}
-                                          </td>
+                                        <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                              item.VoucherDate,
+                                            ).toLocaleDateString("en-GB")
+                                            : ""}
+                                        </td>
 
-                                          <td>{item.VoucherNumber}</td>
-                                          <td>{item.PaidAmount}</td>
-                                          <td>{pending}</td>
-                                        </tr>
-                                      );
-                                    },
-                                  )
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
+                                        <td>{item.VoucherNumber}</td>
+                                        <td>{item.PaidAmount}</td>
+                                        <td>{pending}</td>
+                                      </tr>
+                                    );
+                                  },
+                                )
+                              )}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
+                <div className="main-formcontainer" style={{ marginTop: "10px" }}>
                   <div className="row mb-20">
                     <div className="col-md-12">
                       {workflowHistory.length === 0 ? (
                         <p>No history available</p>
                       ) : (
-                        <div className="workflow-history">
+                        <div style={{ overflowX: "auto" }}>
                           <table
-                            className="workflow-table"
+                            className="custom-table"
                             style={{ width: "100%" }}
                           >
                             <thead>
@@ -1237,8 +1190,8 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                                     <td style={{ padding: "8px" }}>
                                       {h.Date
                                         ? new Date(h.Date).toLocaleDateString(
-                                            "en-GB",
-                                          )
+                                          "en-GB",
+                                        )
                                         : ""}
                                     </td>
 
@@ -1249,63 +1202,45 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                                 ))}
                             </tbody>
                           </table>
-                          {/* {workflowHistory.map((h, index) => (
-                            <div key={index} className="history-item">
-                              <div>
-                                {h.ActionTaken === "Approved" && "✅ "}
-                                {h.ActionTaken === "Rejected" && "❌ "}
-                                {h.ActionTaken === "Send Back" && "↩ "}
-                                {h.ActionTaken}
-                              </div>
-
-                              <div>
-                                <b>{h.CurrentApprover}</b>
-                              </div>
-                              <div>{h.Comment}</div>
-                              <div className="date">
-                                {new Date(h.Date).toLocaleString()}
-                              </div>
-                            </div>
-                          ))} */}
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="row my-3">
-                    <div className="col-md-12">
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "5px",
-                        }}
+                </div>
+                <div className="row my-3">
+                  <div className="col-md-12">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <a
+                        className={`submit-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                        onClick={!isSubmitting ? handleApprove : undefined}
                       >
-                        <a
-                          className={`submit-btn ${isSubmitting ? "disabled-btn" : ""}`}
-                          onClick={!isSubmitting ? handleApprove : undefined}
-                        >
-                          {isSubmitting ? "Processing..." : "Paid"}
-                        </a>
+                        {isSubmitting ? "Processing..." : "Paid"}
+                      </a>
 
-                        <a
-                          className={`Rework-btn ${isSubmitting ? "disabled-btn" : ""}`}
-                          onClick={!isSubmitting ? handleSendBack : undefined}
-                        >
-                          {isSubmitting ? "Processing..." : "Send Back"}
-                        </a>
+                      <a
+                        className={`Rework-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                        onClick={!isSubmitting ? handleSendBack : undefined}
+                      >
+                        {isSubmitting ? "Processing..." : "Send Back"}
+                      </a>
 
-                        <a
-                          className={`Reject-btn ${isSubmitting ? "disabled-btn" : ""}`}
-                          onClick={!isSubmitting ? handleReject : undefined}
-                        >
-                          {isSubmitting ? "Processing..." : "Reject"}
-                        </a>
+                      <a
+                        className={`Reject-btn ${isSubmitting ? "disabled-btn" : ""}`}
+                        onClick={!isSubmitting ? handleReject : undefined}
+                      >
+                        {isSubmitting ? "Processing..." : "Reject"}
+                      </a>
 
-                        <a href="#" onClick={handleExit} className="reset-btn">
-                          Exit
-                        </a>
-                      </div>
+                      <a href="#" onClick={handleExit} className="reset-btn">
+                        Exit
+                      </a>
                     </div>
                   </div>
                 </div>

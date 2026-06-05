@@ -24,7 +24,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
   const sp = spfi().using(SPFx(context));
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
+
   const [formType, setFormType] = useState<"new" | "view" | "approve" | null>(
     null,
   );
@@ -56,7 +56,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
         .expand("PICName")();
 
       setSelectedItem(fullItem);
-      setFormType("approve"); 
+      setFormType("approve");
       setShowForm(true);
     } catch (error) {
       console.error("Approve error:", error);
@@ -70,13 +70,13 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     try {
       let filterQuery = "";
 
-     
+
       if (activeMenu === "Paid") {
         filterQuery = `Status eq 'Paid'`;
       } else if (activeMenu === "Rejected") {
         filterQuery = `Status eq 'Rejected'`;
       } else {
-        
+
         filterQuery = `Status eq 'Pending for Approver'`;
       }
 
@@ -118,7 +118,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     }
   };
 
-  
+
   const handleViewClick = async (item: any) => {
     try {
       const fullItem = await sp.web.lists
@@ -135,7 +135,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     }
   };
 
-  
+
   const filteredData = data.filter((item) => {
     const text = searchText.toLowerCase();
     const status = statusFilter.toLowerCase();
@@ -175,18 +175,18 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
     void getLoggedInUser();
     void getCapexData();
   }, [context, activeMenu]);
- 
+
   if (showForm) {
     if (formType === "approve") {
       return (
         <ApproverAdvanceForm
           context={context}
           itemId={selectedItem?.ID}
-          
+
         />
       );
     }
-     if (formType === "view") {
+    if (formType === "view") {
       return (
         <ViewAdvanceForm
           context={context}
@@ -302,6 +302,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                     style={{ backgroundColor: "rgb(60, 62, 69)" }}
                   >
                     <tr>
+                      <th className="px-4 py-2">Action</th>
                       <th className="px-4 py-2">Payment ID</th>
                       <th className="px-4 py-2">Requestor Date</th>
                       <th className="px-4 py-2">Requestor Name</th>
@@ -312,7 +313,7 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                       <th className="px-4 py-2">Advance Amount</th>
                       <th className="px-4 py-2">Pending With</th>
                       <th className="px-4 py-2">Status</th>
-                      <th className="px-4 py-2">Action</th>
+
                     </tr>
                   </thead>
                   <tbody>
@@ -325,6 +326,30 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                     ) : (
                       paginatedData.map((item, i) => (
                         <tr key={i}>
+                          <td className="px-4 py-2">
+                            {(activeMenu === "Paid" ||
+                              activeMenu === "Rejected") && (
+                                <span
+                                  onClick={() => handleViewClick(item)}
+                                  style={{
+                                    cursor: "pointer",
+                                    marginRight: "10px",
+                                  }}
+                                >
+                                  <img src={View} width={15} alt="View" />
+                                </span>
+                              )}
+
+                            {activeMenu === "My Request" &&
+
+                              <span
+                                onClick={() => handleApproveClick(item)}
+                                style={{ cursor: "pointer" }}
+                              >
+                                <img src={Edit} width={15} alt="Edit" />
+                              </span>
+                            }
+                          </td>
                           <td className="px-4 py-2">{item.id}</td>
                           <td className="px-4 py-2">{item.date}</td>
                           <td className="px-4 py-2">{item.EmployeeName}</td>
@@ -335,64 +360,41 @@ const ApproverDashboard: React.FC<UserDashboardProps> = ({ context }) => {
                           <td className="px-4 py-2">₹ {item.amount}</td>
                           <td className="px-4 py-2">Approver</td>
                           <td className="px-4 py-2">{item.status}</td>
-                         <td className="px-4 py-2">
-                            {(activeMenu === "Paid" ||
-                              activeMenu === "Rejected") && (
-                              <span
-                                onClick={() => handleViewClick(item)}
-                                style={{
-                                  cursor: "pointer",
-                                  marginRight: "10px",
-                                }}
-                              >
-                                <img src={View} width={15} alt="View" />
-                              </span>
-                            )}
 
-                            {activeMenu === "My Request" &&
-                              
-                                <span
-                                  onClick={() => handleApproveClick(item)}
-                                  style={{ cursor: "pointer" }}
-                                >
-                                  <img src={Edit} width={15} alt="Edit" />
-                                </span>
-                              }
-                          </td>
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
-                 <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  gap: "10px",
-                  marginTop: "15px",
-                }}
-              >
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginTop: "15px",
+                  }}
                 >
-                  Previous
-                </button>
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                    Previous
+                  </button>
 
-                <span>
-                  Page {currentPage} of {totalPages}
-                </span>
+                  <span>
+                    Page {currentPage} of {totalPages}
+                  </span>
 
-                <button
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
+                  <button
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
-              </div>
-              
+
             </div>
           </main>
         </div>
