@@ -1,8 +1,9 @@
-label{
+label {
   margin-bottom: 0px !important;
   padding: 0px;
   box-sizing: border-box;
 }
+
 .form-container {
   max-width: 1100px;
   margin: auto;
@@ -18,19 +19,23 @@ h2 {
   padding: 20px;
   margin-bottom: 20px;
   border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
+
 .required {
   color: red;
   margin-left: 2px;
 }
+
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 15px;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -47,7 +52,8 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
+th,
+td {
   border: 1px solid #ddd;
   padding: 8px;
 }
@@ -158,8 +164,8 @@ button {
 
 
 .approval-step.approved {
-   background-color: #008000;
-   color: #fff;
+  background-color: #008000;
+  color: #fff;
 }
 
 .approval-step.rejected {
@@ -236,9 +242,26 @@ label {
 .main-formcontainer {
   border: 1px solid #a9a9a9;
   box-shadow: 0 1px 1px rgba(9, 30, 66, .25), 0 0 1px 1px rgba(9, 30, 66, .13);
-  margin: 0 !important;
+  margin: 0px;
   padding: 10px 15px;
   width: 100%;
+}
+
+.textviewbox {
+  // border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
+  height: auto;
+  word-break: break-word;
+}
+
+.textviewbox.readonly {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+  font-size: 13px;
+  outline: none;
+  padding: 6px 10px;
+  pointer-events: none;
 }
 
 .font {
@@ -250,7 +273,7 @@ label {
   font-weight: 400;
 }
 
-.textbox{
+.textbox {
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 10px;
