@@ -981,7 +981,7 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                     </label>
                   </div>
                   <div className='col-md-4'>
-                    <label className="font">PO Terms</label>
+                    <label className="font">Payment Terms as per PO</label>
                     <label className="fonttext textviewbox readonly">
                       {itemData.POAdvanceTerms}
                     </label>
@@ -1000,12 +1000,12 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                       {itemData.RequestAdvanceAmount}
                     </label>
                   </div>
-                  <div className="col-md-4">
+                  {/* <div className="col-md-4">
                     <label className="font">Paid Amount</label>
                     <label className="fonttext textviewbox readonly">
                       {itemData.PaidAmount}
                     </label>
-                  </div>
+                  </div> */}
                   <div className="col-md-4">
                     <label className="font">Expected Date</label>
                     <label className="fonttext textviewbox readonly">
@@ -1102,47 +1102,66 @@ const ApproverAdvanceForm: React.FC<IProps> = ({ context, itemId }) => {
                                 <th className="px-4 py-2">Pending Advance</th>
                               </tr>
                             </thead>
-                            <tbody>
+                           <tbody>
                               {previousAdvances.length === 0 ? (
                                 <tr>
-                                  <td colSpan={7} style={{ textAlign: "center" }}>
+                                  <td
+                                    colSpan={7}
+                                    style={{ textAlign: "center" }}
+                                  >
                                     No previous advances available
                                   </td>
                                 </tr>
                               ) : (
-                                previousAdvances.map((item: any, index: number) => {
-                                  const pending = Math.max(
-                                    0,
-                                    Number(item.RequestAdvanceAmount || 0) -
-                                    Number(item.PaidAmount || 0),
-                                  );
-                                  return (
-                                    <tr key={index}>
-                                      <td>{item.PONumber}</td>
-                                      <td>{item.RequestAdvanceAmount}</td>
+                                previousAdvances.map(
+                                  (item: any, index: number) => {
+                                    const pending = Math.max(
+                                      0,
+                                      Number(item.RequestAdvanceAmount || 0) -
+                                        Number(item.PaidAmount || 0),
+                                    );
 
-                                      <td>
-                                        {item.Created
-                                          ? new Date(
-                                            item.Created,
-                                          ).toLocaleDateString("en-GB")
-                                          : ""}
-                                      </td>
+                                    const isDuplicate =
+                                      previousAdvances.filter(
+                                        (x: any) =>
+                                          x.PONumber === item.PONumber,
+                                      ).length > 1;
 
-                                      <td>
-                                        {item.VoucherDate
-                                          ? new Date(
-                                            item.VoucherDate,
-                                          ).toLocaleDateString('en-GB')
-                                          : ""}
-                                      </td>
+                                    return (
+                                      <tr
+                                        key={index}
+                                        style={{
+                                          backgroundColor: isDuplicate
+                                            ? "#ffff99"
+                                            : "",
+                                        }}
+                                      >
+                                        <td>{item.PONumber}</td>
+                                        <td>{item.RequestAdvanceAmount}</td>
 
-                                      <td>{item.VoucherNumber}</td>
-                                      <td>{item.PaidAmount}</td>
-                                      <td>{pending}</td>
-                                    </tr>
-                                  );
-                                })
+                                        <td>
+                                          {item.Created
+                                            ? new Date(
+                                                item.Created,
+                                              ).toLocaleDateString("en-GB")
+                                            : ""}
+                                        </td>
+
+                                        <td>
+                                          {item.VoucherDate
+                                            ? new Date(
+                                                item.VoucherDate,
+                                              ).toLocaleDateString("en-GB")
+                                            : ""}
+                                        </td>
+
+                                        <td>{item.VoucherNumber}</td>
+                                        <td>{item.PaidAmount}</td>
+                                        <td>{pending}</td>
+                                      </tr>
+                                    );
+                                  },
+                                )
                               )}
                             </tbody>
                           </table>

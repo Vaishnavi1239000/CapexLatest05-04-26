@@ -24,7 +24,7 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
 }) => {
   const sp = spfi().using(SPFx(context));
   const today = new Date();
-
+const [glCode, setGlCode] = useState("");
   const localDate: string = new Date(
     today.getTime() - today.getTimezoneOffset() * 60000,
   )
@@ -131,7 +131,9 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
       console.log("Vendor Id:", vendorId);
 
       setSelectedVendorId(vendorId);
-
+  if (item) {
+    setGlCode(item.GL || "");
+  }
       setSelectedVendorName(item?.VendorName || "");
 
       if (item.CapexID) {
@@ -322,6 +324,7 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
         .getByTitle("CapexAdvance")
         .items.getById(itemId)
         .update({
+          GL: glCode,
           ApproverRemarks: approverRemarks,
           UTRDate: new Date(UTRDate),
           UTRNumber: UTRNumber,
@@ -497,16 +500,17 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                     {approvalMatrix.map((a, index) => (
                       <li
                         key={index}
-                        className={`approval-step ${a.Status === "In Progress"
-                          ? "active"
-                          : a.Status === "Approved"
-                            ? "approved"
-                            : a.Status === "Rejected"
-                              ? "rejected"
-                              : a.Status === "Send Back"
-                                ? "sendback"
-                                : ""
-                          }`}
+                        className={`approval-step ${
+                          a.Status === "In Progress"
+                            ? "active"
+                            : a.Status === "Approved"
+                              ? "approved"
+                              : a.Status === "Rejected"
+                                ? "rejected"
+                                : a.Status === "Send Back"
+                                  ? "sendback"
+                                  : ""
+                        }`}
                       >
                         {a.Role} - {a.Name}
                       </li>
@@ -879,11 +883,12 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                   <label>Capex Details</label>
                 </div>
                 <div className="main-formcontainer">
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
                       <label className="font">Vendor Code</label>
                       <label className="fonttext textviewbox readonly">
-                        {vendors.find(v => v.Id === selectedVendorId)?.VendorCode || ""}
+                        {vendors.find((v) => v.Id === selectedVendorId)
+                          ?.VendorCode || ""}
                       </label>
                     </div>
                     <div className="col-md-4">
@@ -899,15 +904,19 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                       </label>
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
                       <label className="font">PO Date</label>
                       <label className="fonttext textviewbox readonly">
-                        {itemData.PODate ? new Date(itemData.PODate).toLocaleDateString("en-GB",) : ""}
+                        {itemData.PODate
+                          ? new Date(itemData.PODate).toLocaleDateString(
+                              "en-GB",
+                            )
+                          : ""}
                       </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label className="font">PO Terms</label>
+                    <div className="col-md-4">
+                      <label className="font">Payment Terms as per PO</label>
                       <label className="fonttext textviewbox readonly">
                         {itemData.POAdvanceTerms}
                       </label>
@@ -919,23 +928,27 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                       </label>
                     </div>
                   </div>
-                  <div className='row mb-20'>
+                  <div className="row mb-20">
                     <div className="col-md-4">
                       <label className="font">Advance Amount</label>
                       <label className="fonttext textviewbox readonly">
                         {itemData.RequestAdvanceAmount}
                       </label>
                     </div>
-                    <div className="col-md-4">
+                    {/* <div className="col-md-4">
                       <label className="font">Paid Amount</label>
                       <label className="fonttext textviewbox readonly">
                         {itemData.PaidAmount}
                       </label>
-                    </div>
+                    </div> */}
                     <div className="col-md-4">
                       <label className="font">Expected Settlement</label>
                       <label className="fonttext textviewbox readonly">
-                        {itemData.ExpectedDateofSettlement ? new Date(itemData.ExpectedDateofSettlement).toLocaleDateString("en-GB") : ""}
+                        {itemData.ExpectedDateofSettlement
+                          ? new Date(
+                              itemData.ExpectedDateofSettlement,
+                            ).toLocaleDateString("en-GB")
+                          : ""}
                       </label>
                     </div>
                   </div>
@@ -948,16 +961,21 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                         disabled={true}
                         principalTypes={[PrincipalType.User]}
                         defaultSelectedUsers={
-                          itemData?.PICName?.Title ? [itemData.PICName.Title] : []
+                          itemData?.PICName?.Title
+                            ? [itemData.PICName.Title]
+                            : []
                         }
                       />
                     </div>
-                    <div className="col-md-4">
-                      <label className="font">GL Code</label>
-                      <label className="fonttext textviewbox readonly">
-                        {itemData.GL}
-                      </label>
-                    </div>
+                   <div className="col-md-4">
+  <label className="font">GL Code</label>
+  <input
+    type="text"
+    className="form-control"
+    value={glCode}
+    onChange={(e) => setGlCode(e.target.value)}
+  />
+</div>
                     <div className="col-md-4">
                       <label className="font">Cost Center</label>
                       <label className="fonttext textviewbox readonly">
@@ -967,7 +985,9 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className="font" style={{ display: "block" }}>User Remarks</label>
+                      <label className="font" style={{ display: "block" }}>
+                        User Remarks
+                      </label>
                       <label className="fonttext textviewbox readonly">
                         {itemData.Remarks}
                       </label>
@@ -1001,9 +1021,10 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className='font'>Approver Remarks</label>
+                      <label className="font">Approver Remarks</label>
                       <textarea
-                        value={approverRemarks} className='form-control'
+                        value={approverRemarks}
+                        className="form-control"
                         onChange={(e) => setApproverRemarks(e.target.value)}
                       />
                     </div>
@@ -1012,16 +1033,20 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                 <div className="heading1" style={{ marginTop: "10px" }}>
                   <label>Vouching Details</label>
                 </div>
-                <div className='main-formcontainer'>
+                <div className="main-formcontainer">
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className='font'>Voucher Date</label>
+                      <label className="font">Voucher Date</label>
                       <label className="fonttext textviewbox readonly">
-                        {itemData.VoucherDate ? new Date(itemData.VoucherDate).toLocaleDateString("en-GB",) : ""}
+                        {itemData.VoucherDate
+                          ? new Date(itemData.VoucherDate).toLocaleDateString(
+                              "en-GB",
+                            )
+                          : ""}
                       </label>
                     </div>
                     <div className="col-md-4">
-                      <label className='font'>Voucher Number</label>
+                      <label className="font">Voucher Number</label>
                       <label className="fonttext textviewbox readonly">
                         {itemData.VouchingNumber ? itemData.VouchingNumber : ""}
                       </label>
@@ -1070,9 +1095,7 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                             >
                               <tr>
                                 <th className="px-4 py-2">PO Number</th>
-                                <th className="px-4 py-2">
-                                  Previous Advance
-                                </th>
+                                <th className="px-4 py-2">Previous Advance</th>
                                 <th className="px-4 py-2">Requested Date</th>
                                 <th className="px-4 py-2">Paid Date</th>
                                 <th className="px-4 py-2">MRN No</th>
@@ -1096,26 +1119,40 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                                     const pending = Math.max(
                                       0,
                                       Number(item.RequestAdvanceAmount || 0) -
-                                      Number(item.PaidAmount || 0),
+                                        Number(item.PaidAmount || 0),
                                     );
+
+                                    const isDuplicate =
+                                      previousAdvances.filter(
+                                        (x: any) =>
+                                          x.PONumber === item.PONumber,
+                                      ).length > 1;
+
                                     return (
-                                      <tr key={index}>
+                                      <tr
+                                        key={index}
+                                        style={{
+                                          backgroundColor: isDuplicate
+                                            ? "#ffff99"
+                                            : "",
+                                        }}
+                                      >
                                         <td>{item.PONumber}</td>
                                         <td>{item.RequestAdvanceAmount}</td>
 
                                         <td>
                                           {item.Created
                                             ? new Date(
-                                              item.Created,
-                                            ).toLocaleDateString("en-GB")
+                                                item.Created,
+                                              ).toLocaleDateString("en-GB")
                                             : ""}
                                         </td>
 
                                         <td>
                                           {item.VoucherDate
                                             ? new Date(
-                                              item.VoucherDate,
-                                            ).toLocaleDateString("en-GB")
+                                                item.VoucherDate,
+                                              ).toLocaleDateString("en-GB")
                                             : ""}
                                         </td>
 
@@ -1134,7 +1171,10 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                     </div>
                   </div>
                 </div>
-                <div className="main-formcontainer" style={{ marginTop: "10px" }}>
+                <div
+                  className="main-formcontainer"
+                  style={{ marginTop: "10px" }}
+                >
                   <div className="row mb-20">
                     <div className="col-md-12">
                       {workflowHistory.length === 0 ? (
@@ -1190,8 +1230,8 @@ const APperformerAdvanceFormForUTR: React.FC<IProps> = ({
                                     <td style={{ padding: "8px" }}>
                                       {h.Date
                                         ? new Date(h.Date).toLocaleDateString(
-                                          "en-GB",
-                                        )
+                                            "en-GB",
+                                          )
                                         : ""}
                                     </td>
 

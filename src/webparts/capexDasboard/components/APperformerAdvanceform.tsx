@@ -25,9 +25,9 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
   const [attachments, setAttachments] = useState<any[]>([]);
   const today = new Date();
   const [employee, setEmployee] = useState<any>({});
-
+  const [glCode, setGlCode] = useState("");
   const localDate: string = new Date(
-    today.getTime() - today.getTimezoneOffset() * 60000
+    today.getTime() - today.getTimezoneOffset() * 60000,
   )
     .toISOString()
     .split("T")[0];
@@ -105,18 +105,23 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
       const item = await sp.web.lists
         .getByTitle("CapexAdvance")
         .items.getById(itemId)
-        .select("*", "PICName/Title", "VendorCode/Id", "VendorCode/VendorCode", "Author/Id", "Author/Title", "Author/EMail")
+        .select(
+          "*",
+          "PICName/Title",
+          "VendorCode/Id",
+          "VendorCode/VendorCode",
+          "Author/Id",
+          "Author/Title",
+          "Author/EMail",
+        )
         .expand("PICName", "VendorCode", "Author")();
-
 
       setItemData(item);
       //  setApproverRemarks(item.ApproverRemarks || "");
 
-
       setSelectedVendorId(item.VendorCode?.Id || null);
 
       setSelectedVendorName(item.VendorName); // optional
-
 
       if (item.CapexID) {
         await getAttachments(item.CapexID);
@@ -194,7 +199,6 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
     }
   }, [selectedVendorId]);
 
-
   const getItemById = async () => {
     try {
       debugger;
@@ -217,21 +221,21 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
 
       setItemData(item);
 
-
       const vendorId = item?.VendorCode?.Id || null;
 
       console.log("Vendor Id:", vendorId);
-
+      if (item) {
+        setGlCode(item.GL || "");
+      }
       setSelectedVendorId(vendorId);
-
-
+if (item) {
+    setGlCode(item.GL || "");
+  }
       setSelectedVendorName(item?.VendorName || "");
-
 
       if (item.CapexID) {
         await getAttachments(item.CapexID);
       }
-
 
       if (item.ApprovalMatrix) {
         try {
@@ -248,7 +252,6 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
       } else {
         setApprovalMatrix([]);
       }
-
 
       if (item.WorkFlowHistory) {
         try {
@@ -270,7 +273,6 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
     }
   };
 
-
   useEffect(() => {
     if (!context || !itemId) return;
     debugger;
@@ -279,9 +281,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
 
       await getLoggedInUser();
 
-
       await getVendors();
-
 
       await getItemById();
     };
@@ -289,33 +289,18 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
     void loadData();
   }, [context, itemId]);
 
-
-  useEffect(() => {
-    if (!context || !itemId) return;
-
-    const loadData = async () => {
-      void getLoggedInUser();
-      await getItemById();
-      await getVendors();
-
-    };
-
-    void loadData();
-  }, [context, itemId]);
   const buildApprovalFlow = async () => {
-
     const existingFlow = itemData.ApprovalMatrix
       ? JSON.parse(itemData.ApprovalMatrix)
       : [];
 
     const baseApprovers = existingFlow.filter(
-      (a: any) => a.Role === "RM" || a.Role === "HOD"
+      (a: any) => a.Role === "RM" || a.Role === "HOD",
     );
 
     const matrixData = await sp.web.lists
       .getByTitle("CapexApprovalMatrix")
-      .items
-      .select("Role/RoleName,Approver/Id,Approver/Title,Level/Level")
+      .items.select("Role/RoleName,Approver/Id,Approver/Title,Level/Level")
       .expand("Approver,Role,Level")
       .filter("Status eq 'Active'")
       .orderBy("Level", true)();
@@ -325,7 +310,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
       Name: item.Approver?.Title,
       Role: item.Role?.RoleName,
       Level: baseApprovers.length + index + 1,
-      Status: "Pending"
+      Status: "Pending",
     }));
 
     const fullFlow = [...baseApprovers, ...matrixApprovers];
@@ -338,7 +323,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
 
       return {
         ...newItem,
-        Status: oldItem?.Status || newItem.Status // 🔥 preserve status
+        Status: oldItem?.Status || newItem.Status, // 🔥 preserve status
       };
     });
   };
@@ -380,17 +365,14 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         ? JSON.parse(itemData.ApprovalMatrix)
         : [];
 
-
       const latestFlow = await buildApprovalFlow();
 
-
       const finalFlow = mergeFlowWithStatus(oldFlow, latestFlow);
-
 
       const currentUserId = context.pageContext.legacyPageContext.userId;
 
       const currentIndex = finalFlow.findIndex(
-        (a: any) => a.Id === currentUserId
+        (a: any) => a.Id === currentUserId,
       );
 
       if (currentIndex === -1) {
@@ -424,7 +406,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         .items.getById(itemId)
         .update({
           ApproverRemarks: approverRemarks,
-
+          GL: glCode,
           VoucherDate: voucherDate ? new Date(voucherDate) : null,
           VouchingNumber: voucherNumber,
 
@@ -432,27 +414,22 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
 
           ApprovalMatrix: JSON.stringify(finalFlow),
 
-
           CurrentApproverId: nextApproverId,
-          ApproverStatus: "Pending for PF Approver UTR"
+          ApproverStatus: "Pending for PF Approver UTR",
         });
 
       alert("Approved successfully ✅");
 
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
-
     } catch (error) {
       console.error("Approve error:", error);
       alert("Error ❌");
-
-    }
-    finally {
+    } finally {
       //actionLock.current = false;
       setIsSubmitting(false);
     }
   };
-
 
   const handleSendBack = async () => {
     if (actionLock.current) return;
@@ -473,9 +450,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
 
       const currentUserId = context.pageContext.legacyPageContext.userId;
 
-      const currentIndex = flow.findIndex(
-        (a: any) => a.Id === currentUserId
-      );
+      const currentIndex = flow.findIndex((a: any) => a.Id === currentUserId);
 
       if (currentIndex !== -1) {
         flow[currentIndex].Status = "Send Back";
@@ -489,7 +464,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         CurrentApprover: context.pageContext.user.displayName,
         ActionTaken: "Send Back",
         Comment: approverRemarks,
-        Date: new Date().toISOString()
+        Date: new Date().toISOString(),
       });
 
       await sp.web.lists
@@ -502,7 +477,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
           ApprovalMatrix: JSON.stringify(flow),
           WorkFlowHistory: JSON.stringify(history),
 
-          CurrentApproverId: null
+          CurrentApproverId: null,
         });
 
       alert("Send Back ✅");
@@ -511,14 +486,11 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
     } catch (error) {
       console.error(error);
-
-    }
-    finally {
+    } finally {
       //actionLock.current = false;
       setIsSubmitting(false);
     }
   };
-
 
   const handleReject = async () => {
     if (actionLock.current) return;
@@ -533,16 +505,13 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         return;
       }
 
-
       const flow = itemData.ApprovalMatrix
         ? JSON.parse(itemData.ApprovalMatrix)
         : [];
 
       const currentUserId = context.pageContext.legacyPageContext.userId;
 
-      const currentIndex = flow.findIndex(
-        (a: any) => a.Id === currentUserId
-      );
+      const currentIndex = flow.findIndex((a: any) => a.Id === currentUserId);
 
       if (currentIndex !== -1) {
         flow[currentIndex].Status = "Rejected";
@@ -556,7 +525,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
         CurrentApprover: context.pageContext.user.displayName,
         ActionTaken: "Rejected",
         Comment: approverRemarks,
-        Date: new Date().toISOString()
+        Date: new Date().toISOString(),
       });
 
       await sp.web.lists
@@ -569,19 +538,16 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
           ApprovalMatrix: JSON.stringify(flow),
           WorkFlowHistory: JSON.stringify(history),
 
-          CurrentApproverId: null
+          CurrentApproverId: null,
         });
 
       alert("Rejected ❌");
 
       window.location.href =
         "https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer";
-
     } catch (error) {
       console.error(error);
-
-    }
-    finally {
+    } finally {
       //actionLock.current = false;
       setIsSubmitting(false);
     }
@@ -591,16 +557,14 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
     window.location.href = `https://isriglobal.sharepoint.com/sites/SonaFinance/SitePages/CapexForm.aspx?page=Performer`;
   };
 
-
   if (!itemData) return <div>Loading...</div>;
 
   return (
-
     <>
-      <div className='MainUplodForm' style={{ margin: "5px 0px" }}>
-        <div className='row'>
-          <div className='col-md-12'>
-            <div className='Main-Boxpoup'>
+      <div className="MainUplodForm" style={{ margin: "5px 0px" }}>
+        <div className="row">
+          <div className="col-md-12">
+            <div className="Main-Boxpoup">
               <div className="bordered">
                 <img src={logo} />
                 <h1>Capex Advance Payment (Approver) </h1>
@@ -611,19 +575,18 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                 <div className="displayWF">
                   <ul className="approval-flow">
                     <li className={`approval-step`}>
-
                       {`Initiator`} - {itemData.Author.Title}
-
                     </li>
                     {approvalMatrix.map((a, index) => (
                       <li
                         key={index}
-                        className={`approval-step ${a.Status === "In Progress"
-                          ? "active"
-                          : a.Status === "Approved"
-                            ? "approved"
-                            : ""
-                          }`}
+                        className={`approval-step ${
+                          a.Status === "In Progress"
+                            ? "active"
+                            : a.Status === "Approved"
+                              ? "approved"
+                              : ""
+                        }`}
                       >
                         {a.Role} - {a.Name}
                       </li>
@@ -893,63 +856,103 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                   </a>
                 </div>
               </div> */}
-              <div className='borderedbox'>
+              <div className="borderedbox">
                 <div className="heading1" style={{ marginTop: "10px" }}>
                   <label>Requestor Information</label>
                 </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Code" className='font'>Employee Code</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {itemData.EmployeeCode}</label>
+                <div className="main-formcontainer">
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Code" className="font">
+                        Employee Code
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {itemData.EmployeeCode}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Name" className='font'>Employee Name </label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {itemData.EmployeeName}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Name" className="font">
+                        Employee Name{" "}
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {itemData.EmployeeName}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Email" className='font'>Employee Email </label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {itemData.EmployeeEmail}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Email" className="font">
+                        Employee Email{" "}
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {itemData.EmployeeEmail}
+                      </label>
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Contact No" className='font'>Contact No</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {itemData.ContactNo}</label>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label htmlFor="Contact No" className="font">
+                        Contact No
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {itemData.ContactNo}</label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Employee Status" className='font'>Employee Status</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {itemData.EmployeeStatus}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Employee Status" className="font">
+                        Employee Status
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext">
+                        {" "}
+                        {itemData.EmployeeStatus}
+                      </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="Division" className='font'>Division</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {itemData.Division}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="Division" className="font">
+                        Division
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {itemData.Division}</label>
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
-                      <label htmlFor="Location" className='font'>Location</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {itemData.Location}</label>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
+                      <label htmlFor="Location" className="font">
+                        Location
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {itemData.Location}</label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="RM" className='font'>RM</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {itemData.RM}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="RM" className="font">
+                        RM
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {itemData.RM}</label>
                     </div>
-                    <div className='col-md-4'>
-                      <label htmlFor="HOD" className='font'>HOD</label> : &nbsp;&nbsp;
-                      <label className='fonttext'>  {itemData.HOD}</label>
+                    <div className="col-md-4">
+                      <label htmlFor="HOD" className="font">
+                        HOD
+                      </label>{" "}
+                      : &nbsp;&nbsp;
+                      <label className="fonttext"> {itemData.HOD}</label>
                     </div>
                   </div>
                 </div>
                 <div className="heading1" style={{ marginTop: "10px" }}>
                   <label>Capex Details</label>
                 </div>
-                <div className='main-formcontainer'>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
+                <div className="main-formcontainer">
+                  <div className="row mb-20">
+                    <div className="col-md-4">
                       <label className="font">Vendor Code</label>
                       <label className="fonttext textviewbox readonly">
-                        {vendors.find(v => v.Id === selectedVendorId)?.VendorCode || ""}
+                        {vendors.find((v) => v.Id === selectedVendorId)
+                          ?.VendorCode || ""}
                       </label>
                     </div>
                     <div className="col-md-4">
@@ -965,15 +968,19 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                       </label>
                     </div>
                   </div>
-                  <div className='row mb-20'>
-                    <div className='col-md-4'>
+                  <div className="row mb-20">
+                    <div className="col-md-4">
                       <label className="font">PO Date</label>
                       <label className="fonttext textviewbox readonly">
-                        {itemData.PODate ? new Date(itemData.PODate).toLocaleDateString("en-GB",) : ""}
+                        {itemData.PODate
+                          ? new Date(itemData.PODate).toLocaleDateString(
+                              "en-GB",
+                            )
+                          : ""}
                       </label>
                     </div>
-                    <div className='col-md-4'>
-                      <label className="font">PO Terms</label>
+                    <div className="col-md-4">
+                      <label className="font">Payment Terms as per PO</label>
                       <label className="fonttext textviewbox readonly">
                         {itemData.POAdvanceTerms}
                       </label>
@@ -985,23 +992,27 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                       </label>
                     </div>
                   </div>
-                  <div className='row mb-20'>
+                  <div className="row mb-20">
                     <div className="col-md-4">
                       <label className="font">Advance Amount</label>
                       <label className="fonttext textviewbox readonly">
                         {itemData.RequestAdvanceAmount}
                       </label>
                     </div>
-                    <div className="col-md-4">
+                    {/* <div className="col-md-4">
                       <label className="font">Paid Amount</label>
                       <label className="fonttext textviewbox readonly">
                         {itemData.PaidAmount}
                       </label>
-                    </div>
+                    </div> */}
                     <div className="col-md-4">
                       <label className="font">Expected Settlement</label>
                       <label className="fonttext textviewbox readonly">
-                        {itemData.ExpectedDateofSettlement ? new Date(itemData.ExpectedDateofSettlement).toLocaleDateString("en-GB") : ""}
+                        {itemData.ExpectedDateofSettlement
+                          ? new Date(
+                              itemData.ExpectedDateofSettlement,
+                            ).toLocaleDateString("en-GB")
+                          : ""}
                       </label>
                     </div>
                   </div>
@@ -1014,15 +1025,20 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                         disabled={true}
                         principalTypes={[PrincipalType.User]}
                         defaultSelectedUsers={
-                          itemData?.PICName?.Title ? [itemData.PICName.Title] : []
+                          itemData?.PICName?.Title
+                            ? [itemData.PICName.Title]
+                            : []
                         }
                       />
                     </div>
                     <div className="col-md-4">
                       <label className="font">GL Code</label>
-                      <label className="fonttext textviewbox readonly">
-                        {itemData.GL}
-                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={glCode}
+                        onChange={(e) => setGlCode(e.target.value)}
+                      />
                     </div>
                     <div className="col-md-4">
                       <label className="font">Cost Center</label>
@@ -1033,7 +1049,9 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className="font" style={{ display: "block" }}>User Remarks</label>
+                      <label className="font" style={{ display: "block" }}>
+                        User Remarks
+                      </label>
                       <label className="fonttext textviewbox readonly">
                         {itemData.Remarks}
                       </label>
@@ -1067,9 +1085,10 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                   </div>
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className='font'>Approver Remarks</label>
+                      <label className="font">Approver Remarks</label>
                       <textarea
-                        value={approverRemarks} className='form-control'
+                        value={approverRemarks}
+                        className="form-control"
                         onChange={(e) => setApproverRemarks(e.target.value)}
                       />
                     </div>
@@ -1078,21 +1097,23 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                 <div className="heading1" style={{ marginTop: "10px" }}>
                   <label>Vouching Details</label>
                 </div>
-                <div className='main-formcontainer'>
+                <div className="main-formcontainer">
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className='font'>Voucher Date</label>
+                      <label className="font">Voucher Date</label>
                       <input
                         type="date"
                         value={voucherDate}
                         onChange={(e) => setVoucherDate(e.target.value)}
-                        max={new Date().toISOString().split("T")[0]} className='form-control'
+                        max={new Date().toISOString().split("T")[0]}
+                        className="form-control"
                       />
                     </div>
                     <div className="col-md-4">
-                      <label className='font'>Voucher Number</label>
+                      <label className="font">Voucher Number</label>
                       <input
-                        value={voucherNumber} className='form-control'
+                        value={voucherNumber}
+                        className="form-control"
                         onChange={(e) => setVoucherNumber(e.target.value)}
                       />
                     </div>
@@ -1124,7 +1145,10 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                             <tbody>
                               {previousAdvances.length === 0 ? (
                                 <tr>
-                                  <td colSpan={7} style={{ textAlign: "center" }}>
+                                  <td
+                                    colSpan={7}
+                                    style={{ textAlign: "center" }}
+                                  >
                                     No previous advances available
                                   </td>
                                 </tr>
@@ -1134,26 +1158,40 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                                     const pending = Math.max(
                                       0,
                                       Number(item.RequestAdvanceAmount || 0) -
-                                      Number(item.PaidAmount || 0),
+                                        Number(item.PaidAmount || 0),
                                     );
+
+                                    const isDuplicate =
+                                      previousAdvances.filter(
+                                        (x: any) =>
+                                          x.PONumber === item.PONumber,
+                                      ).length > 1;
+
                                     return (
-                                      <tr key={index}>
+                                      <tr
+                                        key={index}
+                                        style={{
+                                          backgroundColor: isDuplicate
+                                            ? "#ffff99"
+                                            : "",
+                                        }}
+                                      >
                                         <td>{item.PONumber}</td>
                                         <td>{item.RequestAdvanceAmount}</td>
 
                                         <td>
                                           {item.Created
                                             ? new Date(
-                                              item.Created,
-                                            ).toLocaleDateString("en-GB")
+                                                item.Created,
+                                              ).toLocaleDateString("en-GB")
                                             : ""}
                                         </td>
 
                                         <td>
                                           {item.VoucherDate
                                             ? new Date(
-                                              item.VoucherDate,
-                                            ).toLocaleDateString('en-GB')
+                                                item.VoucherDate,
+                                              ).toLocaleDateString("en-GB")
                                             : ""}
                                         </td>
 
@@ -1167,13 +1205,15 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                               )}
                             </tbody>
                           </table>
-
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="main-formcontainer" style={{ marginTop: "10px" }}>
+                <div
+                  className="main-formcontainer"
+                  style={{ marginTop: "10px" }}
+                >
                   <div className="row mb-20">
                     <div className="col-md-12">
                       {workflowHistory.length === 0 ? (
@@ -1230,8 +1270,8 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                                     <td style={{ padding: "8px" }}>
                                       {h.Date
                                         ? new Date(h.Date).toLocaleDateString(
-                                          "en-GB",
-                                        )
+                                            "en-GB",
+                                          )
                                         : ""}
                                     </td>
 
@@ -1265,7 +1305,15 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
                     </div>
                   </div>
                 </div>
-                <div style={{ display: "flex", justifyContent: "center", gap: "5px", marginBottom: "1rem", marginTop: "1rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "5px",
+                    marginBottom: "1rem",
+                    marginTop: "1rem",
+                  }}
+                >
                   <a
                     className={`submit-btn ${isSubmitting ? "disabled-btn" : ""}`}
                     onClick={!isSubmitting ? handleApprove : undefined}
@@ -1296,9 +1344,7 @@ const APperformerAdvanceform: React.FC<IProps> = ({ context, itemId }) => {
           </div>
         </div>
       </div>
-
     </>
-
   );
 };
 

@@ -232,7 +232,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
     }
 
     if (!poTerms || poTerms.trim() === "") {
-      errors.push("Please update PO Terms");
+      errors.push("Please update Payment Terms as per PO");
     }
 
     if (!poAmount || Number(poAmount) <= 0) {
@@ -243,9 +243,9 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
       errors.push("Please update Advance Amount");
     }
 
-    if (!paidAmount || Number(paidAmount) <= 0) {
-      errors.push("Please update Paid Amount");
-    }
+    // if (!paidAmount || Number(paidAmount) <= 0) {
+    //   errors.push("Please update Paid Amount");
+    // }
 
     if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
       errors.push(
@@ -254,13 +254,13 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
     }
 
 
-    if (
-      advanceAmount &&
-      paidAmount &&
-      Number(paidAmount) > Number(advanceAmount)
-    ) {
-      errors.push("Paid Amount cannot be greater than Advance Amount");
-    }
+    // if (
+    //   advanceAmount &&
+    //   paidAmount &&
+    //   Number(paidAmount) > Number(advanceAmount)
+    // ) {
+    //   errors.push("Paid Amount cannot be greater than Advance Amount");
+    // }
 
 
 
@@ -959,7 +959,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                       />
                     </div>
                     <div className="col-md-4">
-                      <label className="font">PO Advance Terms</label>
+                      <label className="font">Payment Terms as per PO</label>
                       <span className="required" style={{ color: "red" }}>
                         *
                       </span>
@@ -998,7 +998,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                         className="form-control"
                       />
                     </div>
-                    <div className="col-md-4">
+                    {/* <div className="col-md-4">
                       <label className="font" style={{ color: "red" }}>
                         Paid Amount
                       </label>
@@ -1012,7 +1012,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                         }
                         className="form-control"
                       />
-                    </div>
+                    </div> */}
                     <div className="col-md-4">
                       <label className="font">Expected Settlement Date</label>
                       <span className="required" style={{ color: "red" }}>
@@ -1046,7 +1046,9 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                         onChange={(items) => setSelectedUser(items)}
                       />
                     </div>
-                    <div className="col-md-4">
+                   {new URLSearchParams(window.location.search).get("page") !== "User" && (
+                    <div className="col-md-4" >
+                    
                       <label className="font">GL Code</label>
                       <span className="required" style={{ color: "red" }}>
                         *
@@ -1058,6 +1060,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                         readOnly
                       />
                     </div>
+                    )}
                     <div className="col-md-4">
                       <label className="font">Cost Center</label>
                       <span className="required" style={{ color: "red" }}>
@@ -1198,37 +1201,55 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {previousAdvances.length === 0 ? (
-                                  <tr>
-                                    <td colSpan={7} style={{ textAlign: "center" }}>
-                                      No previous advances available
-                                    </td>
-                                  </tr>
-                                ) : (
-                                  previousAdvances.map((item: any, index: number) => {
+                              {previousAdvances.length === 0 ? (
+                                <tr>
+                                  <td
+                                    colSpan={7}
+                                    style={{ textAlign: "center" }}
+                                  >
+                                    No previous advances available
+                                  </td>
+                                </tr>
+                              ) : (
+                                previousAdvances.map(
+                                  (item: any, index: number) => {
                                     const pending = Math.max(
                                       0,
                                       Number(item.RequestAdvanceAmount || 0) -
-                                      Number(item.PaidAmount || 0),
+                                        Number(item.PaidAmount || 0),
                                     );
+
+                                    const isDuplicate =
+                                      previousAdvances.filter(
+                                        (x: any) =>
+                                          x.PONumber === item.PONumber,
+                                      ).length > 1;
+
                                     return (
-                                      <tr key={index}>
+                                      <tr
+                                        key={index}
+                                        style={{
+                                          backgroundColor: isDuplicate
+                                            ? "#ffff99"
+                                            : "",
+                                        }}
+                                      >
                                         <td>{item.PONumber}</td>
                                         <td>{item.RequestAdvanceAmount}</td>
 
                                         <td>
                                           {item.Created
                                             ? new Date(
-                                              item.Created,
-                                            ).toLocaleDateString("en-GB")
+                                                item.Created,
+                                              ).toLocaleDateString("en-GB")
                                             : ""}
                                         </td>
 
                                         <td>
                                           {item.VoucherDate
                                             ? new Date(
-                                              item.VoucherDate,
-                                            ).toLocaleDateString('en-GB')
+                                                item.VoucherDate,
+                                              ).toLocaleDateString("en-GB")
                                             : ""}
                                         </td>
 
@@ -1237,9 +1258,10 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                                         <td>{pending}</td>
                                       </tr>
                                     );
-                                  })
-                                )}
-                              </tbody>
+                                  },
+                                )
+                              )}
+                            </tbody>
                             </table>
                           </div>
                         </div>

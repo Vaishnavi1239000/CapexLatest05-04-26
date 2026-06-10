@@ -679,7 +679,7 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                       </label>
                     </div>
                     <div className='col-md-4'>
-                      <label className="font">PO Terms</label>
+                      <label className="font">Payment Terms as per PO</label>
                       <label className="fonttext textviewbox readonly">
                         {poTerms}
                       </label>
@@ -698,12 +698,12 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                         {advanceAmount}
                       </label>
                     </div>
-                    <div className="col-md-4">
+                    {/* <div className="col-md-4">
                       <label className="font">Paid Amount</label>
                       <label className="fonttext textviewbox readonly">
                         {paidAmount}
                       </label>
-                    </div>
+                    </div> */}
                     <div className="col-md-4">
                       <label className="font">Expected Date</label>
                       <label className="fonttext textviewbox readonly">
@@ -724,12 +724,14 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                         }
                       />
                     </div>
+                    {new URLSearchParams(window.location.search).get("page") !== "User" && (
                     <div className="col-md-4">
                       <label className="font">GL Code</label>
                       <label className="fonttext textviewbox readonly">
                         {glCode}
                       </label>
                     </div>
+                    )}
                     <div className="col-md-4">
                       <label className="font">Cost Center</label>
                       <label className="fonttext textviewbox readonly">
@@ -827,38 +829,56 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                                   <th className="px-4 py-2">Pending Advance</th>
                                 </tr>
                               </thead>
-                              <tbody>
-                                {previousAdvances.length === 0 ? (
-                                  <tr>
-                                    <td colSpan={7} style={{ textAlign: "center" }}>
-                                      No previous advances available
-                                    </td>
-                                  </tr>
-                                ) : (
-                                  previousAdvances.map((item: any, index: number) => {
+                            <tbody>
+                              {previousAdvances.length === 0 ? (
+                                <tr>
+                                  <td
+                                    colSpan={7}
+                                    style={{ textAlign: "center" }}
+                                  >
+                                    No previous advances available
+                                  </td>
+                                </tr>
+                              ) : (
+                                previousAdvances.map(
+                                  (item: any, index: number) => {
                                     const pending = Math.max(
                                       0,
                                       Number(item.RequestAdvanceAmount || 0) -
-                                      Number(item.PaidAmount || 0),
+                                        Number(item.PaidAmount || 0),
                                     );
+
+                                    const isDuplicate =
+                                      previousAdvances.filter(
+                                        (x: any) =>
+                                          x.PONumber === item.PONumber,
+                                      ).length > 1;
+
                                     return (
-                                      <tr key={index}>
+                                      <tr
+                                        key={index}
+                                        style={{
+                                          backgroundColor: isDuplicate
+                                            ? "#ffff99"
+                                            : "",
+                                        }}
+                                      >
                                         <td>{item.PONumber}</td>
                                         <td>{item.RequestAdvanceAmount}</td>
 
                                         <td>
                                           {item.Created
                                             ? new Date(
-                                              item.Created,
-                                            ).toLocaleDateString("en-GB")
+                                                item.Created,
+                                              ).toLocaleDateString("en-GB")
                                             : ""}
                                         </td>
 
                                         <td>
                                           {item.VoucherDate
                                             ? new Date(
-                                              item.VoucherDate,
-                                            ).toLocaleDateString('en-GB')
+                                                item.VoucherDate,
+                                              ).toLocaleDateString("en-GB")
                                             : ""}
                                         </td>
 
@@ -867,9 +887,10 @@ const ViewAdvanceForm = ({ context, formData, onClose }: any) => {
                                         <td>{pending}</td>
                                       </tr>
                                     );
-                                  })
-                                )}
-                              </tbody>
+                                  },
+                                )
+                              )}
+                            </tbody>
                             </table>
                           </div>
                         </div>

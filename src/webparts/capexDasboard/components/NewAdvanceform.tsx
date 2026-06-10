@@ -24,6 +24,9 @@ const NewAdvanceform = ({ context }: any) => {
   const sp = spfi().using(SPFx(context));
   const submitRef = useRef(false);
   const draftRef = useRef(false);
+
+  const pageType =
+  new URLSearchParams(window.location.search).get("page");
   const [attachments, setAttachments] = useState<any[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -344,7 +347,7 @@ const NewAdvanceform = ({ context }: any) => {
     }
 
     if (!poTerms || poTerms.trim() === "") {
-      errors.push("Please update PO Terms");
+      errors.push("Please update Payment Terms as per PO");
       setIsSubmitting(false);
     }
 
@@ -358,23 +361,23 @@ const NewAdvanceform = ({ context }: any) => {
       setIsSubmitting(false);
     }
 
-    if (!paidAmount || Number(paidAmount) <= 0) {
-      errors.push("Please update Paid Amount");
-      setIsSubmitting(false);
-    }
+    // if (!paidAmount || Number(paidAmount) <= 0) {
+    //   errors.push("Please update Paid Amount");
+    //   setIsSubmitting(false);
+    // }
     if (poAmount && advanceAmount && Number(advanceAmount) > Number(poAmount)) {
       errors.push(
         "The requested advance amount cannot be greater than the PO Amount (Including GST)",
       );
     }
 
-    if (
-      advanceAmount &&
-      paidAmount &&
-      Number(paidAmount) > Number(advanceAmount)
-    ) {
-      errors.push("Paid Amount cannot be greater than Advance Amount");
-    }
+    // if (
+    //   advanceAmount &&
+    //   paidAmount &&
+    //   Number(paidAmount) > Number(advanceAmount)
+    // ) {
+    //   errors.push("Paid Amount cannot be greater than Advance Amount");
+    // }
 
     if (expectedDate) {
       const today = new Date().setHours(0, 0, 0, 0);
@@ -1104,7 +1107,7 @@ const NewAdvanceform = ({ context }: any) => {
                       />
                     </div>
                     <div className="col-md-4">
-                      <label className="font">PO Advance Terms</label>{" "}
+                      <label className="font">Payment Terms as per PO</label>{" "}
                       <span className="required" style={{ color: "red" }}>
                         *
                       </span>
@@ -1142,7 +1145,7 @@ const NewAdvanceform = ({ context }: any) => {
                         }
                       />
                     </div>
-                    <div className="col-md-4">
+                    {/* <div className="col-md-4">
                       <label className="font" style={{ color: "red" }}>
                         Paid Amount
                       </label>{" "}
@@ -1156,7 +1159,7 @@ const NewAdvanceform = ({ context }: any) => {
                           handleNumberChange(e.target.value, setPaidAmount)
                         }
                       />
-                    </div>
+                    </div> */}
                     <div className="col-md-4">
                       <label className="font">Expected Settlement Date</label>{" "}
                       <span className="required" style={{ color: "red" }}>
@@ -1185,13 +1188,15 @@ const NewAdvanceform = ({ context }: any) => {
                         onChange={(items) => setSelectedUser(items)}
                       />
                     </div>
-                    <div className="col-md-4">
+                    {new URLSearchParams(window.location.search).get("page") !== "User" && (
+                   <div className="col-md-4" >
                       <label className="font">GL Code</label>{" "}
                       <span className="required" style={{ color: "red" }}>
                         *
                       </span>
                       <input value={glCode} className="form-control readonly" />
                     </div>
+                    )}
                     <div className="col-md-4">
                       <label className="font">Cost Center</label>{" "}
                       <span className="required" style={{ color: "red" }}>
@@ -1289,54 +1294,68 @@ const NewAdvanceform = ({ context }: any) => {
                                   <th className="px-4 py-2">Pending Advance</th>
                                 </tr>
                               </thead>
-                              <tbody>
-                                {previousAdvances.length === 0 ? (
-                                  <tr>
-                                    <td
-                                      colSpan={7}
-                                      style={{ textAlign: "center" }}
-                                    >
-                                      No previous advances available
-                                    </td>
-                                  </tr>
-                                ) : (
-                                  previousAdvances.map(
-                                    (item: any, index: number) => {
-                                      const pending = Math.max(
-                                        0,
-                                        Number(item.RequestAdvanceAmount || 0) -
+                            <tbody>
+                              {previousAdvances.length === 0 ? (
+                                <tr>
+                                  <td
+                                    colSpan={7}
+                                    style={{ textAlign: "center" }}
+                                  >
+                                    No previous advances available
+                                  </td>
+                                </tr>
+                              ) : (
+                                previousAdvances.map(
+                                  (item: any, index: number) => {
+                                    const pending = Math.max(
+                                      0,
+                                      Number(item.RequestAdvanceAmount || 0) -
                                         Number(item.PaidAmount || 0),
-                                      );
-                                      return (
-                                        <tr key={index}>
-                                          <td>{item.PONumber}</td>
-                                          <td>{item.RequestAdvanceAmount}</td>
+                                    );
 
-                                          <td>
-                                            {item.Created
-                                              ? new Date(
+                                    const isDuplicate =
+                                      previousAdvances.filter(
+                                        (x: any) =>
+                                          x.PONumber === item.PONumber,
+                                      ).length > 1;
+
+                                    return (
+                                      <tr
+                                        key={index}
+                                        style={{
+                                          backgroundColor: isDuplicate
+                                            ? "#ffff99"
+                                            : "",
+                                        }}
+                                      >
+                                        <td>{item.PONumber}</td>
+                                        <td>{item.RequestAdvanceAmount}</td>
+
+                                        <td>
+                                          {item.Created
+                                            ? new Date(
                                                 item.Created,
                                               ).toLocaleDateString("en-GB")
-                                              : ""}
-                                          </td>
+                                            : ""}
+                                        </td>
 
-                                          <td>
-                                            {item.VoucherDate
-                                              ? new Date(
+                                        <td>
+                                          {item.VoucherDate
+                                            ? new Date(
                                                 item.VoucherDate,
                                               ).toLocaleDateString("en-GB")
-                                              : ""}
-                                          </td>
+                                            : ""}
+                                        </td>
 
-                                          <td>{item.VoucherNumber}</td>
-                                          <td>{item.PaidAmount}</td>
-                                          <td>{pending}</td>
-                                        </tr>
-                                      );
-                                    },
-                                  )
-                                )}
-                              </tbody>
+                                        <td>{item.VoucherNumber}</td>
+                                        <td>{item.PaidAmount}</td>
+                                        <td>{pending}</td>
+                                      </tr>
+                                    );
+                                  },
+                                )
+                              )}
+                            </tbody>
                             </table>
                           </div>
                         </div>
