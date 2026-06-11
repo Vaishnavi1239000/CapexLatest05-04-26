@@ -549,7 +549,7 @@ const onPICChange = async (items: any[]) => {
 
         // Other
         GL: glCode,
-        CostCenter: employee.CostCenter,
+        CostCenter: costCenter,
         Remarks: remarks,
         ProjectDescription: projectDesc,
 
@@ -655,7 +655,7 @@ const onPICChange = async (items: any[]) => {
 
         // Other
         GL: glCode,
-        CostCenter: employee.CostCenter,
+        CostCenter: costCenter,
         Remarks: remarks,
         ProjectDescription: projectDesc,
 

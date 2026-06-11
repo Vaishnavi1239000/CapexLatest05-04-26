@@ -64,8 +64,34 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
     spHttpClient: context.spHttpClient,
   };
 
+const onPICChange = async (items: any[]) => {
+  setSelectedUser(items);
 
+  // PIC removed
+  if (!items || items.length === 0) {
+    setCostCenter("");
+    return;
+  }
 
+  try {
+    const userEmail = items[0].secondaryText;
+
+    const employeeData = await sp.web.lists
+      .getByTitle("EmployeeMaster")
+      .items
+      .filter(`EmployeeEmail eq '${userEmail}'`)
+      .top(1)();
+
+    if (employeeData.length > 0) {
+      setCostCenter(employeeData[0].CostCenter || "");
+    } else {
+      setCostCenter("");
+    }
+  } catch (error) {
+    console.error("Error fetching Cost Center:", error);
+    setCostCenter("");
+  }
+};
   const handleDeleteExistingFile = async (file: any) => {
     try {
       if (!window.confirm(`Delete ${file.Name}?`)) return;
@@ -431,7 +457,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
 
         // Other
         GL: glCode,
-        CostCenter: employee.CostCenter,
+        CostCenter: costCenter,
         Remarks: remarks,
         ProjectDescription: projectDesc,
 
@@ -713,6 +739,12 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
         },
       ]);
     }
+void onPICChange([
+    {
+      text: formData.PICName.Title,
+      secondaryText: formData.PICName.EMail,
+    },
+  ]);
 
     if (formData?.ApprovalMatrix) {
       try {
@@ -1043,7 +1075,8 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                             ? [selectedUser[0].secondaryText]
                             : []
                         }
-                        onChange={(items) => setSelectedUser(items)}
+                         onChange={onPICChange}
+                        // onChange={(items) => setSelectedUser(items)}
                       />
                     </div>
                    {new URLSearchParams(window.location.search).get("page") !== "User" && (
@@ -1067,8 +1100,9 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
                         *
                       </span>
                       <input
-                        value={employee.CostCenter || ""}
+                        type="text"
                         className="form-control"
+                        value={costCenter}
                         readOnly
                       />
                     </div>
