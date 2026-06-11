@@ -967,15 +967,15 @@ const [glCode, setGlCode] = useState("");
                         }
                       />
                     </div>
-                   <div className="col-md-4">
-  <label className="font">GL Code</label>
-  <input
-    type="text"
-    className="form-control"
-    value={glCode}
-    onChange={(e) => setGlCode(e.target.value)}
-  />
-</div>
+                  <div className="col-md-4">
+                      <label className="font">GL Code</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={glCode}
+                        onChange={(e) => setGlCode(e.target.value)}
+                      />
+                    </div>
                     <div className="col-md-4">
                       <label className="font">Cost Center</label>
                       <label className="fonttext textviewbox readonly">

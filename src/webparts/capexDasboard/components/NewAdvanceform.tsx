@@ -24,9 +24,10 @@ const NewAdvanceform = ({ context }: any) => {
   const sp = spfi().using(SPFx(context));
   const submitRef = useRef(false);
   const draftRef = useRef(false);
-
-  const pageType =
-  new URLSearchParams(window.location.search).get("page");
+const [selectedUser, setSelectedUser] = useState<any[]>([]);
+const [costCenter, setCostCenter] = useState("");
+const [picUserId, setPicUserId] = useState<number | null>(null);
+  const pageType = new URLSearchParams(window.location.search).get("page");
   const [attachments, setAttachments] = useState<any[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -41,7 +42,7 @@ const NewAdvanceform = ({ context }: any) => {
   const [pickerKey, setPickerKey] = React.useState<number>(0);
   const [vendors, setVendors] = useState<IVendor[]>([]);
 
-  const [selectedUser, setSelectedUser] = useState<any[]>([]);
+ 
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [selectedVendorName, setSelectedVendorName] = useState("");
 
@@ -56,7 +57,7 @@ const NewAdvanceform = ({ context }: any) => {
 
   const [glCode, setGlCode] = useState("390111003");
 
-  const [costCenter, setCostCenter] = useState("");
+ 
 
   const [remarks, setRemarks] = useState("");
   const [projectDesc, setProjectDesc] = useState("");
@@ -106,6 +107,52 @@ const NewAdvanceform = ({ context }: any) => {
     } catch (error) {
       console.error("Error fetching previous advances:", error);
       void setPreviousAdvances([]);
+    }
+  };
+const onPICChange = async (items: any[]) => {
+  setSelectedUser(items);
+
+  if (!items || items.length === 0) {
+    setCostCenter("");
+    return;
+  }
+
+  const userEmail = items[0].secondaryText;
+
+ const employee = await sp.web.lists
+        .getByTitle("EmployeeMaster")
+        .items.filter(`EmployeeEmail eq '${userEmail}'`)
+        .top(1)();
+
+  if (employee.length > 0) {
+    setCostCenter(employee[0].CostCenter);
+  } else {
+    setCostCenter("");
+  }
+};
+  const onPICChange1 = async (selectedUser: any) => {
+
+    debugger;
+    if (!selectedUser || selectedUser.length === 0) {
+      setCostCenter("");
+      return;
+    }
+
+    const userEmail = selectedUser[0].secondaryText; // People Picker email
+
+    try {
+      const employee = await sp.web.lists
+        .getByTitle("EmployeeMaster")
+        .items.filter(`EmployeeEmail eq '${userEmail}'`)
+        .top(1)();
+
+      if (employee.length > 0) {
+        setCostCenter(employee[0].CostCenter);
+      } else {
+        setCostCenter("");
+      }
+    } catch (error) {
+      console.error("Error fetching employee:", error);
     }
   };
   const handleRemoveFile = (index: number) => {
@@ -412,6 +459,7 @@ const NewAdvanceform = ({ context }: any) => {
   };
 
   const handleSubmit = async () => {
+    debugger;
     if (submitRef.current) return;
 
     //submitRef.current = true;
@@ -1185,17 +1233,23 @@ const NewAdvanceform = ({ context }: any) => {
                         personSelectionLimit={1}
                         ensureUser={true}
                         principalTypes={[PrincipalType.User]}
-                        onChange={(items) => setSelectedUser(items)}
+                        onChange={onPICChange}
+
+                        // onChange={(items) => setSelectedUser(items)}
                       />
                     </div>
-                    {new URLSearchParams(window.location.search).get("page") !== "User" && (
-                   <div className="col-md-4" >
-                      <label className="font">GL Code</label>{" "}
-                      <span className="required" style={{ color: "red" }}>
-                        *
-                      </span>
-                      <input value={glCode} className="form-control readonly" />
-                    </div>
+                    {new URLSearchParams(window.location.search).get("page") !==
+                      "User" && (
+                      <div className="col-md-4">
+                        <label className="font">GL Code</label>{" "}
+                        <span className="required" style={{ color: "red" }}>
+                          *
+                        </span>
+                        <input
+                          value={glCode}
+                          className="form-control readonly"
+                        />
+                      </div>
                     )}
                     <div className="col-md-4">
                       <label className="font">Cost Center</label>{" "}
@@ -1203,8 +1257,10 @@ const NewAdvanceform = ({ context }: any) => {
                         *
                       </span>
                       <input
-                        value={employee.CostCenter}
-                        className="form-control readonly"
+                        type="text"
+                        className="form-control"
+                        value={costCenter}
+                        readOnly
                       />
                     </div>
                   </div>
@@ -1286,7 +1342,9 @@ const NewAdvanceform = ({ context }: any) => {
                               >
                                 <tr>
                                   <th className="px-4 py-2">PO Number</th>
-                                  <th className="px-4 py-2">Previous Advance</th>
+                                  <th className="px-4 py-2">
+                                    Previous Advance
+                                  </th>
                                   <th className="px-4 py-2">Requested Date</th>
                                   <th className="px-4 py-2">Paid Date</th>
                                   <th className="px-4 py-2">MRN No</th>
@@ -1294,68 +1352,68 @@ const NewAdvanceform = ({ context }: any) => {
                                   <th className="px-4 py-2">Pending Advance</th>
                                 </tr>
                               </thead>
-                            <tbody>
-                              {previousAdvances.length === 0 ? (
-                                <tr>
-                                  <td
-                                    colSpan={7}
-                                    style={{ textAlign: "center" }}
-                                  >
-                                    No previous advances available
-                                  </td>
-                                </tr>
-                              ) : (
-                                previousAdvances.map(
-                                  (item: any, index: number) => {
-                                    const pending = Math.max(
-                                      0,
-                                      Number(item.RequestAdvanceAmount || 0) -
-                                        Number(item.PaidAmount || 0),
-                                    );
+                              <tbody>
+                                {previousAdvances.length === 0 ? (
+                                  <tr>
+                                    <td
+                                      colSpan={7}
+                                      style={{ textAlign: "center" }}
+                                    >
+                                      No previous advances available
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  previousAdvances.map(
+                                    (item: any, index: number) => {
+                                      const pending = Math.max(
+                                        0,
+                                        Number(item.RequestAdvanceAmount || 0) -
+                                          Number(item.PaidAmount || 0),
+                                      );
 
-                                    const isDuplicate =
-                                      previousAdvances.filter(
-                                        (x: any) =>
-                                          x.PONumber === item.PONumber,
-                                      ).length > 1;
+                                      const isDuplicate =
+                                        previousAdvances.filter(
+                                          (x: any) =>
+                                            x.PONumber === item.PONumber,
+                                        ).length > 1;
 
-                                    return (
-                                      <tr
-                                        key={index}
-                                        style={{
-                                          backgroundColor: isDuplicate
-                                            ? "#ffff99"
-                                            : "",
-                                        }}
-                                      >
-                                        <td>{item.PONumber}</td>
-                                        <td>{item.RequestAdvanceAmount}</td>
+                                      return (
+                                        <tr
+                                          key={index}
+                                          style={{
+                                            backgroundColor: isDuplicate
+                                              ? "#ffff99"
+                                              : "",
+                                          }}
+                                        >
+                                          <td>{item.PONumber}</td>
+                                          <td>{item.RequestAdvanceAmount}</td>
 
-                                        <td>
-                                          {item.Created
-                                            ? new Date(
-                                                item.Created,
-                                              ).toLocaleDateString("en-GB")
-                                            : ""}
-                                        </td>
+                                          <td>
+                                            {item.Created
+                                              ? new Date(
+                                                  item.Created,
+                                                ).toLocaleDateString("en-GB")
+                                              : ""}
+                                          </td>
 
-                                        <td>
-                                          {item.VoucherDate
-                                            ? new Date(
-                                                item.VoucherDate,
-                                              ).toLocaleDateString("en-GB")
-                                            : ""}
-                                        </td>
+                                          <td>
+                                            {item.VoucherDate
+                                              ? new Date(
+                                                  item.VoucherDate,
+                                                ).toLocaleDateString("en-GB")
+                                              : ""}
+                                          </td>
 
-                                        <td>{item.VoucherNumber}</td>
-                                        <td>{item.PaidAmount}</td>
-                                        <td>{pending}</td>
-                                      </tr>
-                                    );
-                                  },
-                                )
-                              )}
-                            </tbody>
+                                          <td>{item.VoucherNumber}</td>
+                                          <td>{item.PaidAmount}</td>
+                                          <td>{pending}</td>
+                                        </tr>
+                                      );
+                                    },
+                                  )
+                                )}
+                              </tbody>
                             </table>
                           </div>
                         </div>
