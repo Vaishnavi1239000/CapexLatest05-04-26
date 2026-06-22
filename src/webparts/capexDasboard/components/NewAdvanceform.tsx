@@ -23,10 +23,12 @@ interface IVendor {
 const NewAdvanceform = ({ context }: any) => {
   const sp = spfi().using(SPFx(context));
   const submitRef = useRef(false);
+  
+const [selectedVendorCode, setSelectedVendorCode] = useState("");
   const draftRef = useRef(false);
-const [selectedUser, setSelectedUser] = useState<any[]>([]);
-const [costCenter, setCostCenter] = useState("");
-const [picUserId, setPicUserId] = useState<number | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any[]>([]);
+  const [costCenter, setCostCenter] = useState("");
+  const [picUserId, setPicUserId] = useState<number | null>(null);
   const pageType = new URLSearchParams(window.location.search).get("page");
   const [attachments, setAttachments] = useState<any[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -42,7 +44,6 @@ const [picUserId, setPicUserId] = useState<number | null>(null);
   const [pickerKey, setPickerKey] = React.useState<number>(0);
   const [vendors, setVendors] = useState<IVendor[]>([]);
 
- 
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [selectedVendorName, setSelectedVendorName] = useState("");
 
@@ -56,8 +57,6 @@ const [picUserId, setPicUserId] = useState<number | null>(null);
   const [expectedDate, setExpectedDate] = useState("");
 
   const [glCode, setGlCode] = useState("390111003");
-
- 
 
   const [remarks, setRemarks] = useState("");
   const [projectDesc, setProjectDesc] = useState("");
@@ -109,29 +108,28 @@ const [picUserId, setPicUserId] = useState<number | null>(null);
       void setPreviousAdvances([]);
     }
   };
-const onPICChange = async (items: any[]) => {
-  setSelectedUser(items);
+  const onPICChange = async (items: any[]) => {
+    setSelectedUser(items);
 
-  if (!items || items.length === 0) {
-    setCostCenter("");
-    return;
-  }
+    if (!items || items.length === 0) {
+      setCostCenter("");
+      return;
+    }
 
-  const userEmail = items[0].secondaryText;
+    const userEmail = items[0].secondaryText;
 
- const employee = await sp.web.lists
-        .getByTitle("EmployeeMaster")
-        .items.filter(`EmployeeEmail eq '${userEmail}'`)
-        .top(1)();
+    const employee = await sp.web.lists
+      .getByTitle("EmployeeMaster")
+      .items.filter(`EmployeeEmail eq '${userEmail}'`)
+      .top(1)();
 
-  if (employee.length > 0) {
-    setCostCenter(employee[0].CostCenter);
-  } else {
-    setCostCenter("");
-  }
-};
+    if (employee.length > 0) {
+      setCostCenter(employee[0].CostCenter);
+    } else {
+      setCostCenter("");
+    }
+  };
   const onPICChange1 = async (selectedUser: any) => {
-
     debugger;
     if (!selectedUser || selectedUser.length === 0) {
       setCostCenter("");
@@ -374,10 +372,10 @@ const onPICChange = async (items: any[]) => {
   const validateForm = () => {
     const errors: string[] = [];
 
-    if (!selectedVendorId || selectedVendorId === 0) {
-      errors.push("Please select the Vendor code");
-      setIsSubmitting(false);
-    }
+   if (!selectedVendorId || selectedVendorId === 0) {
+  errors.push("Please select the Vendor Name");
+  setIsSubmitting(false);
+}
 
     if (!poNumber || poNumber.trim() === "") {
       errors.push("Please update PO Number");
@@ -1066,19 +1064,26 @@ const onPICChange = async (items: any[]) => {
                 <div className="main-formcontainer">
                   <div className="row mb-20">
                     <div className="col-md-4">
-                      <label className="font">Vendor Code</label>{" "}
+                      <label className="font">Vendor Name</label>
                       <span className="required" style={{ color: "red" }}>
                         *
                       </span>
-                      {/* <select
+
+                      <select
                         value={selectedVendorId || ""}
                         onChange={(e) => {
                           const id = Number(e.target.value);
+
                           const vendor = vendors.find((v) => v.Id === id);
-                          setSelectedVendorId(id);
+
+                          setSelectedVendorId(id || null);
                           setSelectedVendorName(vendor?.VendorName || "");
-                          if (id) {
+                          setSelectedVendorCode(vendor?.VendorCode || "");
+
+                          if (id > 0) {
                             void getPreviousAdvances(id);
+                          } else {
+                            setPreviousAdvances([]);
                           }
                         }}
                         className="formtext-control"
@@ -1086,10 +1091,30 @@ const onPICChange = async (items: any[]) => {
                         <option value="">Select Vendor</option>
                         {vendors.map((v) => (
                           <option key={v.Id} value={v.Id}>
-                            {v.VendorCode}
+                            {v.VendorName}
                           </option>
                         ))}
-                      </select> */}
+                      </select>
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="font">Vendor Code</label>
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+
+                      <input
+                        value={selectedVendorCode}
+                        className="form-control readonly"
+                        readOnly
+                      />
+                    </div>
+                    {/* <div className="col-md-4">
+                      <label className="font">Vendor Code</label>{" "}
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+                    
                       <select
                         value={selectedVendorId || ""}
                         onChange={(e) => {
@@ -1126,7 +1151,7 @@ const onPICChange = async (items: any[]) => {
                         value={selectedVendorName}
                         className="form-control readonly"
                       />
-                    </div>
+                    </div> */}
                     <div className="col-md-4">
                       <label className="font">PO Number</label>{" "}
                       <span className="required" style={{ color: "red" }}>

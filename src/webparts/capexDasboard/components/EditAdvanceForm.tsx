@@ -27,6 +27,7 @@ const EditAdvanceForm = ({ context, formData, onClose }: any) => {
 
   const [isDraftSaving, setIsDraftSaving] = useState(false);
   const submitRef = useRef(false);
+  const [selectedVendorCode, setSelectedVendorCode] = useState("");
   const [previousAdvances, setPreviousAdvances] = useState<any[]>([]);
   const [vendors, setVendors] = useState<IVendor[]>([]);
   const [employee, setEmployee] = useState<any>({});
@@ -242,7 +243,7 @@ const onPICChange = async (items: any[]) => {
     const errors: string[] = [];
 
     if (!selectedVendorId || selectedVendorId === 0) {
-      errors.push("Please select the Vendor code");
+      errors.push("Please select the Vendor Name");
     }
 
     if (!poNumber || poNumber.trim() === "") {
@@ -739,12 +740,12 @@ const onPICChange = async (items: any[]) => {
         },
       ]);
     }
-void onPICChange([
-    {
-      text: formData.PICName.Title,
-      secondaryText: formData.PICName.EMail,
-    },
-  ]);
+// void onPICChange([
+//     {
+//       text: formData.PICName.Title,
+//       secondaryText: formData.PICName.EMail,
+//     },
+//   ]);
 
     if (formData?.ApprovalMatrix) {
       try {
@@ -925,7 +926,53 @@ void onPICChange([
                 </div>
                 <div className="main-formcontainer">
                   <div className="row mb-20">
+                     <div className="col-md-4">
+                      <label className="font">Vendor Name</label>
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+
+                      <select
+                        value={selectedVendorId || ""}
+                        onChange={(e) => {
+                          const id = Number(e.target.value);
+
+                          const vendor = vendors.find((v) => v.Id === id);
+
+                          setSelectedVendorId(id || null);
+                          setSelectedVendorName(vendor?.VendorName || "");
+                          setSelectedVendorCode(vendor?.VendorCode || "");
+
+                          if (id > 0) {
+                            void getPreviousAdvances(id);
+                          } else {
+                            setPreviousAdvances([]);
+                          }
+                        }}
+                        className="formtext-control"
+                      >
+                        <option value="">Select Vendor</option>
+                        {vendors.map((v) => (
+                          <option key={v.Id} value={v.Id}>
+                            {v.VendorName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div className="col-md-4">
+                      <label className="font">Vendor Code</label>
+                      <span className="required" style={{ color: "red" }}>
+                        *
+                      </span>
+
+                      <input
+                        value={selectedVendorCode}
+                        className="form-control readonly"
+                        readOnly
+                      />
+                    </div>
+                    {/* <div className="col-md-4">
                       <label className="font">Vendor Code</label>
                       <span className="required" style={{ color: "red" }}>
                         *
@@ -963,7 +1010,7 @@ void onPICChange([
                         value={selectedVendorName || vendorName}
                         className="form-control readonly"
                       />
-                    </div>
+                    </div> */}
                     <div className="col-md-4">
                       <label className="font">PO Number</label>
                       <span className="required" style={{ color: "red" }}>
@@ -1143,12 +1190,24 @@ void onPICChange([
                               }}
                             >
                               <a
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  window.open(
+                                    `${window.location.origin}${file.ServerRelativeUrl}`,
+                                    "_blank",
+                                  );
+                                }}
+                              >
+                                {file.Name}
+                              </a>
+                              {/* <a
                                 href={file.ServerRelativeUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
                                 {file.Name}
-                              </a>
+                              </a> */}
 
                               {/* Delete Existing File */}
                               <a onClick={() => handleDeleteAttachment(file.Name)}>
